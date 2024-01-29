@@ -172,7 +172,7 @@ func Start() {
 	}
 
 	// Register all routes
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		routeList, ok := routeMap[r.URL.Path]
 		if ok {
 			for _, route := range routeList {
