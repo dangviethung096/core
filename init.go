@@ -168,7 +168,7 @@ func Start() {
 
 	// Page
 	for _, page := range pageMap {
-		http.HandleFunc(page.url, page.pageHandler)
+		http.HandleFunc(page.url, pageHandler(page))
 	}
 
 	// Register all routes
