@@ -1,0 +1,35 @@
+debug: true
+server:
+  port: 8080
+  name: example
+context:
+  timeout: 60
+id_generator:
+  distributed: false
+database:
+  use: false
+  host: localhost
+  port: 5432
+  user: localhost
+  pass: hello
+  name: example
+rabbitmq:
+  use: false
+  amqp_server_url: amqp://guest:guest@localhost:5672
+  retry_time: 3
+redis:
+  use: false
+  host: localhost
+  port: 12345
+proxy:
+  url:
+http_client:
+  retry_times:
+  wait_times:
+scheduler:
+  use: false
+  task_doing_expiration: 60
+  delay: 2
+  interval:
+  bucket_size: 20
+  task_timeout: 60
