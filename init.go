@@ -161,14 +161,11 @@ func releaseMessageQueue() {
 * @return void
  */
 func Start() {
+	LoggerInstance.Info("API register must be have prefix \"api\" in url")
 	// Register all static folders
 	for _, staticFolder := range staticFolderMap {
+		LoggerInstance.Info("Register static folder: url = %s, path = %s", staticFolder.url, staticFolder.path)
 		http.Handle(staticFolder.url, http.StripPrefix(staticFolder.prefix, http.FileServer(http.Dir(staticFolder.path))))
-	}
-
-	// Page
-	for _, page := range pageMap {
-		http.HandleFunc(page.url, pageHandler(page))
 	}
 
 	// Register all routes
@@ -200,6 +197,12 @@ func Start() {
 
 		http.NotFound(w, r)
 	})
+
+	// Page
+	for _, page := range pageMap {
+		LoggerInstance.Info("Register page: %s", page.url)
+		http.HandleFunc(page.url, pageHandler(page))
+	}
 
 	// Listen and serve
 	LoggerInstance.Info("Start server at port: %d", Config.Server.Port)
