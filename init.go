@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"regexp"
@@ -27,6 +28,7 @@ var rabbitMQClient *messageQueue
 var coreContext *Context
 var validate *validator.Validate
 var contextTimeout time.Duration
+var htmlTemplateMap map[string]*template.Template
 
 func Init(configFile string) {
 	// Init core context
@@ -89,6 +91,7 @@ func Init(configFile string) {
 	routeRegexMap = make(map[string][]Route)
 	staticFolderMap = make(map[string]staticFolder)
 	pageMap = make(map[string]Page)
+	htmlTemplateMap = make(map[string]*template.Template)
 
 	// Context pool
 	contextPool = sync.Pool{
