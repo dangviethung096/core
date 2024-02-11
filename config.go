@@ -22,8 +22,9 @@ type CoreConfig struct {
 }
 
 type ServerConfig struct {
-	Port int    `yaml:"port"`
-	Name string `yaml:"name"`
+	Port      int    `yaml:"port"`
+	Name      string `yaml:"name"`
+	CacheHtml bool   `yaml:"cache_html"`
 }
 
 type ContextConfig struct {
