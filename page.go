@@ -31,7 +31,10 @@ func pageHandler(pageInfo Page) http.HandlerFunc {
 			tmpl = htmlTemplateMap[pageInfo.url]
 		} else {
 			// Parse files html
-			tmpl = parseTemplateFile(pageInfo)
+			tmpl, err = template.ParseFiles(pageInfo.PageFiles...)
+			if err != nil {
+				panic(err)
+			}
 		}
 
 		// Execute template
