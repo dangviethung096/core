@@ -16,12 +16,7 @@ func RegisterPage(url string, pageInfo Page) {
 	pageInfo.url = url
 	if Config.Server.CacheHtml {
 		// Parse files html
-		tmpl, err := template.ParseFiles((pageInfo.PageFiles[0]))
-		if err != nil {
-			LoggerInstance.Error("Parse html file fail: %s", err.Error())
-			panic(err)
-		}
-
+		tmpl := parseTemplateFile(pageInfo)
 		htmlTemplateMap[url] = tmpl
 	}
 
@@ -36,10 +31,7 @@ func pageHandler(pageInfo Page) http.HandlerFunc {
 			tmpl = htmlTemplateMap[pageInfo.url]
 		} else {
 			// Parse files html
-			tmpl, err = template.ParseFiles((pageInfo.PageFiles[0]))
-			if err != nil {
-				panic(err)
-			}
+			tmpl = parseTemplateFile(pageInfo)
 		}
 
 		// Execute template
@@ -48,4 +40,13 @@ func pageHandler(pageInfo Page) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
+}
+
+func parseTemplateFile(pageInfo Page) *template.Template {
+	// Parse files html
+	tmpl, err := template.ParseFiles(pageInfo.PageFiles...)
+	if err != nil {
+		panic(err)
+	}
+	return tmpl
 }
