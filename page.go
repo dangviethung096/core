@@ -30,11 +30,7 @@ func pageHandler(pageInfo Page) http.HandlerFunc {
 		if Config.Server.CacheHtml {
 			tmpl = htmlTemplateMap[pageInfo.url]
 		} else {
-			// Parse files html
-			tmpl, err = template.ParseFiles(pageInfo.PageFiles...)
-			if err != nil {
-				panic(err)
-			}
+			tmpl = parseTemplateFile(pageInfo)
 		}
 
 		// Execute template
@@ -46,7 +42,6 @@ func pageHandler(pageInfo Page) http.HandlerFunc {
 }
 
 func parseTemplateFile(pageInfo Page) *template.Template {
-	// Parse files html
 	tmpl, err := template.ParseFiles(pageInfo.PageFiles...)
 	if err != nil {
 		panic(err)
