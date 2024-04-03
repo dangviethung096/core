@@ -36,6 +36,7 @@ func pageHandler(pageInfo Page) http.HandlerFunc {
 		// Execute template
 		err = tmpl.Execute(w, pageInfo.Data)
 		if err != nil {
+			LoggerInstance.Error("Error when execute template: %s", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
