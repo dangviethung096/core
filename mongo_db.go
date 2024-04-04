@@ -29,7 +29,8 @@ func buildMongoDbConnectionString(info mongoDBInfo) string {
 
 // Mongodb session struct
 type mongoSession struct {
-	client *mongo.Client
+	Client *mongo.Client
+	*mongo.Database
 }
 
 // Connect to mongo database and return session
@@ -52,7 +53,11 @@ func openMongoDBConnection(info mongoDBInfo) mongoSession {
 		LoggerInstance.Fatal("Error when ping to MongoDB: %v", err)
 	}
 
+	database := client.Database(info.Database)
 	LoggerInstance.Info("Connect to MongoDB success")
 
-	return mongoSession{client: client}
+	return mongoSession{
+		Client:   client,
+		Database: database,
+	}
 }

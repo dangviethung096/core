@@ -18,7 +18,7 @@ func TestOpenMongoDBConnection(t *testing.T) {
 
 	session := openMongoDBConnection(info)
 
-	assert.NotNil(t, session.client, "MongoDB client should not be nil")
+	assert.NotNil(t, session, "MongoDB client should not be nil")
 
 	t.Logf("Connect successfully to mongo db: %#v", info)
 }

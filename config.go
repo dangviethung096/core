@@ -9,16 +9,16 @@ import (
 )
 
 type CoreConfig struct {
-	Debug       bool             `yaml:"debug"`
-	Server      ServerConfig     `yaml:"server"`
-	Context     ContextConfig    `yaml:"context"`
-	IdGenerator IdGenerator      `yaml:"id_generator"`
-	Database    Database         `yaml:"database"`
-	RabbitMQ    RabbitMQConfig   `yaml:"rabbitmq"`
-	Redis       RedisConfig      `yaml:"redis"`
-	Proxy       ProxyConfig      `yaml:"proxy"`
-	HttpClient  HttpClientConfig `yaml:"http_client"`
-	Scheduler   SchedulerConfig  `yaml:"scheduler"`
+	Debug       bool              `yaml:"debug"`
+	Server      ServerConfig      `yaml:"server"`
+	Context     ContextConfig     `yaml:"context"`
+	IdGenerator IdGeneratorConfig `yaml:"id_generator"`
+	Database    DatabaseConfig    `yaml:"database"`
+	RabbitMQ    RabbitMQConfig    `yaml:"rabbitmq"`
+	Redis       RedisConfig       `yaml:"redis"`
+	Proxy       ProxyConfig       `yaml:"proxy"`
+	HttpClient  HttpClientConfig  `yaml:"http_client"`
+	Scheduler   SchedulerConfig   `yaml:"scheduler"`
 }
 
 type ServerConfig struct {
@@ -54,16 +54,16 @@ func (config CoreConfig) GetContextTimeout() time.Duration {
 	return time.Duration(config.Context.Timeout) * time.Second
 }
 
-type IdGenerator struct {
+type IdGeneratorConfig struct {
 	Distributed bool `yaml:"distributed"`
 }
 
-type Database struct {
-	MongoDB    MongoDB
-	PostgresDB PostgresDB
+type DatabaseConfig struct {
+	MongoDB    MongoDBConfig
+	PostgresDB PostgresDBConfig
 }
 
-type PostgresDB struct {
+type PostgresDBConfig struct {
 	Use          bool   `yaml:"use"`
 	Host         string `yaml:"host"`
 	Port         int    `yaml:"port"`
@@ -72,7 +72,7 @@ type PostgresDB struct {
 	DatabaseName string `yaml:"name"`
 }
 
-type MongoDB struct {
+type MongoDBConfig struct {
 	Use          bool   `yaml:"use"`
 	Host         string `yaml:"host"`
 	Port         int    `yaml:"port"`

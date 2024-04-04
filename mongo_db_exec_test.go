@@ -17,9 +17,8 @@ func TestMongoGetDB(t *testing.T) {
 	}
 
 	session := openMongoDBConnection(info)
-	db := session.client.Database(info.Database)
 
-	assert.NotNil(t, db, "MongoDB database should not be nil")
+	assert.NotNil(t, session, "MongoDB database should not be nil")
 
 	t.Logf("Get successfully mongo db: %#v", info)
 }

@@ -1,5 +1,5 @@
 package core
 
-func GetDataFromCollection(collection string, query interface{}, result interface{}) error {
+func GetDataFromCollection(database, collection string, query interface{}, result interface{}) error {
 	return nil
 }
