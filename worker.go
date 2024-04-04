@@ -58,7 +58,7 @@ func (w *worker) execute() {
 	bucket := GetBucket(time.Now())
 
 	// Get all task from database: table: todo
-	result, err := DBSession().QueryContext(coreContext, "SELECT task_id, bucket FROM scheduler_todo WHERE bucket <= $1 and source = $2", bucket, Config.Server.Name)
+	result, err := PostgresDBSession().QueryContext(coreContext, "SELECT task_id, bucket FROM scheduler_todo WHERE bucket <= $1 and source = $2", bucket, Config.Server.Name)
 	if err != nil {
 		LoggerInstance.Error("Execute tasks fail: %v", err)
 		return
@@ -115,7 +115,7 @@ func (w *worker) process(taskKey string, bucket int64, id int64) {
 
 	var t task
 	// Get task detail from database in table: tasks
-	row := DBSession().QueryRowContext(coreContext, "SELECT id, queue_name, data, done, loop_index, loop_count, next, interval FROM scheduler_tasks WHERE id = $1", id)
+	row := PostgresDBSession().QueryRowContext(coreContext, "SELECT id, queue_name, data, done, loop_index, loop_count, next, interval FROM scheduler_tasks WHERE id = $1", id)
 	err := row.Scan(&t.ID, &t.QueueName, &t.Data, &t.Done, &t.LoopIndex, &t.LoopCount, &t.Next, &t.Interval)
 	if err != nil {
 		LoggerInstance.Error("Get task fail: %v", err)
@@ -125,7 +125,7 @@ func (w *worker) process(taskKey string, bucket int64, id int64) {
 
 	if t.Done {
 		// Delete task in table: todo
-		if _, err := DBSession().ExecContext(coreContext, "DELETE FROM scheduler_todo WHERE task_id = $1", id); err != nil {
+		if _, err := PostgresDBSession().ExecContext(coreContext, "DELETE FROM scheduler_todo WHERE task_id = $1", id); err != nil {
 			LoggerInstance.Error("Cannot delete todo task: %d", id)
 		}
 		return
@@ -147,16 +147,16 @@ func (w *worker) process(taskKey string, bucket int64, id int64) {
 	now := time.Now()
 	if err != nil {
 		LoggerInstance.Error("Fail to run task: %v: %s", t, err.Error())
-		DBSession().ExecContext(coreContext, "INSERT INTO scheduler_done(bucket, task_id, operation_time, status) VALUES ($1, $2, $3, $4)", bucket, t.ID, now.Format(time.RFC3339), TASK_FAIL)
+		PostgresDBSession().ExecContext(coreContext, "INSERT INTO scheduler_done(bucket, task_id, operation_time, status) VALUES ($1, $2, $3, $4)", bucket, t.ID, now.Format(time.RFC3339), TASK_FAIL)
 	} else {
 		// Do task
 		defer session.CloseSession()
 		err = session.publish(t.Data)
 		if err != nil {
 			LoggerInstance.Error("Cannot run task: %v, err = %s", t, err.Error())
-			DBSession().ExecContext(coreContext, "INSERT INTO scheduler_done(bucket, task_id, operation_time, status) VALUES ($1, $2, $3, $4)", bucket, t.ID, now.Format(time.RFC3339), TASK_FAIL)
+			PostgresDBSession().ExecContext(coreContext, "INSERT INTO scheduler_done(bucket, task_id, operation_time, status) VALUES ($1, $2, $3, $4)", bucket, t.ID, now.Format(time.RFC3339), TASK_FAIL)
 		} else {
-			_, err := DBSession().ExecContext(coreContext, "INSERT INTO scheduler_done(bucket, task_id, operation_time, status) VALUES ($1, $2, $3, $4)", bucket, t.ID, now.Format(time.RFC3339), TASK_DONE)
+			_, err := PostgresDBSession().ExecContext(coreContext, "INSERT INTO scheduler_done(bucket, task_id, operation_time, status) VALUES ($1, $2, $3, $4)", bucket, t.ID, now.Format(time.RFC3339), TASK_DONE)
 			if err != nil {
 				fmt.Println(err.Error())
 			}
@@ -170,7 +170,7 @@ func (w *worker) process(taskKey string, bucket int64, id int64) {
 		next := time.Unix(t.Next, 0)
 		newBucket := GetBucket(next)
 		// Update new task in table: todo, task (time of next task)
-		tx, err := DBSession().BeginTx(coreContext, &sql.TxOptions{})
+		tx, err := PostgresDBSession().BeginTx(coreContext, &sql.TxOptions{})
 		if err != nil {
 			LoggerInstance.Error("Start transaction fail: %v")
 		}
@@ -197,7 +197,7 @@ func (w *worker) process(taskKey string, bucket int64, id int64) {
 		}
 
 	} else {
-		tx, err := DBSession().BeginTx(coreContext, &sql.TxOptions{})
+		tx, err := PostgresDBSession().BeginTx(coreContext, &sql.TxOptions{})
 		if err != nil {
 			LoggerInstance.Error("Start transaction fail: %v")
 		}

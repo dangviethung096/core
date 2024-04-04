@@ -244,9 +244,13 @@ func MessageQueue() *messageQueue {
 }
 
 /*
-* DBSession: Get database session
+* PostgresDBSession: Get database session
 * @return dbSession
  */
-func DBSession() postgresDBSession {
+func PostgresDBSession() postgresDBSession {
 	return pgSession
+}
+
+func MongoSession() mongoSession {
+	return mgdbSession
 }

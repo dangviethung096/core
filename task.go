@@ -46,7 +46,7 @@ func StartTask(ctx *Context, request *StartTaskRequest) Error {
 	var taskId int64
 
 	// Init transaction
-	tx, err := DBSession().BeginTx(ctx, &sql.TxOptions{})
+	tx, err := PostgresDBSession().BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
 		ctx.LogError("Begin transaction fail: %v, err = %s", *request, err.Error())
 		return ERROR_ADD_TASK_SYSTEM_FAIL
@@ -58,7 +58,7 @@ func StartTask(ctx *Context, request *StartTaskRequest) Error {
 	var startTime string
 	var source string
 	var loopCount, interval int64
-	row := DBSession().QueryRowContext(ctx, "SELECT id, start_time, loop_count, interval, source FROM scheduler_tasks WHERE queue_name = $1", request.QueueName)
+	row := PostgresDBSession().QueryRowContext(ctx, "SELECT id, start_time, loop_count, interval, source FROM scheduler_tasks WHERE queue_name = $1", request.QueueName)
 	err = row.Scan(&id, &startTime, &loopCount, &interval, &source)
 	if err == nil {
 		if startTime == request.Time.Format(time.RFC3339) && loopCount == int64(request.Loop) && interval == request.Interval && source == Config.Server.Name {
@@ -114,7 +114,7 @@ type StopTaskRequest struct {
 }
 
 func StopTask(ctx *Context, request *StopTaskRequest) Error {
-	tx, err := DBSession().BeginTx(ctx, &sql.TxOptions{})
+	tx, err := PostgresDBSession().BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
 		ctx.LogError("Begin transaction fail: %v, error = %s", *request, err.Error())
 		return ERROR_STOP_TASK_FAIL
