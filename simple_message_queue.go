@@ -17,7 +17,7 @@ func (mq *messageQueue) CreateSimpleSession(config QueueConfig) (*simpleMessageQ
 		return nil, ERROR_CANNOT_CREATE_RABBITMQ_CHANNEL
 	}
 
-	_, originalErr := channel.QueueDeclare(
+	_, err = channel.QueueDeclare(
 		config.QueueName,
 		config.Durable,
 		config.AutoDelete,
@@ -26,7 +26,7 @@ func (mq *messageQueue) CreateSimpleSession(config QueueConfig) (*simpleMessageQ
 		config.Args,
 	)
 
-	if originalErr != nil {
+	if err != nil {
 		LoggerInstance.Error("Error when declare queue: %s", err.Error())
 		return nil, ERROR_CANNOT_DECLARE_QUEUE
 	}
