@@ -9,7 +9,7 @@ id_generator:
   distributed: false
 database:
   mongodb:
-    use: true
+    use: false
     host: localhost
     port: 5432
     user: localhost

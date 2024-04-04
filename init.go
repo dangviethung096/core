@@ -14,6 +14,7 @@ import (
 )
 
 var pgSession postgresDBSession
+var mgdbSession mongoSession
 var LoggerInstance Logger
 var routeMap map[string][]Route
 var routeRegexMap map[string][]Route
@@ -63,13 +64,24 @@ func Init(configFile string) {
 	}
 
 	// Init database connection
-	if Config.Database.Use {
+	if Config.Database.PostgresDB.Use {
 		pgSession = openPostgresDBConnection(postgresDBInfo{
-			Host:     Config.Database.Host,
-			Port:     int32(Config.Database.Port),
-			Username: Config.Database.Username,
-			Password: Config.Database.Password,
-			Database: Config.Database.DatabaseName,
+			Host:     Config.Database.PostgresDB.Host,
+			Port:     int32(Config.Database.PostgresDB.Port),
+			Username: Config.Database.PostgresDB.Username,
+			Password: Config.Database.PostgresDB.Password,
+			Database: Config.Database.PostgresDB.DatabaseName,
+		})
+	}
+
+	// Connect
+	if Config.Database.MongoDB.Use {
+		mgdbSession = openMongoDBConnection(mongoDBInfo{
+			Host:     Config.Database.MongoDB.Host,
+			Port:     int32(Config.Database.MongoDB.Port),
+			Username: Config.Database.MongoDB.Username,
+			Password: Config.Database.MongoDB.Password,
+			Database: Config.Database.MongoDB.DatabaseName,
 		})
 	}
 

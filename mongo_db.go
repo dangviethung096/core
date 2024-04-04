@@ -18,8 +18,13 @@ type mongoDBInfo struct {
 
 // Build connection string from mongo db info
 func buildMongoDbConnectionString(info mongoDBInfo) string {
-	return fmt.Sprintf("mongodb://%s:%s@%s:%d/%s",
-		info.Username, info.Password, info.Host, info.Port, info.Database)
+	var connectionString string
+	if info.Username == BLANK && info.Password == BLANK {
+		connectionString = fmt.Sprintf("mongodb://%s:%d/%s", info.Host, info.Port, info.Database)
+	} else {
+		connectionString = fmt.Sprintf("mongodb://%s:%s@%s:%d/%s", info.Username, info.Password, info.Host, info.Port, info.Database)
+	}
+	return connectionString
 }
 
 // Mongodb session struct
@@ -28,7 +33,7 @@ type mongoSession struct {
 }
 
 // Connect to mongo database and return session
-func connectMongoDB(info mongoDBInfo) mongoSession {
+func openMongoDBConnection(info mongoDBInfo) mongoSession {
 	// Build mongo db connection string
 	connectionString := buildMongoDbConnectionString(info)
 
