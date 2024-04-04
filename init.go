@@ -13,7 +13,7 @@ import (
 	"github.com/go-playground/validator"
 )
 
-var pgSession dbSession
+var pgSession postgresDBSession
 var LoggerInstance Logger
 var routeMap map[string][]Route
 var routeRegexMap map[string][]Route
@@ -64,7 +64,7 @@ func Init(configFile string) {
 
 	// Init database connection
 	if Config.Database.Use {
-		pgSession = openDBConnection(DBInfo{
+		pgSession = openPostgresDBConnection(postgresDBInfo{
 			Host:     Config.Database.Host,
 			Port:     int32(Config.Database.Port),
 			Username: Config.Database.Username,
@@ -235,6 +235,6 @@ func MessageQueue() *messageQueue {
 * DBSession: Get database session
 * @return dbSession
  */
-func DBSession() dbSession {
+func DBSession() postgresDBSession {
 	return pgSession
 }

@@ -6,11 +6,11 @@ func TestOpenDBWithSuccessResponse(t *testing.T) {
 	// Set up test cases
 	testCase := struct {
 		name    string
-		dbInfo  DBInfo
+		dbInfo  postgresDBInfo
 		wantErr bool
 	}{
 		name: "Valid DBInfo",
-		dbInfo: DBInfo{
+		dbInfo: postgresDBInfo{
 			Host:     "localhost",
 			Port:     5432,
 			Username: "postgres",
@@ -21,6 +21,6 @@ func TestOpenDBWithSuccessResponse(t *testing.T) {
 	}
 
 	// Call the function being tested
-	db := openDBConnection(testCase.dbInfo)
+	db := openPostgresDBConnection(testCase.dbInfo)
 	db.Close()
 }

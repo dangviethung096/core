@@ -9,7 +9,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-type DBInfo struct {
+type postgresDBInfo struct {
 	Host     string
 	Port     int32
 	Username string
@@ -19,17 +19,17 @@ type DBInfo struct {
 	// TODO
 }
 
-type dbSession struct {
+type postgresDBSession struct {
 	*sql.DB
 }
 
-func (info *DBInfo) buildConnectionString() string {
+func (info *postgresDBInfo) buildConnectionString() string {
 	connStr := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable", info.Username, info.Password, info.Host, info.Port, info.Database)
 	// Configure the database connection string with the host, port, user, password, and dbname details
 	return connStr
 }
 
-func openDBConnection(dbInfo DBInfo) dbSession {
+func openPostgresDBConnection(dbInfo postgresDBInfo) postgresDBSession {
 	// Connect to postgres database and return session
 	connectStr := dbInfo.buildConnectionString()
 	fmt.Printf("Connect to postgres database: %s:%d/%s\n", dbInfo.Host, dbInfo.Port, dbInfo.Database)
@@ -44,5 +44,5 @@ func openDBConnection(dbInfo DBInfo) dbSession {
 	}
 
 	// Optionally, you can use an ORM like GORM to simplify the database operations
-	return dbSession{db}
+	return postgresDBSession{db}
 }
