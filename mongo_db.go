@@ -43,13 +43,13 @@ func openMongoDBConnection(info mongoDBInfo) mongoSession {
 	// Connect to MongoDB
 	client, err := mongo.Connect(coreContext, clientOptions)
 	if err != nil {
-		LoggerInstance.Panic("Error when connect to MongoDB: %v", err)
+		LoggerInstance.Fatal("Error when connect to MongoDB: %v", err)
 	}
 
 	// Check the connection
 	err = client.Ping(coreContext, nil)
 	if err != nil {
-		LoggerInstance.Panic("Error when ping to MongoDB: %v", err)
+		LoggerInstance.Fatal("Error when ping to MongoDB: %v", err)
 	}
 
 	LoggerInstance.Info("Connect to MongoDB success")
