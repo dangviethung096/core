@@ -59,6 +59,20 @@ type IdGenerator struct {
 }
 
 type Database struct {
+	MongoDB    MongoDB
+	PostgresDB PostgresDB
+}
+
+type PostgresDB struct {
+	Use          bool   `yaml:"use"`
+	Host         string `yaml:"host"`
+	Port         int    `yaml:"port"`
+	Username     string `yaml:"user"`
+	Password     string `yaml:"pass"`
+	DatabaseName string `yaml:"name"`
+}
+
+type MongoDB struct {
 	Use          bool   `yaml:"use"`
 	Host         string `yaml:"host"`
 	Port         int    `yaml:"port"`

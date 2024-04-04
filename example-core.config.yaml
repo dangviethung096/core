@@ -8,12 +8,20 @@ context:
 id_generator:
   distributed: false
 database:
-  use: false
-  host: localhost
-  port: 5432
-  user: localhost
-  pass: hello
-  name: example
+  mongodb:
+    use: true
+    host: localhost
+    port: 5432
+    user: localhost
+    pass: hello
+    name: example
+  postgresdb:
+    use: false
+    host: localhost
+    port: 5432
+    user: localhost
+    pass: hello
+    name: example
 rabbitmq:
   use: false
   amqp_server_url: amqp://guest:guest@localhost:5672
