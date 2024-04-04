@@ -9,12 +9,12 @@ id_generator:
   distributed: false
 database:
   mongodb:
-    use: false
+    use: true
     host: localhost
-    port: 5432
-    user: localhost
-    pass: hello
-    name: example
+    port: 27000
+    user:
+    pass:
+    name:
   postgresdb:
     use: false
     host: localhost
