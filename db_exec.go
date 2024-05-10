@@ -93,7 +93,7 @@ func UpdateDataInDB[T DataBaseObject](ctx *Context, data T) Error {
 
 	ctx.LogInfo("Update query = %v, args = %v", query, args)
 	if _, err := pgSession.ExecContext(ctx, query, args...); err != nil {
-		ctx.LogError("Error update data = %#v, err = %s", data, updateError.Error())
+		ctx.LogError("Error update data = %#v, err = %s", data, err.Error())
 		return ERROR_DB_ERROR
 	}
 
@@ -115,7 +115,7 @@ func SelectById(ctx *Context, data DataBaseObject) Error {
 	query += fmt.Sprintf(" WHERE %s = $1", data.GetPrimaryKey())
 	pk, found := searchPrimaryKey(data)
 	if !found {
-		ctx.LogError("Error not found primary key = %#v, err = %v", data, err.Error())
+		ctx.LogError("Error not found primary key = %#v", data)
 		return ERROR_DB_ERROR
 	}
 
