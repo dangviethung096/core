@@ -43,6 +43,8 @@ func openDBConnection(dbInfo DBInfo) dbSession {
 		log.Panicf("Cannot ping to database: %v", err)
 	}
 
+	fmt.Println("Connected to database!")
+
 	// Optionally, you can use an ORM like GORM to simplify the database operations
 	return dbSession{db}
 }
