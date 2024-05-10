@@ -166,46 +166,13 @@ func releaseMessageQueue() {
 func Start() {
 	LoggerInstance.Info("API register must be have prefix \"api\" in url")
 	// Register all static folders
-	for _, staticFolder := range staticFolderMap {
-		LoggerInstance.Info("Register static folder: url = %s, path = %s", staticFolder.url, staticFolder.path)
-		http.Handle(staticFolder.url, http.StripPrefix(staticFolder.prefix, http.FileServer(http.Dir(staticFolder.path))))
-	}
+	handleStaticFolder()
 
 	// Register all routes
-	http.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
-		routeList, ok := routeMap[r.URL.Path]
-		if ok {
-			for _, route := range routeList {
-				if route.Method == r.Method {
-					route.handler(w, r, optionalParams{})
-					return
-				}
-			}
-		} else {
-			for regexPath, routeList := range routeRegexMap {
-				if match, _ := regexp.MatchString(regexPath, r.URL.Path); match {
-					for _, route := range routeList {
-						if route.Method == r.Method {
-							route.handler(w, r, optionalParams{
-								haveUrlParam: true,
-								urlPattern:   regexPath,
-								urlParamKeys: route.URL.Params,
-							})
-							return
-						}
-					}
-				}
-			}
-		}
-
-		http.NotFound(w, r)
-	})
+	handleAPI()
 
 	// Page
-	for _, page := range pageMap {
-		LoggerInstance.Info("Register page: %s", page.url)
-		http.HandleFunc(page.url, pageHandler(page))
-	}
+	handlePage()
 
 	// Listen and serve
 	LoggerInstance.Info("Start server at port: %d", Config.Server.Port)
@@ -237,4 +204,65 @@ func MessageQueue() *messageQueue {
  */
 func DBSession() dbSession {
 	return pgSession
+}
+
+/*
+* Handle API
+ */
+
+func handleAPI() {
+	http.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
+		routeList, ok := routeMap[r.URL.Path]
+		if ok {
+			for _, route := range routeList {
+				if route.Method == r.Method {
+					route.handler(w, r, optionalParams{})
+					return
+				}
+			}
+		} else {
+			for regexPath, routeList := range routeRegexMap {
+				if match, _ := regexp.MatchString(regexPath, r.URL.Path); match {
+					for _, route := range routeList {
+						if route.Method == r.Method {
+							route.handler(w, r, optionalParams{
+								haveUrlParam: true,
+								urlPattern:   regexPath,
+								urlParamKeys: route.URL.Params,
+							})
+							return
+						}
+					}
+				}
+			}
+		}
+
+		http.NotFound(w, r)
+	})
+}
+
+/*
+* Handle Static Folder
+ */
+
+func handleStaticFolder() {
+	for _, staticFolder := range staticFolderMap {
+		LoggerInstance.Info("Register static folder: url = %s, path = %s", staticFolder.url, staticFolder.path)
+		http.Handle(staticFolder.url, http.StripPrefix(staticFolder.prefix, http.FileServer(http.Dir(staticFolder.path))))
+	}
+}
+
+/*
+* Handle Page
+ */
+func handlePage() {
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		LoggerInstance.Info("Handle request page: %s", r.URL.Path)
+		page, ok := pageMap[r.URL.Path]
+		if ok {
+			pageHandler(page)(w, r)
+		} else {
+			http.NotFound(w, r)
+		}
+	})
 }
