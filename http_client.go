@@ -17,10 +17,10 @@ const (
 	BodyType_XML  bodyType = "xml"
 )
 
-type HttpClientCallback func(ctx *Context, response HttpClientResponse)
+type HttpClientCallback func(ctx Context, response HttpClientResponse)
 
 type httpClientBuilder struct {
-	ctx *Context
+	ctx Context
 	*http.Client
 	transport     *http.Transport
 	defaultProxy  func(*http.Request) (*url.URL, error)
@@ -47,12 +47,12 @@ type HttpClientBuilder interface {
 	AddFormData(key string, value string) HttpClientBuilder
 	SetFormData(formData map[string][]string) HttpClientBuilder
 	SetCallback(callback HttpClientCallback) HttpClientBuilder
-	SetContext(ctx *Context) HttpClientBuilder
+	SetContext(ctx Context) HttpClientBuilder
 	SetRetry() HttpClientBuilder
 	SetErrorBody(errorResponse any) HttpClientBuilder
 	IgnoreTLSCertificate() HttpClientBuilder
 	SetProxy(stringProxyUrl string) HttpClientBuilder
-	GetContext() *Context
+	GetContext() Context
 	GetUrl() string
 	GetMethod() string
 
@@ -163,7 +163,7 @@ func (builder *httpClientBuilder) AddFormData(key string, value string) HttpClie
 	return builder
 }
 
-func (builder *httpClientBuilder) SetContext(ctx *Context) HttpClientBuilder {
+func (builder *httpClientBuilder) SetContext(ctx Context) HttpClientBuilder {
 	builder.ctx = ctx
 	return builder
 }
@@ -361,7 +361,7 @@ func (builder *httpClientBuilder) GetMethod() string {
 	return builder.method
 }
 
-func (builder *httpClientBuilder) GetContext() *Context {
+func (builder *httpClientBuilder) GetContext() Context {
 	return builder.ctx
 }
 

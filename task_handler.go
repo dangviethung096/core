@@ -11,7 +11,7 @@ type TaskInfo struct {
 	Data []byte
 }
 
-type TaskHandler func(ctx *Context, task TaskInfo)
+type TaskHandler func(ctx Context, task TaskInfo)
 
 /*
 * Handle task: handle a task message is published from message queue

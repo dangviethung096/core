@@ -12,7 +12,7 @@ import (
 * @params: format string, args ...interface{}
 * @return: void
  */
-func (ctx *Context) LogInfo(format string, args ...interface{}) {
+func (ctx *HttpContext) LogInfo(format string, args ...interface{}) {
 	logStr := "[INFO] " + ctx.format(format, args...)
 	log.Println(logStr)
 }
@@ -22,7 +22,7 @@ func (ctx *Context) LogInfo(format string, args ...interface{}) {
 * @params: format string, args ...interface{}
 * @return: void
  */
-func (ctx *Context) LogDebug(format string, args ...interface{}) {
+func (ctx *HttpContext) LogDebug(format string, args ...interface{}) {
 	logStr := "[DEBUG] " + ctx.format(format, args...)
 	log.Println(logStr)
 }
@@ -32,7 +32,7 @@ func (ctx *Context) LogDebug(format string, args ...interface{}) {
 * @params: format string, args ...interface{}
 * @return: void
  */
-func (ctx *Context) LogError(format string, args ...interface{}) {
+func (ctx *HttpContext) LogError(format string, args ...interface{}) {
 	logStr := "[ERROR] " + ctx.format(format, args...)
 	log.Println(logStr)
 }
@@ -42,7 +42,7 @@ func (ctx *Context) LogError(format string, args ...interface{}) {
 * @params: format string, args ...interface{}
 * @return: void
  */
-func (ctx *Context) LogWarning(format string, args ...interface{}) {
+func (ctx *HttpContext) LogWarning(format string, args ...interface{}) {
 	logStr := "[WARNING] " + ctx.format(format, args...)
 	log.Println(logStr)
 }
@@ -52,7 +52,7 @@ func (ctx *Context) LogWarning(format string, args ...interface{}) {
 * @params: format string, args ...interface{}
 * @return: void
  */
-func (ctx *Context) LogFatal(format string, args ...interface{}) {
+func (ctx *HttpContext) LogFatal(format string, args ...interface{}) {
 	logStr := "[FATAL] " + ctx.format(format, args...)
 	log.Fatalln(logStr)
 }
@@ -63,7 +63,7 @@ func (ctx *Context) LogFatal(format string, args ...interface{}) {
 * @params: format string, args ...interface{}
 * @return: string
  */
-func (ctx *Context) format(format string, args ...interface{}) string {
+func (ctx *HttpContext) format(format string, args ...interface{}) string {
 	// Format the ctx
 	logStr := fmt.Sprintf(format, args...)
 

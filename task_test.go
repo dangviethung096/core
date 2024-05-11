@@ -34,7 +34,7 @@ func TestStartSchedule_ReturnSuccess(t *testing.T) {
 
 	done := make(chan bool)
 	go func() {
-		HandleTask(queueConfig.QueueName, func(ctx *Context, taskInfo TaskInfo) {
+		HandleTask(queueConfig.QueueName, func(ctx Context, taskInfo TaskInfo) {
 			if string(taskInfo.Data) != data {
 				t.Errorf("Not receive exactly message: expected: %s, actually: %s", data, string(taskInfo.Data))
 			}

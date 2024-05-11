@@ -14,7 +14,7 @@ type StartTaskRequest struct {
 	Loop      int64
 }
 
-func StartTask(ctx *Context, request *StartTaskRequest) Error {
+func StartTask(ctx Context, request *StartTaskRequest) Error {
 	ctx.LogInfo("Receive StartTaskRequest: %+v", *request)
 
 	if err := validateStartTaskRequest(request); err != nil {
@@ -113,7 +113,7 @@ type StopTaskRequest struct {
 	Id uint64
 }
 
-func StopTask(ctx *Context, request *StopTaskRequest) Error {
+func StopTask(ctx Context, request *StopTaskRequest) Error {
 	tx, err := DBSession().BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
 		ctx.LogError("Begin transaction fail: %v, error = %s", *request, err.Error())

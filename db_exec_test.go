@@ -46,13 +46,13 @@ var account3 = Account{
 	Age:  20,
 }
 
-func insertAccount(ctx *Context) {
+func insertAccount(ctx Context) {
 	SaveDataToDB(ctx, &account1)
 	SaveDataToDB(ctx, &account2)
 	SaveDataToDB(ctx, &account3)
 }
 
-func deleteAccount(ctx *Context) {
+func deleteAccount(ctx Context) {
 	DeleteDataInDB(ctx, &account1)
 	DeleteDataInDB(ctx, &account2)
 	DeleteDataInDB(ctx, &account3)

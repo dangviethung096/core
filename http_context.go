@@ -14,7 +14,7 @@ import (
 * and other request-scoped values across API boundaries and between processes.
  */
 type HttpContext struct {
-	Context
+	context.Context
 	URL            string
 	Method         string
 	requestBody    []byte
@@ -25,23 +25,26 @@ type HttpContext struct {
 	isResponseEnd  bool
 	urlParams      map[string]string
 	responseHeader map[string][]string
+	cancelFunc     context.CancelFunc
+	requestID      string
+	timeout        time.Duration
 }
 
 /*
 * GetContext: Get context from pool
-* @return: *Context
+* @return: Context
  */
 func getHttpContext() *HttpContext {
 	ctx := httpContextPool.Get().(*HttpContext)
-	ctx.Context.Context, ctx.cancelFunc = context.WithTimeout(coreContext, contextTimeout)
-	ctx.Timeout = contextTimeout
+	ctx.Context, ctx.cancelFunc = context.WithTimeout(coreContext, contextTimeout)
+	ctx.timeout = contextTimeout
 	ctx.isResponseEnd = false
 	return ctx
 }
 
 /*
 * PutContext: Put context to pool
-* @params: *Context
+* @params: Context
 * @return: void
  */
 func putHttpContext(ctx *HttpContext) {
@@ -250,32 +253,27 @@ func (ctx *HttpContext) convertUrlParams(pattern string, url string, params []st
 }
 
 /*
-* GetContextForTest: Get context for test
-* Caution: This function is only used for test
-* @return: *Context
+* GetContextID: Get the context id
+* @params: void
+* @return: string
  */
-func GetContextForTest() *Context {
-	ctx := contextPool.Get().(*Context)
-	ctx.Context, ctx.cancelFunc = context.WithTimeout(coreContext, contextTimeout)
-	ctx.requestID = ID.GenerateID()
-	return ctx
+func (ctx *HttpContext) GetContextID() string {
+	return ctx.requestID
 }
 
 /*
-* Get child of core context with timeout as a parameter
+* GetCancelFunc: Get the cancel function
+* @params: void
+* @return: func()
  */
-func GetContextWithTimeout(timeout time.Duration) *Context {
-	ctx := contextPool.Get().(*Context)
-	ctx.Context, ctx.cancelFunc = context.WithTimeout(coreContext, timeout)
-	ctx.Timeout = timeout
-	ctx.requestID = ID.GenerateID()
-	return ctx
+func (ctx *HttpContext) GetCancelFunc() func() {
+	return ctx.cancelFunc
 }
 
 /*
-* Return context to http context pool
+* GetTimeout: Get the timeout
+* @params: void
  */
-func PutContext(ctx *Context) {
-	ctx.cancelFunc()
-	contextPool.Put(ctx)
+func (ctx *HttpContext) GetTimeout() time.Duration {
+	return ctx.timeout
 }

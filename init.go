@@ -25,14 +25,14 @@ var commonMiddlewares []Middleware
 var Config CoreConfig
 var redisClient cacheClient
 var rabbitMQClient *messageQueue
-var coreContext *Context
+var coreContext Context
 var validate *validator.Validate
 var contextTimeout time.Duration
 var htmlTemplateMap map[string]*template.Template
 
 func Init(configFile string) {
 	// Init core context
-	coreContext = &Context{
+	coreContext = &rootContext{
 		Context: context.Background(),
 	}
 
@@ -85,7 +85,7 @@ func Init(configFile string) {
 	// Init id generator
 	initIdGenerator()
 	// Core context will hold first id from instance
-	coreContext.requestID = ID.GenerateID()
+	coreContext.(*rootContext).contextID = ID.GenerateID()
 
 	routeMap = make(map[string][]Route)
 	routeRegexMap = make(map[string][]Route)
@@ -96,7 +96,11 @@ func Init(configFile string) {
 	// Context pool
 	contextPool = sync.Pool{
 		New: func() interface{} {
-			return &Context{}
+			return &rootContext{
+				contextID:  BLANK,
+				timeout:    0,
+				cancelFunc: nil,
+			}
 		},
 	}
 

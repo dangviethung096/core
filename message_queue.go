@@ -270,7 +270,7 @@ type RabbitmqMessage struct {
 	Body []byte
 }
 
-type ConsumerHandler func(ctx *Context, msg RabbitmqMessage)
+type ConsumerHandler func(ctx Context, msg RabbitmqMessage)
 
 func (mqs *MessageQueueSession) Consume(handler ConsumerHandler) Error {
 	LoggerInstance.Info("Consume message from queue: %s", mqs.config.QueueName)

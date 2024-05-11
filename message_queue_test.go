@@ -179,7 +179,7 @@ func TestConsumeMessageInMessageQueue_ReturnSuccess(t *testing.T) {
 
 	messages := make(chan string)
 
-	err = session.Consume(func(ctx *Context, message RabbitmqMessage) {
+	err = session.Consume(func(ctx Context, message RabbitmqMessage) {
 		messages <- string(message.Body)
 	})
 
@@ -229,7 +229,7 @@ func consume(t *testing.T, messages chan string, id int, done chan bool) {
 
 	defer session.CloseSession()
 
-	err = session.Consume(func(ctx *Context, message RabbitmqMessage) {
+	err = session.Consume(func(ctx Context, message RabbitmqMessage) {
 		messages <- fmt.Sprintf("Message from %d: %s", id, string(message.Body))
 		time.Sleep(time.Millisecond * 100)
 	})
@@ -304,7 +304,7 @@ func TestConsumeMessageRetryConnect_ReturnSuccess(t *testing.T) {
 
 	defer session.CloseSession()
 
-	session.Consume(func(ctx *Context, msg RabbitmqMessage) {
+	session.Consume(func(ctx Context, msg RabbitmqMessage) {
 		fmt.Printf("Consumer data: %s\n", string(msg.Body))
 	})
 

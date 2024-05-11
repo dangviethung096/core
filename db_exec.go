@@ -17,7 +17,7 @@ type DBWhere struct {
 * @param data interface{} Data to save
 * @return Error
  */
-func SaveDataToDB[T DataBaseObject](ctx *Context, data T) Error {
+func SaveDataToDB[T DataBaseObject](ctx Context, data T) Error {
 	query, args, insertError := GetInsertQuery(data)
 	if insertError != nil {
 		ctx.LogError("Error when get insert data = %#v, err = %s", data, insertError.Error())
@@ -39,7 +39,7 @@ func SaveDataToDB[T DataBaseObject](ctx *Context, data T) Error {
 * @param data interface{} Data to save
 * @return Error
  */
-func SaveDataToDBWithoutPrimaryKey[T DataBaseObject](ctx *Context, data T) Error {
+func SaveDataToDBWithoutPrimaryKey[T DataBaseObject](ctx Context, data T) Error {
 	query, args, pkAddress, insertError := GetInsertQueryWithoutPrimaryKey(data)
 	if insertError != nil {
 		ctx.LogError("Error when get insert data = %#v, err = %s", data, insertError.Error())
@@ -63,7 +63,7 @@ func SaveDataToDBWithoutPrimaryKey[T DataBaseObject](ctx *Context, data T) Error
 * @param data interface{} Data to delete
 * @return Error
  */
-func DeleteDataInDB[T DataBaseObject](ctx *Context, data T) Error {
+func DeleteDataInDB[T DataBaseObject](ctx Context, data T) Error {
 	query, args, deleteError := GetDeleteQuery(data)
 	if deleteError != nil {
 		ctx.LogError("Error when get delete data = %#v, err = %s", data, deleteError.Error())
@@ -84,7 +84,7 @@ func DeleteDataInDB[T DataBaseObject](ctx *Context, data T) Error {
 * @param data interface{} Data to update
 * @return Error
  */
-func UpdateDataInDB[T DataBaseObject](ctx *Context, data T) Error {
+func UpdateDataInDB[T DataBaseObject](ctx Context, data T) Error {
 	query, args, updateError := GetUpdateQuery(data)
 	if updateError != nil {
 		ctx.LogError("Error when get update data = %#v, err = %s", data, updateError.Error())
@@ -105,7 +105,7 @@ func UpdateDataInDB[T DataBaseObject](ctx *Context, data T) Error {
 * @param data interface{} Data to select
 * @return Error
  */
-func SelectById(ctx *Context, data DataBaseObject) Error {
+func SelectById(ctx Context, data DataBaseObject) Error {
 	query, params, err := GetSelectQuery(data)
 	if err != nil {
 		ctx.LogError("Error when get update data = %#v, err = %s", data, err.Error())
@@ -136,7 +136,7 @@ func SelectById(ctx *Context, data DataBaseObject) Error {
 * Select data from database by field: fieldName and fieldValue is passed in parameter
 * @return Error
  */
-func SelectByField(ctx *Context, data DataBaseObject, fieldName string, fieldValue any) Error {
+func SelectByField(ctx Context, data DataBaseObject, fieldName string, fieldValue any) Error {
 	query, params, err := GetSelectQuery(data)
 	if err != nil {
 		ctx.LogError("Error when get update data = %#v, err = %s", data, err.Error())
@@ -160,11 +160,11 @@ func SelectByField(ctx *Context, data DataBaseObject, fieldName string, fieldVal
 
 /*
 * SelectListByField
-* @params: ctx *Context, data DataBaseObject, fieldName string, fieldValue any
+* @params: ctx Context, data DataBaseObject, fieldName string, fieldValue any
 * @return []DataBaseObject, Error
 * @description: select list of data by field
  */
-func SelectListByField(ctx *Context, data DataBaseObject, fieldName string, fieldValue any) ([]DataBaseObject, Error) {
+func SelectListByField(ctx Context, data DataBaseObject, fieldName string, fieldValue any) ([]DataBaseObject, Error) {
 	query, params, err := GetSelectQuery(data)
 	if err != nil {
 		ctx.LogError("Error when get update data = %#v, err = %s", data, err.Error())
@@ -196,11 +196,11 @@ func SelectListByField(ctx *Context, data DataBaseObject, fieldName string, fiel
 
 /*
 * SelectListByFieldsWithCustomOperator
-* @params: ctx *Context, data DataBaseObject, whereParams ...DBWhere
+* @params: ctx Context, data DataBaseObject, whereParams ...DBWhere
 * @return []DataBaseObject, Error
 * @description: select list of data by where params
  */
-func SelectListByFieldsWithCustomOperator(ctx *Context, data DataBaseObject, whereParams ...DBWhere) ([]DataBaseObject, Error) {
+func SelectListByFieldsWithCustomOperator(ctx Context, data DataBaseObject, whereParams ...DBWhere) ([]DataBaseObject, Error) {
 	query, params, err := GetSelectQuery(data)
 	if err != nil {
 		ctx.LogError("Error when get update data = %#v, err = %s", data, err.Error())
@@ -248,11 +248,11 @@ func SelectListByFieldsWithCustomOperator(ctx *Context, data DataBaseObject, whe
 
 /*
 * SelectListByFields
-* @params: ctx *Context, data DataBaseObject, mapArgs map[string]interface{}
+* @params: ctx Context, data DataBaseObject, mapArgs map[string]interface{}
 * @return []DataBaseObject, Error
 * @description: select list of data by args
  */
-func SelectListByFields(ctx *Context, data DataBaseObject, mapArgs map[string]interface{}) ([]DataBaseObject, Error) {
+func SelectListByFields(ctx Context, data DataBaseObject, mapArgs map[string]interface{}) ([]DataBaseObject, Error) {
 	query, params, err := GetSelectQuery(data)
 	if err != nil {
 		ctx.LogError("Error when get update data = %#v, err = %s", data, err.Error())
