@@ -263,7 +263,7 @@ func handlePage() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		coreContext.LogInfo("Handle request page: %s", r.URL.Path)
 		page, ok := pageMap[r.URL.Path]
-		if ok {
+		if ok && r.Method == "GET" {
 			pageHandler(page)(w, r)
 		} else {
 			http.NotFound(w, r)

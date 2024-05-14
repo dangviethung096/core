@@ -3,21 +3,39 @@ package core
 import (
 	"html/template"
 	"net/http"
+	"net/url"
 )
 
 type Page struct {
-	middleware PageMiddleware
+	middleware []PageMiddleware
 	url        string
+	handler    PageHandler
 	PageFiles  []string
 	Data       any
+	Cache      bool
 }
 
-type PageHandler func(url string) Page
+type PageRequest struct {
+	Header  http.Header
+	Queries url.Values
+}
+
+type PageResponse struct {
+	PageFiles []string
+	Data      any
+}
+
+type PageHandler func(url string, request PageRequest) PageResponse
 
 func RegisterPage(url string, handler PageHandler) {
 	coreContext.LogInfo("Register page: url = %s", url)
-	pageInfo := handler(url)
-	pageInfo.url = url
+	pageInfo := Page{
+		url:        url,
+		handler:    handler,
+		Cache:      true,
+		middleware: nil,
+	}
+
 	if Config.Server.CacheHtml {
 		// Parse files html
 		tmpl := parseTemplateFile(pageInfo)
@@ -29,15 +47,12 @@ func RegisterPage(url string, handler PageHandler) {
 
 func RegisterPageWithMiddleware(url string, handler PageHandler, middleware PageMiddleware) {
 	coreContext.LogInfo("Register page: url = %s", url)
-	pageInfo := handler(url)
-	pageInfo.url = url
-	if Config.Server.CacheHtml {
-		// Parse files html
-		tmpl := parseTemplateFile(pageInfo)
-		htmlTemplateMap[url] = tmpl
+	pageInfo := Page{
+		handler:    handler,
+		url:        url,
+		middleware: []PageMiddleware{middleware},
 	}
 
-	pageInfo.middleware = middleware
 	pageMap[url] = pageInfo
 }
 
@@ -52,17 +67,29 @@ func pageHandler(pageInfo Page) http.HandlerFunc {
 		// Check if middleware is not nil
 		if pageInfo.middleware != nil {
 			// Execute middleware
-			err := pageInfo.middleware(w, r)
-			if err != nil {
-				LoggerInstance.Error("Error when execute middleware of request %s: %s", pageInfo.url, err)
-				return
+			for _, middleware := range pageInfo.middleware {
+				err := middleware(w, r)
+				if err != nil {
+					LoggerInstance.Error("Error when execute middleware of request %s: %s", pageInfo.url, err)
+					return
+				}
 			}
 		}
+
+		request := PageRequest{
+			Header:  r.Header,
+			Queries: r.URL.Query(),
+		}
+
+		response := pageInfo.handler(pageInfo.url, request)
+		pageInfo.PageFiles = response.PageFiles
+		pageInfo.Data = response.Data
 
 		// Render page
 		var tmpl *template.Template
 		var err error
-		if Config.Server.CacheHtml {
+
+		if Config.Server.CacheHtml && pageInfo.Cache && htmlTemplateMap[pageInfo.url] != nil {
 			tmpl = htmlTemplateMap[pageInfo.url]
 		} else {
 			tmpl = parseTemplateFile(pageInfo)
