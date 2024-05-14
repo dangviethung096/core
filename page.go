@@ -12,8 +12,11 @@ type Page struct {
 	Data       any
 }
 
-func RegisterPage(url string, pageInfo Page) {
-	coreContext.LogInfo("Register page: url = %s, pageFiles = %#v", url, pageInfo.PageFiles)
+type PageHandler func(url string) Page
+
+func RegisterPage(url string, handler PageHandler) {
+	coreContext.LogInfo("Register page: url = %s", url)
+	pageInfo := handler(url)
 	pageInfo.url = url
 	if Config.Server.CacheHtml {
 		// Parse files html
@@ -24,8 +27,9 @@ func RegisterPage(url string, pageInfo Page) {
 	pageMap[url] = pageInfo
 }
 
-func RegisterPageWithMiddleware(url string, pageInfo Page, middleware PageMiddleware) {
-	coreContext.LogInfo("Register page: url = %s, pageFiles = %#v", url, pageInfo.PageFiles)
+func RegisterPageWithMiddleware(url string, handler PageHandler, middleware PageMiddleware) {
+	coreContext.LogInfo("Register page: url = %s", url)
+	pageInfo := handler(url)
 	pageInfo.url = url
 	if Config.Server.CacheHtml {
 		// Parse files html
