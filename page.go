@@ -13,7 +13,7 @@ type Page struct {
 }
 
 func RegisterPage(url string, pageInfo Page) {
-	LoggerInstance.Info("Register page: url = %s, pageFiles = %#v", url, pageInfo.PageFiles)
+	coreContext.LogInfo("Register page: url = %s, pageFiles = %#v", url, pageInfo.PageFiles)
 	pageInfo.url = url
 	if Config.Server.CacheHtml {
 		// Parse files html
@@ -25,7 +25,7 @@ func RegisterPage(url string, pageInfo Page) {
 }
 
 func RegisterPageWithMiddleware(url string, pageInfo Page, middleware PageMiddleware) {
-	LoggerInstance.Info("Register page: url = %s, pageFiles = %#v", url, pageInfo.PageFiles)
+	coreContext.LogInfo("Register page: url = %s, pageFiles = %#v", url, pageInfo.PageFiles)
 	pageInfo.url = url
 	if Config.Server.CacheHtml {
 		// Parse files html

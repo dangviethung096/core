@@ -78,7 +78,7 @@ func (mq *messageQueue) retryConnect() Error {
 	LoggerInstance.Error("Retry to connect to rabbitmq at: %s", now.Format(time.RFC3339))
 
 	if time.Since(mq.retryConnectTime).Seconds() < float64(Config.RabbitMQ.RetryTime) {
-		LoggerInstance.Info("Retry to connect too fast: %s", now.Format(time.RFC3339))
+		coreContext.LogInfo("Retry to connect too fast: %s", now.Format(time.RFC3339))
 		return nil
 	} else {
 		mq.retryConnectTime = now
@@ -171,7 +171,7 @@ func (mq *messageQueue) CreateSession(config QueueConfig) (*MessageQueueSession,
 
 			// Reconsume data
 			if sess.consumerData != nil {
-				LoggerInstance.Info("Reconsume queue: %s", sess.config.QueueName)
+				coreContext.LogInfo("Reconsume queue: %s", sess.config.QueueName)
 				sess.consume()
 			}
 		}
@@ -184,7 +184,7 @@ func (mq *messageQueue) CreateSession(config QueueConfig) (*MessageQueueSession,
 * recreateSession
  */
 func (session *MessageQueueSession) recreateSession() bool {
-	LoggerInstance.Info("Recreate session for queue: %s", session.config.QueueName)
+	coreContext.LogInfo("Recreate session for queue: %s", session.config.QueueName)
 	channel, err := session.connection.connection.Channel()
 	if err != nil {
 		LoggerInstance.Error("Could not open channel with RabbitMQ: %s", err.Error())
@@ -245,7 +245,7 @@ func (mqs *MessageQueueSession) CloseSession() {
 }
 
 func (mqs *MessageQueueSession) Publish(body []byte) Error {
-	LoggerInstance.Info("Publish message to queue: %s, data = %s", mqs.config.QueueName, string(body))
+	coreContext.LogInfo("Publish message to queue: %s, data = %s", mqs.config.QueueName, string(body))
 	err := mqs.channel.PublishWithContext(
 		coreContext,
 		mqs.config.ExchangeName,
@@ -273,7 +273,7 @@ type RabbitmqMessage struct {
 type ConsumerHandler func(ctx Context, msg RabbitmqMessage)
 
 func (mqs *MessageQueueSession) Consume(handler ConsumerHandler) Error {
-	LoggerInstance.Info("Consume message from queue: %s", mqs.config.QueueName)
+	coreContext.LogInfo("Consume message from queue: %s", mqs.config.QueueName)
 	consumerTag := mqs.config.ConsumerTag
 	if consumerTag == BLANK {
 		consumerTag = DEFAULT_CONSUMER_TAG
