@@ -18,10 +18,10 @@ var LoggerInstance Logger
 var routeMap map[string][]Route
 var routeRegexMap map[string][]Route
 var staticFolderMap map[string]staticFolder
-var pageMap map[string]Page
+var pageMap map[string]pageInfo
 var httpContextPool sync.Pool
 var contextPool sync.Pool
-var commonMiddlewares []Middleware
+var commonApiMiddlewares []ApiMiddleware
 var Config CoreConfig
 var redisClient cacheClient
 var rabbitMQClient *messageQueue
@@ -90,7 +90,7 @@ func Init(configFile string) {
 	routeMap = make(map[string][]Route)
 	routeRegexMap = make(map[string][]Route)
 	staticFolderMap = make(map[string]staticFolder)
-	pageMap = make(map[string]Page)
+	pageMap = make(map[string]pageInfo)
 	htmlTemplateMap = make(map[string]*template.Template)
 
 	// Context pool
@@ -115,7 +115,7 @@ func Init(configFile string) {
 		},
 	}
 
-	commonMiddlewares = make([]Middleware, 0)
+	commonApiMiddlewares = make([]ApiMiddleware, 0)
 	validate = validator.New()
 
 	// Set background job
@@ -264,7 +264,7 @@ func handlePage() {
 		coreContext.LogInfo("Handle request page: %s", r.URL.Path)
 		page, ok := pageMap[r.URL.Path]
 		if ok && r.Method == "GET" {
-			pageHandler(page)(w, r)
+			pageHandler(page, w, r)
 		} else {
 			http.NotFound(w, r)
 		}

@@ -30,7 +30,7 @@ type Url struct {
 	Params []string
 }
 
-type Middleware func(ctx *HttpContext) HttpError
+type ApiMiddleware func(ctx *HttpContext) HttpError
 
 type Handler[T any] func(ctx *HttpContext, request T) (HttpResponse, HttpError)
 
@@ -43,7 +43,7 @@ var urlRegex = regexp.MustCompile(`.*[{].*[}].*`)
 * @param middleware: middleware of api
 * @return void
  */
-func RegisterAPI[T any](url string, method string, handler Handler[T], middlewares ...Middleware) {
+func RegisterAPI[T any](url string, method string, handler Handler[T], middlewares ...ApiMiddleware) {
 	var isRegexPath = false
 	var urlParams []string
 	if urlRegex.MatchString(url) {
@@ -65,8 +65,8 @@ func RegisterAPI[T any](url string, method string, handler Handler[T], middlewar
 		buildContext(ctx, writer, request)
 
 		// Append to common middleware
-		middlewareList := []Middleware{}
-		middlewareList = append(middlewareList, commonMiddlewares...)
+		middlewareList := []ApiMiddleware{}
+		middlewareList = append(middlewareList, commonApiMiddlewares...)
 		middlewareList = append(middlewareList, middlewares...)
 
 		// Call middleware of function

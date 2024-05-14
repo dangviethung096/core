@@ -20,6 +20,6 @@ func UserCorsMiddleware() {
 	UseMiddleware(corsMiddleware)
 }
 
-func UseMiddleware(middleware Middleware) {
-	commonMiddlewares = append(commonMiddlewares, middleware)
+func UseMiddleware(middleware ApiMiddleware) {
+	commonApiMiddlewares = append(commonApiMiddlewares, middleware)
 }
