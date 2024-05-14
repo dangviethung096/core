@@ -55,7 +55,7 @@ func RegisterAPI[T any](url string, method string, handler Handler[T], middlewar
 	// Check if T is a struct
 	tType := reflect.TypeOf((*T)(nil)).Elem()
 	if tType.Kind() != reflect.Struct {
-		LoggerInstance.Fatal("Handler request parameter must be a struct, got: %s", tType.Kind())
+		LogFatal("Handler request parameter must be a struct, got: %s", tType.Kind())
 	}
 	// Create a new handler
 	h := func(writer http.ResponseWriter, request *http.Request, optional optionalParams) {
@@ -204,12 +204,12 @@ func buildContext(ctx *HttpContext, writer http.ResponseWriter, request *http.Re
 	buffer.Reset()
 
 	if _, err := io.Copy(buffer, request.Body); err != nil {
-		LoggerInstance.Error("Read request body fail. RequestId: %s, Error: %s", ctx.requestID, err.Error())
+		LogError("Read request body fail. RequestId: %s, Error: %s", ctx.requestID, err.Error())
 		return HTTP_ERROR_READ_BODY_REQUEST_FAIL
 	}
 
 	if err := request.Body.Close(); err != nil {
-		LoggerInstance.Error("Close request body fail. RequestId: %s, Error: %s", ctx.requestID, err.Error())
+		LogError("Close request body fail. RequestId: %s, Error: %s", ctx.requestID, err.Error())
 		return HTTP_ERROR_CLOSE_BODY_REQUEST_FAIL
 	}
 

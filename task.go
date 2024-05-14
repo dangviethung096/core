@@ -102,7 +102,7 @@ func StartTask(ctx Context, request *StartTaskRequest) Error {
 
 func validateStartTaskRequest(request *StartTaskRequest) Error {
 	if err := validate.Struct(*request); err != nil {
-		LoggerInstance.Error("Task request is invalid: %s", err.Error())
+		LogError("Task request is invalid: %s", err.Error())
 		return ERROR_TASK_REQUEST_INVALID
 	}
 

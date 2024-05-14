@@ -239,7 +239,7 @@ func (ctx *HttpContext) convertUrlParams(pattern string, url string, params []st
 	patternArray := strings.Split(pattern, "/")
 	urlArray := strings.Split(url, "/")
 	if len(urlArray) != len(patternArray) {
-		LoggerInstance.Error("Cannot convert url params: %s, %s", pattern, url)
+		LogError("Cannot convert url params: %s, %s", pattern, url)
 		return
 	}
 

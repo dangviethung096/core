@@ -57,6 +57,11 @@ func (ctx *HttpContext) LogFatal(format string, args ...interface{}) {
 	log.Fatalln(logStr)
 }
 
+func (ctx *HttpContext) LogPanic(format string, args ...interface{}) {
+	logStr := "[PANIC] " + ctx.format(format, args...)
+	log.Panicln(logStr)
+}
+
 /*
 * format: Format the ctx: add to message log the file name
 * and line number of the code that calls the ctx interface

@@ -33,7 +33,7 @@ func HandleTask(taskQueueName string, handler TaskHandler) Error {
 	session, err := MessageQueue().CreateSimpleSession(queueConfig)
 
 	if err != nil {
-		LoggerInstance.Error("Create message queue session fail: %s", err.Error())
+		LogError("Create message queue session fail: %s", err.Error())
 		return err
 	}
 
@@ -43,7 +43,7 @@ func HandleTask(taskQueueName string, handler TaskHandler) Error {
 			// Retry connect
 			sess.channel.Close()
 			// Add retry connect
-			LoggerInstance.Error("Channel disconnected: retry to connect: %s", err.Error())
+			LogError("Channel disconnected: retry to connect: %s", err.Error())
 			for !sess.recreateSession() {
 				time.Sleep(time.Second * time.Duration(Config.RabbitMQ.RetryTime))
 				sess.connection.retryConnect()
@@ -59,7 +59,7 @@ func HandleTask(taskQueueName string, handler TaskHandler) Error {
 func handleTask(session *simpleMessageQueueSession, handler TaskHandler) Error {
 	messages, errConsume := session.channel.Consume(session.config.QueueName, BLANK, true, session.config.Exclusive, false, session.config.NoWait, nil)
 	if errConsume != nil {
-		LoggerInstance.Error("Error when handle task: %s", errConsume.Error())
+		LogError("Error when handle task: %s", errConsume.Error())
 		return ERROR_CANNOT_CONSUME_MESSAGES_FROM_RABBITMQ
 	}
 

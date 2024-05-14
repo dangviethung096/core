@@ -38,7 +38,7 @@ func publishMessage() {
 		Args:         nil,
 	})
 	if err != nil {
-		LoggerInstance.Error("error when create session: %v\n", err)
+		LogError("error when create session: %v\n", err)
 		return
 	}
 
@@ -48,7 +48,7 @@ func publishMessage() {
 		msg := fmt.Sprintf("Hello %d", i)
 		err = session.Publish([]byte(msg))
 		if err != nil {
-			LoggerInstance.Error("error in publish message: %s, %s\n", msg, err)
+			LogError("error in publish message: %s, %s\n", msg, err)
 		}
 	}
 }
@@ -56,23 +56,23 @@ func publishMessage() {
 func releaseMessageQueueTest(connection *messageQueue) {
 	ch, err := connection.connection.Channel()
 	if err != nil {
-		LoggerInstance.Error("Cannot create a channel: %s", err.Error())
+		LogError("Cannot create a channel: %s", err.Error())
 		return
 	}
 	defer ch.Close()
 
 	if err = ch.ExchangeUnbind(queueName, routeKey, exchangeName, noWaits, nil); err != nil {
-		LoggerInstance.Error("Exchange unbind fail: %s", err.Error())
+		LogError("Exchange unbind fail: %s", err.Error())
 		return
 	}
 
 	if err = ch.ExchangeDelete(exchangeName, false, false); err != nil {
-		LoggerInstance.Error("Delete exchange fail: %s", err.Error())
+		LogError("Delete exchange fail: %s", err.Error())
 		return
 	}
 
 	if data, err := ch.QueueDelete(queueName, false, false, false); err != nil {
-		LoggerInstance.Error("Delete exchange fail: %s", err.Error())
+		LogError("Delete exchange fail: %s", err.Error())
 		return
 	} else {
 		fmt.Printf("Queue Delete: %d\n", data)
@@ -298,7 +298,7 @@ func TestConsumeMessageRetryConnect_ReturnSuccess(t *testing.T) {
 		Args:         nil,
 	})
 	if err != nil {
-		LoggerInstance.Error("error when create session: %v\n", err)
+		LogError("error when create session: %v\n", err)
 		return
 	}
 

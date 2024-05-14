@@ -65,7 +65,7 @@ func pageHandler(pageInfo pageInfo, w http.ResponseWriter, r *http.Request) {
 		for _, middleware := range pageInfo.middleware {
 			err := middleware(w, r)
 			if err != nil {
-				LoggerInstance.Error("Error when execute middleware of request %s: %s", pageInfo.url, err)
+				LogError("Error when execute middleware of request %s: %s", pageInfo.url, err)
 				return
 			}
 		}
@@ -96,7 +96,7 @@ func pageHandler(pageInfo pageInfo, w http.ResponseWriter, r *http.Request) {
 	// Execute template
 	err = tmpl.Execute(w, pageInfo.data)
 	if err != nil {
-		LoggerInstance.Error("Error when execute template: %s", err)
+		LogError("Error when execute template: %s", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }

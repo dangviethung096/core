@@ -13,7 +13,7 @@ type simpleMessageQueueSession struct {
 func (mq *messageQueue) CreateSimpleSession(config QueueConfig) (*simpleMessageQueueSession, Error) {
 	channel, err := mq.connection.Channel()
 	if err != nil {
-		LoggerInstance.Error("Could not open channel with RabbitMQ: %s", err.Error())
+		LogError("Could not open channel with RabbitMQ: %s", err.Error())
 		return nil, ERROR_CANNOT_CREATE_RABBITMQ_CHANNEL
 	}
 
@@ -27,7 +27,7 @@ func (mq *messageQueue) CreateSimpleSession(config QueueConfig) (*simpleMessageQ
 	)
 
 	if originalErr != nil {
-		LoggerInstance.Error("Error when declare queue: %s", err.Error())
+		LogError("Error when declare queue: %v", originalErr)
 		return nil, ERROR_CANNOT_DECLARE_QUEUE
 	}
 
@@ -49,7 +49,7 @@ func (mqs *simpleMessageQueueSession) CloseSession() {
 func (mqs *simpleMessageQueueSession) recreateSession() bool {
 	channel, err := mqs.connection.connection.Channel()
 	if err != nil {
-		LoggerInstance.Error("Could not open channel with RabbitMQ: %s", err.Error())
+		LogError("Could not open channel with RabbitMQ: %s", err.Error())
 		return false
 	}
 
@@ -63,7 +63,7 @@ func (mqs *simpleMessageQueueSession) recreateSession() bool {
 	)
 
 	if originalErr != nil {
-		LoggerInstance.Error("Error when declare queue: %s", originalErr.Error())
+		LogError("Error when declare queue: %s", originalErr.Error())
 		return false
 	}
 
@@ -85,7 +85,7 @@ func (mqs *simpleMessageQueueSession) publish(body []byte) Error {
 	)
 
 	if err != nil {
-		LoggerInstance.Error("Publish message: error %s", err.Error())
+		LogError("Publish message: error %s", err.Error())
 		return ERROR_SERVER_ERROR
 	}
 

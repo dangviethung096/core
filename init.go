@@ -14,7 +14,6 @@ import (
 )
 
 var pgSession dbSession
-var LoggerInstance Logger
 var routeMap map[string][]Route
 var routeRegexMap map[string][]Route
 var staticFolderMap map[string]staticFolder
@@ -54,8 +53,6 @@ func Init(configFile string) {
 	if Config.HttpClient.WaitTimes == 0 {
 		Config.HttpClient.WaitTimes = 2000
 	}
-
-	LoggerInstance = initLogger()
 
 	// Init cache client
 	if Config.Redis.Use {
@@ -139,7 +136,6 @@ func Init(configFile string) {
 * @return void
  */
 func Release() {
-	closeLogger()
 	closeDB()
 	releaseCacheDB()
 	releaseMessageQueue()
@@ -148,10 +144,6 @@ func Release() {
 
 func closeDB() {
 	pgSession.Close()
-}
-
-func closeLogger() {
-	LoggerInstance = nil
 }
 
 func releaseCacheDB() {

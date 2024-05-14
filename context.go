@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"time"
 )
 
@@ -11,16 +12,10 @@ import (
 
 type Context interface {
 	// Reimplement from context.Context
-	Deadline() (deadline time.Time, ok bool)
-	Done() <-chan struct{}
-	Err() error
+	context.Context
+	logger
 	Value(key any) any
 	GetContextID() string
 	GetTimeout() time.Duration
 	GetCancelFunc() func()
-	LogInfo(format string, args ...interface{})
-	LogDebug(format string, args ...interface{})
-	LogError(format string, args ...interface{})
-	LogWarning(format string, args ...interface{})
-	LogFatal(format string, args ...interface{})
 }

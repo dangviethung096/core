@@ -59,7 +59,7 @@ func connectRabbitMQ() *messageQueue {
 	// Retry to reconnect if
 	go func(con *messageQueue) {
 		for err := range conn.NotifyClose(make(chan *amqp.Error)) {
-			LoggerInstance.Error("Connection to rabbitmq is disconnected: retry to connect %s", err.Error())
+			LogError("Connection to rabbitmq is disconnected: retry to connect %s", err.Error())
 			con.retryConnect()
 		}
 	}(connection)
@@ -75,7 +75,7 @@ func (mq *messageQueue) retryConnect() Error {
 	mq.mu.Lock()
 	defer mq.mu.Unlock()
 	now := time.Now()
-	LoggerInstance.Error("Retry to connect to rabbitmq at: %s", now.Format(time.RFC3339))
+	LogError("Retry to connect to rabbitmq at: %s", now.Format(time.RFC3339))
 
 	if time.Since(mq.retryConnectTime).Seconds() < float64(Config.RabbitMQ.RetryTime) {
 		coreContext.LogInfo("Retry to connect too fast: %s", now.Format(time.RFC3339))
@@ -86,14 +86,14 @@ func (mq *messageQueue) retryConnect() Error {
 
 	mq.count++
 	if mq.count > 50 {
-		LoggerInstance.Panic("Retry to connect message queue too many times: %d", mq.count)
+		LogPanic("Retry to connect message queue too many times: %d", mq.count)
 	}
 
 	mq.connection.Close()
 	// Open new connection
 	connection, err := amqp.Dial(Config.RabbitMQ.AMQPServerURL)
 	if err != nil {
-		LoggerInstance.Error("Could not establish connection with RabbitMQ: %s", err.Error())
+		LogError("Could not establish connection with RabbitMQ: %s", err.Error())
 		return ERROR_CANNOT_CONNECT_RABBITMQ
 	}
 
@@ -104,7 +104,7 @@ func (mq *messageQueue) retryConnect() Error {
 func (mq *messageQueue) CreateSession(config QueueConfig) (*MessageQueueSession, Error) {
 	channel, err := mq.connection.Channel()
 	if err != nil {
-		LoggerInstance.Error("Could not open channel with RabbitMQ: %s", err.Error())
+		LogError("Could not open channel with RabbitMQ: %s", err.Error())
 		return nil, ERROR_CANNOT_CREATE_RABBITMQ_CHANNEL
 	}
 
@@ -118,7 +118,7 @@ func (mq *messageQueue) CreateSession(config QueueConfig) (*MessageQueueSession,
 	)
 
 	if originalErr != nil {
-		LoggerInstance.Error("Error when declare queue: %s", originalErr.Error())
+		LogError("Error when declare queue: %s", originalErr.Error())
 		return nil, ERROR_CANNOT_DECLARE_QUEUE
 	}
 
@@ -133,7 +133,7 @@ func (mq *messageQueue) CreateSession(config QueueConfig) (*MessageQueueSession,
 	)
 
 	if originalErr != nil {
-		LoggerInstance.Error("Error when declare exchange: %s", originalErr.Error())
+		LogError("Error when declare exchange: %s", originalErr.Error())
 		return nil, ERROR_CANNOT_DECLARE_EXCHANGE
 	}
 
@@ -146,7 +146,7 @@ func (mq *messageQueue) CreateSession(config QueueConfig) (*MessageQueueSession,
 	)
 
 	if originalErr != nil {
-		LoggerInstance.Error("Error when bind queue: %s", originalErr.Error())
+		LogError("Error when bind queue: %s", originalErr.Error())
 		return nil, ERROR_CANNOT_BIND_QUEUE
 	}
 
@@ -158,7 +158,7 @@ func (mq *messageQueue) CreateSession(config QueueConfig) (*MessageQueueSession,
 
 	go func(sess *MessageQueueSession) {
 		for err := range sess.channel.NotifyClose(make(chan *amqp.Error)) {
-			LoggerInstance.Error("Channel %s is closed: error %s, queue info = %#v", sess.config.QueueName, err.Error(), sess.config)
+			LogError("Channel %s is closed: error %s, queue info = %#v", sess.config.QueueName, err.Error(), sess.config)
 			// Close old connection
 			sess.connection.retryConnect()
 			// Close session
@@ -187,7 +187,7 @@ func (session *MessageQueueSession) recreateSession() bool {
 	coreContext.LogInfo("Recreate session for queue: %s", session.config.QueueName)
 	channel, err := session.connection.connection.Channel()
 	if err != nil {
-		LoggerInstance.Error("Could not open channel with RabbitMQ: %s", err.Error())
+		LogError("Could not open channel with RabbitMQ: %s", err.Error())
 		return false
 	}
 
@@ -201,7 +201,7 @@ func (session *MessageQueueSession) recreateSession() bool {
 	)
 
 	if originalErr != nil {
-		LoggerInstance.Error("Error when declare queue: %s", originalErr.Error())
+		LogError("Error when declare queue: %s", originalErr.Error())
 		return false
 	}
 
@@ -216,7 +216,7 @@ func (session *MessageQueueSession) recreateSession() bool {
 	)
 
 	if originalErr != nil {
-		LoggerInstance.Error("Error when declare exchange: %s", originalErr.Error())
+		LogError("Error when declare exchange: %s", originalErr.Error())
 		return false
 	}
 
@@ -229,7 +229,7 @@ func (session *MessageQueueSession) recreateSession() bool {
 	)
 
 	if originalErr != nil {
-		LoggerInstance.Error("Error when bind queue: %s", originalErr.Error())
+		LogError("Error when bind queue: %s", originalErr.Error())
 		return false
 	}
 
@@ -259,7 +259,7 @@ func (mqs *MessageQueueSession) Publish(body []byte) Error {
 	)
 
 	if err != nil {
-		LoggerInstance.Error("Publish error: %v", err)
+		LogError("Publish error: %v", err)
 		return ERROR_SERVER_ERROR
 	}
 
@@ -290,7 +290,7 @@ func (mqs *MessageQueueSession) Consume(handler ConsumerHandler) Error {
 func (mqs *MessageQueueSession) consume() Error {
 	messages, err := mqs.channel.Consume(mqs.config.QueueName, mqs.consumerData.consumerTag, true, false, false, false, nil)
 	if err != nil {
-		LoggerInstance.Error("Error when consume messages: %s", err.Error())
+		LogError("Error when consume messages: %s", err.Error())
 		return ERROR_CANNOT_CONSUME_MESSAGES_FROM_RABBITMQ
 	}
 

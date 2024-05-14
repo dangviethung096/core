@@ -80,7 +80,17 @@ func (ctx *rootContext) LogError(format string, args ...interface{}) {
  */
 func (ctx *rootContext) LogWarning(format string, args ...interface{}) {
 	logStr := "[WARNING] " + ctx.format(format, args...)
-	log.Println(logStr)
+	log.Fatalln(logStr)
+}
+
+/*
+* Panic: Log Panic with context information
+* @params: format string, args ...interface{}
+* @return: void
+ */
+func (ctx *rootContext) LogPanic(format string, args ...interface{}) {
+	logStr := "[Panic] " + ctx.format(format, args...)
+	log.Panicln(logStr)
 }
 
 /*
@@ -117,7 +127,7 @@ func (ctx *rootContext) format(format string, args ...interface{}) string {
 			functionName = functionPath[len(functionPath)-1]
 		}
 
-		logStr = fmt.Sprintf("%s:%d:%s RequestID: %s, Message: %s", file, line, functionName, ctx.GetContextID(), logStr)
+		logStr = fmt.Sprintf("%s:%d:%s, RootContext, Message: %s", file, line, functionName, logStr)
 	}
 
 	// Return the formatted string
