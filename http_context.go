@@ -277,3 +277,23 @@ func (ctx *HttpContext) GetCancelFunc() func() {
 func (ctx *HttpContext) GetTimeout() time.Duration {
 	return ctx.timeout
 }
+
+func (ctx *HttpContext) GetCookie(key string) (*http.Cookie, Error) {
+	cookie, err := ctx.request.Cookie(key)
+	if err != nil {
+		return cookie, NewError(ERROR_FROM_LIBRARY, err.Error())
+	}
+	return cookie, nil
+}
+
+func (ctx *HttpContext) ResetCookie(name string, value string, maxAge int) {
+	http.SetCookie(ctx.rw, &http.Cookie{
+		Name:   name,
+		Value:  value,
+		MaxAge: maxAge,
+	})
+}
+
+/*
+* Return a page
+ */

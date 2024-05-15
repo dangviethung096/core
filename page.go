@@ -3,7 +3,6 @@ package core
 import (
 	"html/template"
 	"net/http"
-	"net/url"
 )
 
 type pageInfo struct {
@@ -16,8 +15,7 @@ type pageInfo struct {
 }
 
 type PageRequest struct {
-	Header  http.Header
-	Queries url.Values
+	Role int
 }
 
 type PageResponse struct {
@@ -26,7 +24,7 @@ type PageResponse struct {
 	Cache     bool
 }
 
-type PageHandler func(url string, request PageRequest) PageResponse
+type PageHandler func(ctx *HttpContext, request *PageRequest) (PageResponse, Error)
 
 func RegisterPage(url string, handler PageHandler, middleware ...PageMiddleware) {
 	coreContext.LogInfo("Register page: url = %s", url)
@@ -58,32 +56,45 @@ func RegisterPage(url string, handler PageHandler, middleware ...PageMiddleware)
 * If middleware return nil, page will be rendered
  */
 func pageHandler(pageInfo pageInfo, w http.ResponseWriter, r *http.Request) {
+	// Get http context
+	ctx := getHttpContext()
+	defer putHttpContext(ctx)
+
+	ctx.request = r
+	ctx.rw = w
 	// Implement common page middleware
 	// Check if middleware is not nil
+	request := PageRequest{}
+
 	if pageInfo.middleware != nil {
 		// Execute middleware
 		for _, middleware := range pageInfo.middleware {
-			err := middleware(w, r)
+			err := middleware(ctx, &request)
 			if err != nil {
-				LogError("Error when execute middleware of request %s: %s", pageInfo.url, err)
+				ctx.LogError("Error when execute middleware of request %s: %s", pageInfo.url, err)
+			}
+
+			if ctx.isResponseEnd {
 				return
 			}
 		}
 	}
 
-	request := PageRequest{
-		Header:  r.Header,
-		Queries: r.URL.Query(),
+	response, err := pageInfo.handler(ctx, &request)
+	if err != nil {
+		ctx.LogError("Error when execute handler of request %s: %s", pageInfo.url, err)
 	}
 
-	response := pageInfo.handler(pageInfo.url, request)
+	if ctx.isResponseEnd {
+		return
+	}
+
 	pageInfo.pageFiles = response.PageFiles
 	pageInfo.data = response.Data
 	pageInfo.cache = response.Cache
 
 	// Render page
 	var tmpl *template.Template
-	var err error
 
 	if Config.Server.CacheHtml && pageInfo.cache && htmlTemplateMap[pageInfo.url] != nil {
 		tmpl = htmlTemplateMap[pageInfo.url]
@@ -94,10 +105,9 @@ func pageHandler(pageInfo pageInfo, w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Execute template
-	err = tmpl.Execute(w, pageInfo.data)
-	if err != nil {
-		LogError("Error when execute template: %s", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if originError := tmpl.Execute(w, pageInfo.data); originError != nil {
+		ctx.LogError("Error when execute template: %s", originError)
+		http.Error(w, originError.Error(), http.StatusInternalServerError)
 	}
 }
 
