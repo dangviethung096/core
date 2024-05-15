@@ -164,7 +164,7 @@ func SelectByField(ctx Context, data DataBaseObject, fieldName string, fieldValu
 * @return []DataBaseObject, Error
 * @description: select list of data by field
  */
-func SelectListByField(ctx Context, data DataBaseObject, fieldName string, fieldValue any) ([]DataBaseObject, Error) {
+func SelectListByField(ctx Context, data DataBaseObject, fieldName string, fieldValue any) (any, Error) {
 	query, params, err := GetSelectQuery(data)
 	if err != nil {
 		ctx.LogError("Error when get update data = %#v, err = %s", data, err.Error())
@@ -181,17 +181,18 @@ func SelectListByField(ctx Context, data DataBaseObject, fieldName string, field
 	}
 
 	// Get list of struct
-	result := []DataBaseObject{}
+	resultType := reflect.SliceOf(reflect.TypeOf(data).Elem())
+	result := reflect.MakeSlice(resultType, 0, 5)
 	for rows.Next() {
 		if err := rows.Scan(params...); err != nil {
 			ctx.LogError("Error select data = %#v, err = %s", data, err.Error())
 			return nil, ERROR_DB_ERROR
 		}
 
-		result = append(result, reflect.ValueOf(data).Elem().Interface().(DataBaseObject))
+		result = reflect.Append(result, reflect.ValueOf(data).Elem())
 	}
 
-	return result, nil
+	return result.Interface(), nil
 }
 
 /*
@@ -200,7 +201,7 @@ func SelectListByField(ctx Context, data DataBaseObject, fieldName string, field
 * @return []DataBaseObject, Error
 * @description: select list of data by where params
  */
-func SelectListByFieldsWithCustomOperator(ctx Context, data DataBaseObject, whereParams ...DBWhere) ([]DataBaseObject, Error) {
+func SelectListByFieldsWithCustomOperator(ctx Context, data DataBaseObject, whereParams ...DBWhere) (any, Error) {
 	query, params, err := GetSelectQuery(data)
 	if err != nil {
 		ctx.LogError("Error when get update data = %#v, err = %s", data, err.Error())
@@ -233,17 +234,18 @@ func SelectListByFieldsWithCustomOperator(ctx Context, data DataBaseObject, wher
 	}
 
 	// Get list of struct
-	result := []DataBaseObject{}
+	resultType := reflect.SliceOf(reflect.TypeOf(data).Elem())
+	result := reflect.MakeSlice(resultType, 0, 5)
 	for rows.Next() {
 		if err := rows.Scan(params...); err != nil {
 			ctx.LogError("Error select data = %#v, err = %s", data, err.Error())
 			return nil, ERROR_DB_ERROR
 		}
 
-		result = append(result, reflect.ValueOf(data).Elem().Interface().(DataBaseObject))
+		result = reflect.Append(result, reflect.ValueOf(data).Elem())
 	}
 
-	return result, nil
+	return result.Interface(), nil
 }
 
 /*
@@ -252,13 +254,14 @@ func SelectListByFieldsWithCustomOperator(ctx Context, data DataBaseObject, wher
 * @return []DataBaseObject, Error
 * @description: select list of data by args
  */
-func SelectListByFields(ctx Context, data DataBaseObject, mapArgs map[string]interface{}) ([]DataBaseObject, Error) {
+func SelectListByFields(ctx Context, data DataBaseObject, mapArgs map[string]interface{}) (any, Error) {
 	query, params, err := GetSelectQuery(data)
 	if err != nil {
 		ctx.LogError("Error when get update data = %#v, err = %s", data, err.Error())
 		return nil, err
 	}
 
+	// Handle where params
 	var args []interface{}
 	var keys []string
 	if len(mapArgs) > 0 {
@@ -288,17 +291,19 @@ func SelectListByFields(ctx Context, data DataBaseObject, mapArgs map[string]int
 	}
 
 	// Get list of struct
-	result := []DataBaseObject{}
+	resultType := reflect.SliceOf(reflect.TypeOf(data).Elem())
+	result := reflect.MakeSlice(resultType, 0, 5)
 	for rows.Next() {
 		if err := rows.Scan(params...); err != nil {
 			ctx.LogError("Error select data = %#v, err = %s", data, err.Error())
 			return nil, ERROR_DB_ERROR
 		}
 
-		result = append(result, reflect.ValueOf(data).Elem().Interface().(DataBaseObject))
+		result = reflect.Append(result, reflect.ValueOf(data).Elem())
+
 	}
 
-	return result, nil
+	return result.Interface(), nil
 }
 
 /*

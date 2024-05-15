@@ -8,11 +8,11 @@ context:
 id_generator:
   distributed: false
 database:
-  use: false
+  use: true
   host: localhost
   port: 5432
-  user: localhost
-  pass: hello
+  user: postgres
+  pass: admin@123
   name: example
 rabbitmq:
   use: false

@@ -14,8 +14,8 @@ func TestOpenDBWithSuccessResponse(t *testing.T) {
 			Host:     "localhost",
 			Port:     5432,
 			Username: "postgres",
-			Password: "hungdeptrai",
-			Database: "account",
+			Password: "admin@123",
+			Database: "example",
 		},
 		wantErr: false,
 	}

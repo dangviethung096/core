@@ -10,7 +10,7 @@ DROP TABLE IF EXISTS test_accounts;
 CREATE TABLE test_accounts (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    age INT NOT NULL,
+    age INT NOT NULL
 );
 */
 
@@ -137,7 +137,7 @@ func TestSelectListByFieldsWithCustomOperator_ReturnSuccess(t *testing.T) {
 		return
 	}
 
-	if len(values) != 2 {
+	if len(values.([]Account)) != 2 {
 		t.Errorf("TestSelectListByFieldsWithCustomOperator_ReturnSuccess: wrong return values: %#v\n", values)
 		return
 	}
