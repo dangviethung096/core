@@ -50,7 +50,7 @@ func RegisterAPI[T any](url string, method string, handler Handler[T], middlewar
 		url, urlParams = convertRegexUrl(url)
 		isRegexPath = true
 	}
-	coreContext.LogInfo("Register api: %s %s", method, url)
+	LogInfo("Register api: %s %s", method, url)
 
 	// Check if T is a struct
 	tType := reflect.TypeOf((*T)(nil)).Elem()
@@ -91,7 +91,7 @@ func RegisterAPI[T any](url string, method string, handler Handler[T], middlewar
 		if len(ctx.requestBody) != 0 {
 			if strings.Contains(requestContentType, JSON_CONTENT_TYPE) {
 				if err := json.Unmarshal(ctx.requestBody, &req); err != nil {
-					coreContext.LogInfo("Unmarshal request body fail. RequestId: %s, Error: %s", ctx.requestID, err.Error())
+					LogInfo("Unmarshal request body fail. RequestId: %s, Error: %s", ctx.requestID, err.Error())
 					ctx.writeError(NewDefaultHttpError(400, "Bad request (Marshal requeset body)"))
 					return
 				}

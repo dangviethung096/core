@@ -278,6 +278,13 @@ func (ctx *HttpContext) GetTimeout() time.Duration {
 	return ctx.timeout
 }
 
+/*
+* GetCookie: Get cookie by key
+* @params: key string
+* @return: *http.Cookie, Error
+* if key exist in cookie return cookie, otherwise return error
+* Error: ERROR_FROM_LIBRARY
+ */
 func (ctx *HttpContext) GetCookie(key string) (*http.Cookie, Error) {
 	cookie, err := ctx.request.Cookie(key)
 	if err != nil {
@@ -286,6 +293,11 @@ func (ctx *HttpContext) GetCookie(key string) (*http.Cookie, Error) {
 	return cookie, nil
 }
 
+/*
+* ResetCookie: Reset cookie by name, value and maxAge
+* @params: name string, value string, maxAge int
+* @return: void
+ */
 func (ctx *HttpContext) ResetCookie(name string, value string, maxAge int) {
 	http.SetCookie(ctx.rw, &http.Cookie{
 		Name:   name,
@@ -294,6 +306,10 @@ func (ctx *HttpContext) ResetCookie(name string, value string, maxAge int) {
 	})
 }
 
-/*
-* Return a page
- */
+func (ctx *HttpContext) SetCookie(key string, value string, maxAge int) {
+	http.SetCookie(ctx.rw, &http.Cookie{
+		Name:   key,
+		Value:  value,
+		MaxAge: maxAge,
+	})
+}

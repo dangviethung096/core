@@ -90,10 +90,10 @@ func (w *worker) execute() {
 		taskKey := fmt.Sprintf(TASK_TEMPLATE_KEY, todo.taskId)
 		result, err := CacheClient().SetNX(coreContext, taskKey, string(TaskStatus_Doing), time.Duration(Config.Scheduler.TaskDoingExpiration)*time.Second).Result()
 		if err != nil {
-			coreContext.LogInfo("Set %s fail: %v", taskKey, err)
+			LogInfo("Set %s fail: %v", taskKey, err)
 			continue
 		} else if !result {
-			coreContext.LogInfo("Key %s existed", taskKey)
+			LogInfo("Key %s existed", taskKey)
 			continue
 		}
 		// Process data

@@ -114,7 +114,7 @@ func (ctx *rootContext) format(format string, args ...interface{}) string {
 	logStr := fmt.Sprintf(format, args...)
 
 	// Get the file name and line number of the code that calls the ctx interface
-	pc, file, line, ok := runtime.Caller(2)
+	pc, file, line, ok := runtime.Caller(3)
 	if ok {
 		path := strings.Split(file, "/")
 		if len(path) > 3 {
@@ -127,7 +127,7 @@ func (ctx *rootContext) format(format string, args ...interface{}) string {
 			functionName = functionPath[len(functionPath)-1]
 		}
 
-		logStr = fmt.Sprintf("%s:%d:%s, RootContext, Message: %s", file, line, functionName, logStr)
+		logStr = fmt.Sprintf("%s:%d:%s, RequestID: %s , Message: %s", file, line, functionName, ctx.contextID, logStr)
 	}
 
 	// Return the formatted string

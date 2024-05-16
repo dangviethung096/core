@@ -160,7 +160,7 @@ func releaseMessageQueue() {
 * @return void
  */
 func Start() {
-	coreContext.LogInfo("API register must be have prefix \"api\" in url")
+	LogInfo("API register must be have prefix \"api\" in url")
 	// Register all static folders
 	handleStaticFolder()
 
@@ -171,7 +171,7 @@ func Start() {
 	handlePage()
 
 	// Listen and serve
-	coreContext.LogInfo("Start server at port: %d", Config.Server.Port)
+	LogInfo("Start server at port: %d", Config.Server.Port)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", Config.Server.Port), nil)
 	if err != nil {
 		log.Fatalln("ListenAndServe fail: ", err)
@@ -243,7 +243,7 @@ func handleAPI() {
 
 func handleStaticFolder() {
 	for _, staticFolder := range staticFolderMap {
-		coreContext.LogInfo("Register static folder: url = %s, path = %s", staticFolder.url, staticFolder.path)
+		LogInfo("Register static folder: url = %s, path = %s", staticFolder.url, staticFolder.path)
 		http.Handle(staticFolder.url, http.StripPrefix(staticFolder.prefix, http.FileServer(http.Dir(staticFolder.path))))
 	}
 }
@@ -253,7 +253,7 @@ func handleStaticFolder() {
  */
 func handlePage() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		coreContext.LogInfo("Handle request page: %s", r.URL.Path)
+		LogInfo("Handle request page: %s", r.URL.Path)
 		page, ok := pageMap[r.URL.Path]
 		if ok && r.Method == "GET" {
 			pageHandler(page, w, r)

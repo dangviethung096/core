@@ -15,7 +15,7 @@ type staticFolder struct {
 * @example RegisterFolder("/static/", "/static/", "./static")
  */
 func RegisterFolder(url string, prefix string, path string) {
-	coreContext.LogInfo("Register folder: url = %s, prefix = %s, path = %s", url, prefix, path)
+	LogInfo("Register folder: url = %s, prefix = %s, path = %s", url, prefix, path)
 	staticFolder := staticFolder{
 		url:    url,
 		prefix: prefix,

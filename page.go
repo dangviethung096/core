@@ -27,7 +27,7 @@ type PageResponse struct {
 type PageHandler func(ctx *HttpContext, request *PageRequest) (PageResponse, Error)
 
 func RegisterPage(url string, handler PageHandler, middleware ...PageMiddleware) {
-	coreContext.LogInfo("Register page: url = %s", url)
+	LogInfo("Register page: url = %s", url)
 	pageInfo := pageInfo{
 		url:     url,
 		handler: handler,
