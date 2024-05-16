@@ -81,6 +81,8 @@ func RegisterAPI[T any](url string, method string, handler Handler[T], middlewar
 		}
 
 		if optional.haveUrlParam {
+			// Init url params map
+			ctx.urlParams = make(map[string]string)
 			// convert param
 			ctx.convertUrlParams(optional.urlPattern, request.URL.Path, optional.urlParamKeys)
 		}

@@ -28,6 +28,7 @@ type HttpContext struct {
 	cancelFunc     context.CancelFunc
 	requestID      string
 	timeout        time.Duration
+	tempData       map[string]any
 }
 
 /*
@@ -39,6 +40,7 @@ func getHttpContext() *HttpContext {
 	ctx.Context, ctx.cancelFunc = context.WithTimeout(coreContext, contextTimeout)
 	ctx.timeout = contextTimeout
 	ctx.isResponseEnd = false
+	ctx.responseHeader = make(map[string][]string)
 	return ctx
 }
 
@@ -49,8 +51,11 @@ func getHttpContext() *HttpContext {
  */
 func putHttpContext(ctx *HttpContext) {
 	ctx.cancelFunc()
-	ctx.urlParams = make(map[string]string)
-	ctx.responseHeader = make(map[string][]string)
+	// Release memory of context: urlParams, responseHeader, tempData
+	ctx.urlParams = nil
+	ctx.responseHeader = nil
+	ctx.tempData = nil
+	// Put context to pool
 	httpContextPool.Put(ctx)
 }
 
@@ -306,10 +311,37 @@ func (ctx *HttpContext) ResetCookie(name string, value string, maxAge int) {
 	})
 }
 
+/*
+* SetCookie: Set cookie by key, value and maxAge
+* @params: key string, value string, maxAge int
+* @return: void
+ */
 func (ctx *HttpContext) SetCookie(key string, value string, maxAge int) {
 	http.SetCookie(ctx.rw, &http.Cookie{
 		Name:   key,
 		Value:  value,
 		MaxAge: maxAge,
 	})
+}
+
+/*
+* SetTempData: Set temp data
+* @params: key string, value any
+* @return: void
+ */
+func (ctx *HttpContext) SetTempData(key string, value any) {
+	if ctx.tempData == nil {
+		ctx.tempData = make(map[string]any)
+	}
+
+	ctx.tempData[key] = value
+}
+
+/*
+* GetTempData: Get temp data
+* @params: key string
+* @return: any
+ */
+func (ctx *HttpContext) GetTempData(key string) any {
+	return ctx.tempData[key]
 }
