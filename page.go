@@ -17,6 +17,7 @@ type pageInfo struct {
 type PageRequest struct {
 	RoleID    int64
 	AccountID int64
+	Username  string
 }
 
 type PageResponse struct {
