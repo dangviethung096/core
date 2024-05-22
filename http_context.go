@@ -303,11 +303,11 @@ func (ctx *HttpContext) GetCookie(key string) (*http.Cookie, Error) {
 * @params: name string, value string, maxAge int
 * @return: void
  */
-func (ctx *HttpContext) ResetCookie(name string, value string, maxAge int) {
+func (ctx *HttpContext) ResetCookie(name string) {
 	http.SetCookie(ctx.rw, &http.Cookie{
 		Name:   name,
-		Value:  value,
-		MaxAge: maxAge,
+		Value:  BLANK,
+		MaxAge: -1,
 	})
 }
 
@@ -318,9 +318,11 @@ func (ctx *HttpContext) ResetCookie(name string, value string, maxAge int) {
  */
 func (ctx *HttpContext) SetCookie(key string, value string, maxAge int) {
 	http.SetCookie(ctx.rw, &http.Cookie{
-		Name:   key,
-		Value:  value,
-		MaxAge: maxAge,
+		Name:     key,
+		Value:    value,
+		MaxAge:   maxAge,
+		SameSite: http.SameSiteStrictMode,
+		HttpOnly: true,
 	})
 }
 
