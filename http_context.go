@@ -229,6 +229,7 @@ func (ctx *HttpContext) endResponse(statusCode int, body string) {
 		// end response
 		ctx.rw.WriteHeader(statusCode)
 		fmt.Fprint(ctx.rw, body)
+		ctx.rw.(http.Flusher).Flush()
 	}
 }
 
@@ -308,6 +309,7 @@ func (ctx *HttpContext) ResetCookie(name string) {
 		Name:   name,
 		Value:  BLANK,
 		MaxAge: -1,
+		Path:   "/",
 	})
 }
 
@@ -321,8 +323,10 @@ func (ctx *HttpContext) SetCookie(key string, value string, maxAge int) {
 		Name:     key,
 		Value:    value,
 		MaxAge:   maxAge,
-		SameSite: http.SameSiteStrictMode,
+		SameSite: http.SameSiteLaxMode,
 		HttpOnly: true,
+		Secure:   false,
+		Path:     "/",
 	})
 }
 
