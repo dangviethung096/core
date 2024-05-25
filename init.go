@@ -160,15 +160,11 @@ func releaseMessageQueue() {
 * @return void
  */
 func Start() {
-	LogInfo("API register must be have prefix \"api\" in url")
 	// Register all static folders
 	handleStaticFolder()
 
 	// Register all routes
-	handleAPI()
-
-	// Page
-	handlePage()
+	handleAPIAndPage()
 
 	// Listen and serve
 	LogInfo("Start server at port: %d", Config.Server.Port)
@@ -206,19 +202,25 @@ func DBSession() dbSession {
 * Handle API
  */
 
-func handleAPI() {
-	http.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
-		routeList, ok := routeMap[r.URL.Path]
-		if ok {
+func handleAPIAndPage() {
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		isHandled := false
+		if page, ok := pageMap[r.URL.Path]; ok && r.Method == http.MethodGet {
+			LogInfo("Handle request page: %s", r.URL.Path)
+			pageHandler(page, w, r)
+			isHandled = true
+		} else if routeList, ok := routeMap[r.URL.Path]; ok {
+			LogInfo("Handle API: %s", r.URL.Path)
 			for _, route := range routeList {
 				if route.Method == r.Method {
 					route.handler(w, r, optionalParams{})
-					return
+					break
 				}
 			}
 		} else {
 			for regexPath, routeList := range routeRegexMap {
 				if match, _ := regexp.MatchString(regexPath, r.URL.Path); match {
+					LogInfo("Handle Regex API: %s", r.URL.Path)
 					for _, route := range routeList {
 						if route.Method == r.Method {
 							route.handler(w, r, optionalParams{
@@ -226,14 +228,22 @@ func handleAPI() {
 								urlPattern:   regexPath,
 								urlParamKeys: route.URL.Params,
 							})
-							return
+							isHandled = true
+							break
 						}
+					}
+
+					if isHandled {
+						break
 					}
 				}
 			}
 		}
 
-		http.NotFound(w, r)
+		if !isHandled {
+			http.NotFound(w, r)
+		}
+
 	})
 }
 
@@ -246,19 +256,4 @@ func handleStaticFolder() {
 		LogInfo("Register static folder: url = %s, path = %s", staticFolder.url, staticFolder.path)
 		http.Handle(staticFolder.url, http.StripPrefix(staticFolder.prefix, http.FileServer(http.Dir(staticFolder.path))))
 	}
-}
-
-/*
-* Handle Page
- */
-func handlePage() {
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		LogInfo("Handle request page: %s", r.URL.Path)
-		page, ok := pageMap[r.URL.Path]
-		if ok && r.Method == "GET" {
-			pageHandler(page, w, r)
-		} else {
-			http.NotFound(w, r)
-		}
-	})
 }
