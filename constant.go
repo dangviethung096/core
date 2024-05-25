@@ -6,8 +6,6 @@ const (
 	HTTP_CLIENT_TIMEOUT    = 0
 	DEFAULT_CONSUMER_TAG   = "default_consumer"
 	CONTENT_TYPE_KEY       = "Content-Type"
-	JSON_CONTENT_TYPE      = "application/json"
-	FORMDATA_CONTENT_TYPE  = "application/x-www-form-urlencoded"
 	REGEX_URL_PATH_ELEMENT = "[\\w-]+"
 )
 

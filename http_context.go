@@ -190,8 +190,8 @@ func (ctx *HttpContext) writeError(httpErr HttpError) {
 * writeSuccess: write success http response to user
  */
 func (ctx *HttpContext) writeSuccess(httpRes HttpResponse) {
-	ctx.rw.Header().Set("Content-Type", "application/json")
 	ctx.rw.Header().Set("Request-Id", ctx.requestID)
+	ctx.rw.Header().Set("Content-Type", "application/json")
 
 	for key, values := range ctx.responseHeader {
 		headerValue := BLANK
