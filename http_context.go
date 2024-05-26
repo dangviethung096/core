@@ -18,7 +18,6 @@ type HttpContext struct {
 	URL            string
 	Method         string
 	requestBody    []byte
-	responseBody   responseBody
 	isRequestEnd   bool
 	request        *http.Request
 	rw             http.ResponseWriter
@@ -172,11 +171,13 @@ func (ctx *HttpContext) writeError(httpErr HttpError) {
 		ctx.rw.Header().Set(key, headerValue)
 	}
 
-	ctx.responseBody.Code = httpErr.GetCode()
-	ctx.responseBody.Message = httpErr.GetMessage()
-	ctx.responseBody.Data = httpErr.GetErrorData()
+	resBody := responseBody{
+		Code:    httpErr.GetCode(),
+		Message: httpErr.GetMessage(),
+		Data:    httpErr.GetErrorData(),
+	}
 
-	body, err := json.Marshal(ctx.responseBody)
+	body, err := json.Marshal(resBody)
 	if err != nil {
 		ctx.LogError("Marshal error json. RequestId: %s, Error: %s", ctx.requestID, err.Error())
 		ctx.endResponse(http.StatusInternalServerError, `{"code":500,"message":"Internal server error(Marshal error response data)","errorData":null,"data":null}`)
@@ -191,7 +192,6 @@ func (ctx *HttpContext) writeError(httpErr HttpError) {
  */
 func (ctx *HttpContext) writeSuccess(httpRes HttpResponse) {
 	ctx.rw.Header().Set("Request-Id", ctx.requestID)
-	ctx.rw.Header().Set("Content-Type", "application/json")
 
 	for key, values := range ctx.responseHeader {
 		headerValue := BLANK
@@ -206,15 +206,29 @@ func (ctx *HttpContext) writeSuccess(httpRes HttpResponse) {
 		ctx.rw.Header().Set(key, headerValue)
 	}
 
-	ctx.responseBody.Code = httpRes.GetReponseCode()
-	ctx.responseBody.Message = BLANK
-	ctx.responseBody.Data = httpRes.GetBody()
+	var body []byte
 
-	body, err := json.Marshal(ctx.responseBody)
-	if err != nil {
-		ctx.LogError("Marshal json. RequestId: %s, Error: %s", ctx.requestID, err.Error())
-		ctx.endResponse(http.StatusInternalServerError, `{"code":500,"message":"Internal server error(Marshal response data)","errorData":null,"data":null}`)
-		return
+	if httpRes.GetResponseContentType() == TEXT_PLAIN_CONTENT_TYPE {
+		// Set text plain response
+		ctx.rw.Header().Set("Content-Type", TEXT_PLAIN_CONTENT_TYPE)
+		body = []byte(httpRes.GetBody().(string))
+	} else {
+		ctx.rw.Header().Set("Content-Type", JSON_CONTENT_TYPE)
+
+		resBody := responseBody{
+			Code:    httpRes.GetReponseCode(),
+			Message: BLANK,
+			Data:    httpRes.GetBody(),
+		}
+
+		var errOrigin error
+		body, errOrigin = json.Marshal(resBody)
+		if errOrigin != nil {
+			ctx.LogError("Marshal json. RequestId: %s, Error: %v", ctx.requestID, errOrigin)
+			ctx.endResponse(http.StatusInternalServerError, `{"code":500,"message":"Internal server error(Marshal response data)","errorData":null,"data":null}`)
+			return
+		}
+
 	}
 
 	ctx.endResponse(int(httpRes.GetStatusCode()), string(body))

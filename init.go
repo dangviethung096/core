@@ -214,6 +214,7 @@ func handleAPIAndPage() {
 			for _, route := range routeList {
 				if route.Method == r.Method {
 					route.handler(w, r, optionalParams{})
+					isHandled = true
 					break
 				}
 			}
