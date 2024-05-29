@@ -132,6 +132,37 @@ func SelectById(ctx Context, data DataBaseObject) Error {
 	return nil
 }
 
+func ListPagingTable(ctx Context, data DataBaseObject, limit int64, offset int64) (any, Error) {
+	query, params, err := GetSelectQuery(data)
+	if err != nil {
+		ctx.LogError("Error when get update data = %#v, err = %s", data, err.Error())
+		return nil, err
+	}
+
+	query += fmt.Sprintf(" LIMIT %d OFFSET %d", limit, offset)
+
+	ctx.LogInfo("Select query = %v", query)
+	rows, errQuery := pgSession.QueryContext(ctx, query)
+	if errQuery != nil {
+		ctx.LogError("Error select table %s, err = %s", data.GetTableName(), errQuery.Error())
+		return nil, ERROR_DB_ERROR
+	}
+
+	// Get list of struct
+	resultType := reflect.SliceOf(reflect.TypeOf(data).Elem())
+	result := reflect.MakeSlice(resultType, 0, 5)
+	for rows.Next() {
+		if err := rows.Scan(params...); err != nil {
+			ctx.LogError("Error select data = %#v, err = %s", data, err.Error())
+			return nil, ERROR_DB_ERROR
+		}
+
+		result = reflect.Append(result, reflect.ValueOf(data).Elem())
+	}
+
+	return result.Interface(), nil
+}
+
 /*
 * Select data from database by field: fieldName and fieldValue is passed in parameter
 * @return Error
@@ -172,6 +203,44 @@ func SelectListByField(ctx Context, data DataBaseObject, fieldName string, field
 	}
 
 	query += fmt.Sprintf(" WHERE %s = $1", fieldName)
+
+	ctx.LogInfo("Select query = %v, args = %v", query, fieldValue)
+	rows, errQuery := pgSession.QueryContext(ctx, query, fieldValue)
+	if errQuery != nil {
+		ctx.LogError("Error select %s = %#v, err = %s", fieldName, fieldValue, errQuery.Error())
+		return nil, ERROR_DB_ERROR
+	}
+
+	// Get list of struct
+	resultType := reflect.SliceOf(reflect.TypeOf(data).Elem())
+	result := reflect.MakeSlice(resultType, 0, 5)
+	for rows.Next() {
+		if err := rows.Scan(params...); err != nil {
+			ctx.LogError("Error select data = %#v, err = %s", data, err.Error())
+			return nil, ERROR_DB_ERROR
+		}
+
+		result = reflect.Append(result, reflect.ValueOf(data).Elem())
+	}
+
+	return result.Interface(), nil
+}
+
+/*
+* SelectPagingListByField
+* @params: ctx Context, data DataBaseObject, fieldName string, fieldValue any, limit int64, offset int64
+* @return []DataBaseObject, Error
+* @description: select list of data by field with limit and offset
+* @note: this function is used for paging
+ */
+func SelectPagingListByField(ctx Context, data DataBaseObject, fieldName string, fieldValue any, limit int64, offset int64) (any, Error) {
+	query, params, err := GetSelectQuery(data)
+	if err != nil {
+		ctx.LogError("Error when get update data = %#v, err = %s", data, err.Error())
+		return nil, err
+	}
+
+	query += fmt.Sprintf(" WHERE %s = $1 LIMIT %d OFFSET %d", fieldName, limit, offset)
 
 	ctx.LogInfo("Select query = %v, args = %v", query, fieldValue)
 	rows, errQuery := pgSession.QueryContext(ctx, query, fieldValue)
@@ -282,6 +351,67 @@ func SelectListByFields(ctx Context, data DataBaseObject, mapArgs map[string]int
 		keys = append(keys, key)
 		count++
 	}
+
+	ctx.LogInfo("Select query = %v, args = %#v", query, args)
+	rows, errQuery := pgSession.QueryContext(ctx, query, args...)
+	if errQuery != nil {
+		ctx.LogError("Error select %#v = %#v, err = %s", keys, args, errQuery.Error())
+		return nil, ERROR_DB_ERROR
+	}
+
+	// Get list of struct
+	resultType := reflect.SliceOf(reflect.TypeOf(data).Elem())
+	result := reflect.MakeSlice(resultType, 0, 5)
+	for rows.Next() {
+		if err := rows.Scan(params...); err != nil {
+			ctx.LogError("Error select data = %#v, err = %s", data, err.Error())
+			return nil, ERROR_DB_ERROR
+		}
+
+		result = reflect.Append(result, reflect.ValueOf(data).Elem())
+
+	}
+
+	return result.Interface(), nil
+}
+
+/*
+* SelectPagingListByFields
+* @params: ctx Context, data DataBaseObject, mapArgs map[string]interface{}, limit int64, offset int64
+* @return []DataBaseObject, Error
+* @description: select list of data by args with limit and offset
+* @note: this function is used for paging
+ */
+func SelectPagingListByFields(ctx Context, data DataBaseObject, mapArgs map[string]interface{}, limit int64, offset int64) (any, Error) {
+	query, params, err := GetSelectQuery(data)
+	if err != nil {
+		ctx.LogError("Error when get update data = %#v, err = %s", data, err.Error())
+		return nil, err
+	}
+
+	// Handle where params
+	var args []interface{}
+	var keys []string
+	if len(mapArgs) > 0 {
+		query += " WHERE "
+		args = []interface{}{}
+		keys = []string{}
+	}
+
+	count := 1
+	for key, value := range mapArgs {
+		if count == 1 {
+			query += fmt.Sprintf("%s = $%d ", key, count)
+		} else {
+			query += fmt.Sprintf("AND %s = $%d ", key, count)
+		}
+
+		args = append(args, value)
+		keys = append(keys, key)
+		count++
+	}
+
+	query = fmt.Sprintf("%s LIMIT %d OFFSET %d", query, limit, offset)
 
 	ctx.LogInfo("Select query = %v, args = %#v", query, args)
 	rows, errQuery := pgSession.QueryContext(ctx, query, args...)
