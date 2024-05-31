@@ -158,6 +158,15 @@ func GetContextWithTimeout(timeout time.Duration) Context {
 }
 
 /*
+* Get core context
+* Return core context to http context pool
+* @return: Context
+ */
+func GetContext() Context {
+	return coreContext
+}
+
+/*
 * Get context from http context pool
 * Return context to http context pool
  */
