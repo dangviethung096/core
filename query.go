@@ -37,14 +37,16 @@ func GetSelectQuery[T DataBaseObject](model T) (string, []any, Error) {
 			continue
 		}
 
-		if i != numField-1 {
-			query += tag + ", "
+		if i == 0 {
+			query += tag
 		} else {
-			query += tag + " "
+			query += ", " + tag
 		}
 		scanParams = append(scanParams, v.Field(i).Addr().Interface())
 		dbFieldLength++
 	}
+
+	query += " "
 
 	if dbFieldLength == 0 {
 		return BLANK, nil, ERROR_MODEL_HAVE_NO_FIELD
