@@ -6,6 +6,7 @@ const (
 	HTTP_CLIENT_TIMEOUT    = 0
 	DEFAULT_CONSUMER_TAG   = "default_consumer"
 	CONTENT_TYPE_KEY       = "Content-Type"
+	ACCEPT_KEY             = "Accept"
 	REGEX_URL_PATH_ELEMENT = "[\\w-]+"
 )
 
