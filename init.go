@@ -168,7 +168,7 @@ func Start() {
 
 	// Listen and serve
 	LogInfo("Start server at port: %d", Config.Server.Port)
-	err := http.ListenAndServe(fmt.Sprintf(":%d", Config.Server.Port), nil)
+	err := http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", Config.Server.Port), nil)
 	if err != nil {
 		log.Fatalln("ListenAndServe fail: ", err)
 	}
