@@ -3,6 +3,9 @@ package core
 import (
 	"html/template"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
 )
 
 type pageInfo struct {
@@ -114,9 +117,42 @@ func pageHandler(pageInfo pageInfo, w http.ResponseWriter, r *http.Request) {
 }
 
 func parseTemplateFile(pageInfo pageInfo) *template.Template {
-	tmpl, err := template.ParseFiles(pageInfo.pageFiles...)
+	pageFiles := pageInfo.pageFiles
+	newPageFiles := []string{}
+	for _, filePath := range pageFiles {
+		if strings.HasSuffix(filePath, "/*") {
+			filePath := strings.TrimSuffix(filePath, "/*")
+			files, err := listFiles(filePath)
+			if err != nil {
+				panic(err)
+			}
+			newPageFiles = append(newPageFiles, files...)
+		} else {
+			newPageFiles = append(newPageFiles, filePath)
+		}
+	}
+
+	coreContext.LogInfo("Parse template file: %#v", newPageFiles)
+	tmpl, err := template.ParseFiles(newPageFiles...)
 	if err != nil {
 		panic(err)
 	}
 	return tmpl
+}
+
+func listFiles(folderPath string) ([]string, Error) {
+	folder, err := os.ReadDir(folderPath)
+	if err != nil {
+		coreContext.LogError("Error when read dir %s: %v", folderPath, err)
+		return nil, ERROR_SERVER_ERROR
+	}
+
+	filePaths := []string{}
+	for _, file := range folder {
+		if !file.IsDir() {
+			filePaths = append(filePaths, filepath.Join(folderPath, file.Name()))
+		}
+	}
+
+	return filePaths, nil
 }
