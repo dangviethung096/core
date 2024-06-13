@@ -52,7 +52,7 @@ func SaveDataToDBWithoutPrimaryKey[T DataBaseObject](ctx Context, data T) Error 
 	err := row.Scan(pkAddress)
 	if err != nil {
 		ctx.LogError("Get primary key from query fail: %v", err)
-		return ERROR_INSERT_TO_DB_FAIL
+		return NewError(ERROR_CODE_FROM_DATABASE, err.Error())
 	}
 
 	return nil
@@ -73,7 +73,7 @@ func DeleteDataInDB[T DataBaseObject](ctx Context, data T) Error {
 	ctx.LogInfo("Delete query = %v, args = %v", query, args)
 	if _, err := pgSession.ExecContext(ctx, query, args...); err != nil {
 		ctx.LogError("Error delete data = %#v, err = %v", data, err)
-		return ERROR_DB_ERROR
+		return NewError(ERROR_CODE_FROM_DATABASE, err.Error())
 	}
 
 	return nil
@@ -94,7 +94,7 @@ func UpdateDataInDB[T DataBaseObject](ctx Context, data T) Error {
 	ctx.LogInfo("Update query = %v, args = %v", query, args)
 	if _, err := pgSession.ExecContext(ctx, query, args...); err != nil {
 		ctx.LogError("Error update data = %#v, err = %s", data, err.Error())
-		return ERROR_DB_ERROR
+		return NewError(ERROR_CODE_FROM_DATABASE, err.Error())
 	}
 
 	return nil
@@ -126,12 +126,19 @@ func SelectById(ctx Context, data DataBaseObject) Error {
 		if err == sql.ErrNoRows {
 			return ERROR_NOT_FOUND_IN_DB
 		}
-		return ERROR_DB_ERROR
+		return NewError(ERROR_CODE_FROM_DATABASE, err.Error())
 	}
 
 	return nil
 }
 
+/*
+* ListTable
+* @params: ctx Context, data DataBaseObject
+* @return []DataBaseObject, Error
+* @description: select all data from table
+* @note: this function is used for paging
+ */
 func ListPagingTable(ctx Context, data DataBaseObject, limit int64, offset int64) (any, Error) {
 	query, params, err := GetSelectQuery(data)
 	if err != nil {

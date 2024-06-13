@@ -25,6 +25,7 @@ const (
 	ERROR_CODE_CLOSE_BODY_REQUEST_FAIL = 101
 	ERROR_BAD_BODY_REQUEST             = 102
 	ERROR_FROM_LIBRARY                 = 103
+	ERROR_CODE_FROM_DATABASE           = 104
 )
 
 // Scheduler
