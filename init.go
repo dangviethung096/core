@@ -129,6 +129,8 @@ func Init(configFile string) {
 	if Config.Scheduler.Use {
 		startScheduler(interval)
 	}
+
+	callback = make(map[string]CallbackFunc)
 }
 
 /*
@@ -166,12 +168,25 @@ func Start() {
 	// Register all routes
 	handleAPIAndPage()
 
+	blockServerChan := make(chan string)
 	// Listen and serve
-	LogInfo("Start server at port: %d", Config.Server.Port)
-	err := http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", Config.Server.Port), nil)
-	if err != nil {
-		log.Fatalln("ListenAndServe fail: ", err)
+	go func() {
+		LogInfo("Start server at port: %d", Config.Server.Port)
+		blockServerChan <- "Start server"
+		err := http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", Config.Server.Port), nil)
+		if err != nil {
+			log.Fatalln("ListenAndServe fail: ", err)
+		}
+	}()
+
+	<-blockServerChan
+	// Callback function
+	for _, cb := range callback {
+		cb()
 	}
+
+	// Wait for stop server signal
+	<-blockServerChan
 }
 
 /*
