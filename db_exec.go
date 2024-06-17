@@ -133,6 +133,41 @@ func SelectById(ctx Context, data DataBaseObject) Error {
 }
 
 /*
+* ListAllInTable
+* @params: ctx Context, data DataBaseObject
+* @return []DataBaseObject, Error
+* @description: select all data from table
+ */
+func ListAllInTable(ctx Context, data DataBaseObject) (any, Error) {
+	query, params, err := GetSelectQuery(data)
+	if err != nil {
+		ctx.LogError("Error when get update data = %#v, err = %s", data, err.Error())
+		return nil, err
+	}
+
+	ctx.LogInfo("Select query = %v", query)
+	rows, errQuery := pgSession.QueryContext(ctx, query)
+	if errQuery != nil {
+		ctx.LogError("Error select table %s, err = %s", data.GetTableName(), errQuery.Error())
+		return nil, ERROR_DB_ERROR
+	}
+
+	// Get list of struct
+	resultType := reflect.SliceOf(reflect.TypeOf(data).Elem())
+	result := reflect.MakeSlice(resultType, 0, 5)
+	for rows.Next() {
+		if err := rows.Scan(params...); err != nil {
+			ctx.LogError("Error select data = %#v, err = %s", data, err.Error())
+			return nil, ERROR_DB_ERROR
+		}
+
+		result = reflect.Append(result, reflect.ValueOf(data).Elem())
+	}
+
+	return result.Interface(), nil
+}
+
+/*
 * ListTable
 * @params: ctx Context, data DataBaseObject
 * @return []DataBaseObject, Error
