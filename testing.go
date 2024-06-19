@@ -1,47 +1,46 @@
 package core
 
-type TestApiInfo struct {
+import (
+	"fmt"
+	"net/http"
+
+	"github.com/go-playground/validator"
+)
+
+type TestApiInfo[T any] struct {
 	URL      string
 	Method   string
 	Headers  map[string]string
 	Queries  map[string]string
 	Body     any
 	FormData map[string]string
+	Handler  Handler[T]
 }
 
-type TestApiResponseData struct {
-	Code      int    `json:"code"`
-	ErrorData any    `json:"errorData,omitempty"`
-	Message   string `json:"message,omitempty"`
-	Data      any    `json:"data"`
-}
+func TestAPI[T any](apiInfo TestApiInfo[T]) (HttpResponse, HttpError) {
+	// Create a new context
+	ctx := getHttpContext()
+	defer putHttpContext(ctx)
 
-func TestAPI(apiInfo TestApiInfo) (HttpClientResponse, Error) {
-	client := NewClient().
-		SetUrl(apiInfo.URL).
-		SetMethod(apiInfo.Method)
+	ctx.requestID = ID.GenerateID()
+	// Get url
+	ctx.URL = apiInfo.URL
+	ctx.Method = apiInfo.Method
 
-	if apiInfo.Headers != nil {
-		for key, value := range apiInfo.Headers {
-			client.AddHeader(key, value)
+	ctx.urlParams = apiInfo.Queries
+	var req = apiInfo.Body.(T)
+
+	// Validate go struct with tag
+	errValidate := validate.StructCtx(ctx, req)
+	if errValidate != nil {
+		errMessage := "Request invalid: "
+		for _, err := range errValidate.(validator.ValidationErrors) {
+			errMessage = fmt.Sprintf("%s {Field: %s, Tag: %s, Value: %s}", errMessage, err.Field(), err.Tag(), err.Value())
 		}
+
+		return nil, NewHttpError(http.StatusBadRequest, ERROR_BAD_BODY_REQUEST, errMessage, nil)
 	}
 
-	if apiInfo.FormData == nil {
-		client.SetBody(apiInfo.Body)
-	} else {
-		client.AddHeader(CONTENT_TYPE_KEY, FORMDATA_CONTENT_TYPE)
-		for key, value := range apiInfo.FormData {
-			client.AddFormData(key, value)
-		}
-	}
-
-	if apiInfo.Queries != nil {
-		for key, value := range apiInfo.Queries {
-			client.AddQuery(key, value)
-		}
-	}
-
-	responseData := TestApiResponseData{}
-	return client.Request(&responseData)
+	// Call handler
+	return apiInfo.Handler(ctx, req)
 }
