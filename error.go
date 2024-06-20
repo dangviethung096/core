@@ -69,4 +69,6 @@ var (
 	ERROR_REMOVE_OLD_TASK_FAIL                  Error = NewError(27, "Remove old task failed!")
 	ERROR_TASK_IS_EXPIRED                       Error = NewError(28, "Task is expired!")
 	ERROR_DB_ERROR                              Error = NewError(29, "Database error")
+	ERROR_CANNOT_CREATE_FILE                    Error = NewError(30, "Cannot create file")
+	ERROR_CANNOT_COPY_FILE                      Error = NewError(31, "Cannot copy file")
 )

@@ -7,12 +7,16 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"time"
+
+	"github.com/dangviethung096/hpw_crm/constant"
 )
 
 type bodyType string
 
 const (
+	BodyType_NONE bodyType = "none"
 	BodyType_JSON bodyType = "json"
 	BodyType_XML  bodyType = "xml"
 )
@@ -62,6 +66,8 @@ type HttpClientBuilder interface {
 	 * @return HttpClientResponse, Error
 	 */
 	Request(response any) (HttpClientResponse, Error)
+
+	GetFile(path string) (string, Error)
 }
 
 func NewClient() HttpClientBuilder {
@@ -424,4 +430,99 @@ func (builder *httpClientBuilder) request(req *http.Request, response any) (Http
 	resVal.responseBody = response
 	// Convert the body
 	return resVal, nil
+}
+
+func (builder *httpClientBuilder) GetFile(path string) (string, Error) {
+	// Reset builder after request
+	defer builder.resetBuilder()
+	// Run request timeY
+	start := time.Now()
+	defer func() {
+		end := time.Now()
+		diff := end.UnixNano() - start.UnixNano()
+
+		builder.ctx.LogInfo("Request time: %fs", time.Duration(diff).Seconds())
+	}()
+
+	var body []byte
+	if builder.body != nil && builder.bodyType == BodyType_JSON {
+		var err error
+		body, err = json.Marshal(builder.body)
+		if err != nil {
+			builder.ctx.LogError("Cannot marshal body: body = %v, err = %v", builder.body, err)
+		}
+		builder.ctx.LogInfo("HttpRequest: url = %s, body: %s", builder.url, string(body))
+	}
+
+	if builder.formData != nil {
+		data := url.Values{}
+		for key, values := range builder.formData {
+			for _, value := range values {
+				if data.Get(key) == BLANK {
+					data.Set(key, value)
+				} else {
+					data.Add(key, value)
+				}
+			}
+		}
+		body = []byte(data.Encode())
+	}
+
+	// Init a request
+	req, err := http.NewRequest(builder.method, builder.url, bytes.NewBuffer(body))
+	if err != nil {
+		builder.ctx.LogError("Cannot create new http request: url = %s, method = %s, err = %v", builder.url, builder.method, err)
+		return constant.BLANK, ERROR_CANNOT_CREATE_HTTP_REQUEST
+	}
+
+	// Set headers
+	for key, values := range builder.headers {
+		for _, value := range values {
+			if req.Header.Get(key) == BLANK {
+				req.Header.Set(key, value)
+			} else {
+				req.Header.Add(key, value)
+			}
+		}
+	}
+	builder.ctx.LogInfo("HttpRequest: url = %s, headers: %#v", builder.url, builder.headers)
+
+	//Set Form Data
+	if builder.formData != nil {
+		req.Header.Add(CONTENT_TYPE_KEY, FORMDATA_CONTENT_TYPE)
+	}
+
+	// Set query
+	if len(builder.queries) > 0 {
+		queries := req.URL.Query()
+		for key, values := range builder.queries {
+			for _, value := range values {
+				queries.Add(key, value)
+			}
+
+		}
+		req.URL.RawQuery = queries.Encode()
+	}
+
+	resp, err := builder.Do(req)
+	if err != nil {
+		builder.ctx.LogError("Cannot send http request: url = %s, method = %s, err = %s", builder.url, builder.method, err.Error())
+		return constant.BLANK, ERROR_SEND_HTTP_REQUEST_FAIL
+	}
+
+	defer resp.Body.Close()
+
+	out, err := os.Create(path)
+	if err != nil {
+		builder.ctx.LogError("Cannot create file: url = %s, err = %s", path, err.Error())
+		return constant.BLANK, ERROR_CANNOT_CREATE_FILE
+	}
+
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		builder.ctx.LogError("Cannot copy file: url = %s, err = %s", path, err.Error())
+		return constant.BLANK, ERROR_CANNOT_COPY_FILE
+	}
+
+	return path, nil
 }
