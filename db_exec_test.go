@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -143,4 +144,20 @@ func TestSelectListByFieldsWithCustomOperator_ReturnSuccess(t *testing.T) {
 	}
 
 	t.Logf("Values: %#v\n", values)
+}
+
+func TestSelectListWithWhereQuery_ReturnSuccess(t *testing.T) {
+	ctx := GetContextForTest()
+	var account Account
+	insertAccount(ctx)
+	defer deleteAccount(ctx)
+
+	whereQuery := fmt.Sprintf("age > %d", 18)
+	result, err := SelectListWithWhereQuery(ctx, &account, whereQuery)
+	if err != nil {
+		t.Errorf("TestSelectListWithWhereQuery_ReturnSuccess: get error: %s\n", err.Error())
+		return
+	}
+
+	t.Logf("Result: %#v\n", result)
 }

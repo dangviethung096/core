@@ -360,6 +360,43 @@ func SelectListByFieldsWithCustomOperator(ctx Context, data DataBaseObject, wher
 }
 
 /*
+* SelectListWithWhereQuery
+* @params: ctx Context, data DataBaseObject, whereQuery string
+* @return []DataBaseObject, Error
+* @description: select list of data by where query
+ */
+func SelectListWithWhereQuery(ctx Context, data DataBaseObject, whereQuery string) (any, Error) {
+	query, params, err := GetSelectQuery(data)
+	if err != nil {
+		ctx.LogError("Error when get update data = %#v, err = %s", data, err.Error())
+		return nil, err
+	}
+
+	query += " WHERE " + whereQuery
+
+	ctx.LogInfo("Select query = %s", query)
+	rows, errQuery := pgSession.QueryContext(ctx, query)
+	if errQuery != nil {
+		ctx.LogError("Error select query: %s | err = %s", query, errQuery.Error())
+		return nil, ERROR_DB_ERROR
+	}
+
+	// Get list of struct
+	resultType := reflect.SliceOf(reflect.TypeOf(data).Elem())
+	result := reflect.MakeSlice(resultType, 0, 5)
+	for rows.Next() {
+		if err := rows.Scan(params...); err != nil {
+			ctx.LogError("Error select data = %#v, err = %s", data, err.Error())
+			return nil, ERROR_DB_ERROR
+		}
+
+		result = reflect.Append(result, reflect.ValueOf(data).Elem())
+	}
+
+	return result.Interface(), nil
+}
+
+/*
 * SelectListByFields
 * @params: ctx Context, data DataBaseObject, mapArgs map[string]interface{}
 * @return []DataBaseObject, Error
