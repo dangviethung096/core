@@ -71,4 +71,5 @@ var (
 	ERROR_DB_ERROR                              Error = NewError(29, "Database error")
 	ERROR_CANNOT_CREATE_FILE                    Error = NewError(30, "Cannot create file")
 	ERROR_CANNOT_COPY_FILE                      Error = NewError(31, "Cannot copy file")
+	ERROR_NO_SUPPORT_FOR_MANY_PRIMARY_KEYS      Error = NewError(33, "No support for many primary keys")
 )

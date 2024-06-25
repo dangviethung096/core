@@ -13,6 +13,37 @@ type DBWhere struct {
 }
 
 /*
+* searchPrimaryKey: search primary key in model
+* @params: data DataBaseObject
+* @return: reflect.Value, bool
+ */
+func searchPrimaryKey(data DataBaseObject) ([]any, bool) {
+	t, _ := getTypeOfPointer(data)
+	found := false
+	var idValues []any
+	primaryKeys, numPrimaryKeys := splitPrimaryKey(data)
+	if numPrimaryKeys == 0 {
+		return nil, false
+	}
+
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		tag := field.Tag.Get("db")
+		for _, key := range primaryKeys {
+			if tag == key {
+				idValues = append(idValues, reflect.ValueOf(data).Elem().FieldByIndex(field.Index).Interface())
+				break
+			}
+		}
+	}
+
+	if len(idValues) == numPrimaryKeys {
+		found = true
+	}
+	return idValues, found
+}
+
+/*
 * Save data to database
 * @param data interface{} Data to save
 * @return Error
@@ -108,19 +139,33 @@ func UpdateDataInDB[T DataBaseObject](ctx Context, data T) Error {
 func SelectById(ctx Context, data DataBaseObject) Error {
 	query, params, err := GetSelectQuery(data)
 	if err != nil {
-		ctx.LogError("Error when get update data = %#v, err = %s", data, err.Error())
+		ctx.LogError("Error when get data = %#v, err = %s", data, err.Error())
 		return err
 	}
 
-	query += fmt.Sprintf(" WHERE %s = $1", data.GetPrimaryKey())
-	pk, found := searchPrimaryKey(data)
+	primaryKeys, numPrimaryKeys := splitPrimaryKey(data)
+	if numPrimaryKeys == 0 {
+		ctx.LogError("Error not found primary key = %#v", data)
+		return ERROR_NOT_FOUND_PRIMARY_KEY
+	}
+
+	for i, key := range primaryKeys {
+		if i == 0 {
+			query += fmt.Sprintf(" WHERE %s = $%d", key, i+1)
+		} else {
+			query += fmt.Sprintf(" AND %s = $%d", key, i+1)
+		}
+	}
+
+	args, found := searchPrimaryKey(data)
 	if !found {
 		ctx.LogError("Error not found primary key = %#v", data)
 		return ERROR_DB_ERROR
 	}
 
-	ctx.LogInfo("Select query = %v, args = %v", query, pk.Interface())
-	row := pgSession.QueryRowContext(ctx, query, pk.Interface())
+	ctx.LogInfo("Select query = %v, args = %v", query, args)
+
+	row := pgSession.QueryRowContext(ctx, query, args...)
 	if err := row.Scan(params...); err != nil {
 		ctx.LogError("Error select data = %#v, err = %v", data, err.Error())
 		if err == sql.ErrNoRows {
@@ -513,26 +558,4 @@ func SelectPagingListByFields(ctx Context, data DataBaseObject, mapArgs map[stri
 	}
 
 	return result.Interface(), nil
-}
-
-/*
-* searchPrimaryKey: search primary key in model
-* @params: data DataBaseObject
-* @return: reflect.Value, bool
- */
-func searchPrimaryKey(data DataBaseObject) (reflect.Value, bool) {
-	t, _ := getTypeOfPointer(data)
-	found := false
-	var idValue reflect.Value
-
-	for i := 0; i < t.NumField(); i++ {
-		field := t.Field(i)
-		tag := field.Tag.Get("db")
-		if tag == data.GetPrimaryKey() {
-			found = true
-			idValue = reflect.ValueOf(data).Elem().FieldByIndex(field.Index)
-			break
-		}
-	}
-	return idValue, found
 }

@@ -3,11 +3,22 @@ package core
 import (
 	"fmt"
 	"reflect"
+	"strings"
 )
 
 type DataBaseObject interface {
 	GetTableName() string
 	GetPrimaryKey() string
+}
+
+func splitPrimaryKey(model DataBaseObject) ([]string, int) {
+	if model.GetPrimaryKey() == BLANK {
+		return []string{}, 0
+	}
+
+	primaryKeys := model.GetPrimaryKey()
+	primaryKeyFields := strings.Split(primaryKeys, ",")
+	return primaryKeyFields, len(primaryKeyFields)
 }
 
 /*
@@ -128,7 +139,13 @@ func GetInsertQueryWithoutPrimaryKey[T DataBaseObject](model T) (string, []any, 
 
 	tableName := model.GetTableName()
 	// Primary key
-	primaryKey := model.GetPrimaryKey()
+	primaryKeys, numPrimaryKeys := splitPrimaryKey(model)
+	if numPrimaryKeys > 1 {
+		return BLANK, nil, nil, ERROR_NO_SUPPORT_FOR_MANY_PRIMARY_KEYS
+	} else if numPrimaryKeys == 0 {
+		return BLANK, nil, nil, ERROR_NOT_FOUND_PRIMARY_KEY
+	}
+
 	var primaryKeyAddress interface{}
 	foundPrimaryKey := false
 
@@ -144,7 +161,7 @@ func GetInsertQueryWithoutPrimaryKey[T DataBaseObject](model T) (string, []any, 
 			continue
 		}
 
-		if tag == primaryKey {
+		if tag == primaryKeys[0] {
 			primaryKeyAddress = v.Field(i).Addr().Interface()
 			foundPrimaryKey = true
 			continue
@@ -175,7 +192,7 @@ func GetInsertQueryWithoutPrimaryKey[T DataBaseObject](model T) (string, []any, 
 		questionString = questionString[:len(questionString)-1]
 	}
 
-	query := fmt.Sprintf("INSERT INTO %s(%s) VALUES(%s) RETURNING %s", tableName, fields, questionString, primaryKey)
+	query := fmt.Sprintf("INSERT INTO %s(%s) VALUES(%s) RETURNING %s", tableName, fields, questionString, primaryKeys[0])
 
 	return query, args, primaryKeyAddress, nil
 }
@@ -193,8 +210,11 @@ func GetUpdateQuery[T DataBaseObject](model T) (string, []any, Error) {
 	v := reflect.ValueOf(model).Elem()
 
 	tableName := model.GetTableName()
-	primaryKey := model.GetPrimaryKey()
-	var primaryValue interface{}
+	primaryKeys, numPrimaryKeys := splitPrimaryKey(model)
+	if numPrimaryKeys == 0 {
+		return BLANK, nil, ERROR_NOT_FOUND_PRIMARY_KEY
+	}
+	primaryValues := []interface{}{}
 
 	var setString string
 	var args []interface{}
@@ -207,8 +227,15 @@ func GetUpdateQuery[T DataBaseObject](model T) (string, []any, Error) {
 			continue
 		}
 
-		if tag == primaryKey {
-			primaryValue = v.Field(i).Interface()
+		isPrimaryKey := false
+		for _, key := range primaryKeys {
+			if tag == key {
+				isPrimaryKey = true
+				primaryValues = append(primaryValues, v.Field(i).Interface())
+			}
+		}
+
+		if isPrimaryKey {
 			continue
 		}
 
@@ -223,19 +250,28 @@ func GetUpdateQuery[T DataBaseObject](model T) (string, []any, Error) {
 		args = append(args, value)
 	}
 
+	// Check argument and primary key
 	if len(args) == 0 {
 		return BLANK, nil, ERROR_MODEL_HAVE_NO_FIELD
 	}
-	if primaryValue == nil {
+	if len(primaryValues) == 0 || len(primaryKeys) != len(primaryValues) {
 		return BLANK, nil, ERROR_NOT_FOUND_PRIMARY_KEY
 	}
 
-	if setString[len(setString)-1:] == "," {
-		setString = setString[:len(setString)-1]
+	if setString[len(setString)-2:] == ", " {
+		setString = setString[:len(setString)-2]
 	}
 
-	query := fmt.Sprintf("UPDATE %s SET %s WHERE %s = $%d", tableName, setString, primaryKey, count)
-	args = append(args, primaryValue)
+	query := fmt.Sprintf("UPDATE %s SET %s", tableName, setString)
+	for i, key := range primaryKeys {
+		if i == 0 {
+			query += fmt.Sprintf(" WHERE %s = $%d", key, count)
+		} else {
+			query += fmt.Sprintf(" AND %s = $%d", key, count+i)
+		}
+	}
+
+	args = append(args, primaryValues...)
 
 	return query, args, nil
 }
@@ -253,13 +289,24 @@ func GetDeleteQuery[T DataBaseObject](model T) (string, []any, Error) {
 	}
 
 	tableName := model.GetTableName()
-	pkValue, found := searchPrimaryKey(model)
+	pkValues, found := searchPrimaryKey(model)
 	if !found {
 		return BLANK, nil, ERROR_NOT_FOUND_PRIMARY_KEY
 	}
 
-	query := fmt.Sprintf("DELETE FROM %s WHERE %s = $1", tableName, model.GetPrimaryKey())
-	args := []any{pkValue.Interface()}
+	primaryKeys, number := splitPrimaryKey(model)
+	if number != len(pkValues) {
+		return BLANK, nil, ERROR_NOT_FOUND_PRIMARY_KEY
+	}
 
-	return query, args, nil
+	query := fmt.Sprintf("DELETE FROM %s", tableName)
+	for i, key := range primaryKeys {
+		if i == 0 {
+			query += fmt.Sprintf(" WHERE %s = $%d", key, i+1)
+		} else {
+			query += fmt.Sprintf(" AND %s = $%d", key, i+1)
+		}
+	}
+
+	return query, pkValues, nil
 }
