@@ -597,3 +597,23 @@ func SelectListWithAppendingQuery(ctx Context, data DataBaseObject, appendingQue
 
 	return result.Interface(), nil
 }
+
+/*
+* CountRecordInTable
+* @params: ctx Context, data DataBaseObject
+* @return int64, Error
+* @description: count record in table
+ */
+func CountRecordInTable(ctx Context, data DataBaseObject) (int64, Error) {
+	query := fmt.Sprintf("SELECT COUNT(*) FROM %s", data.GetTableName())
+
+	row := pgSession.QueryRowContext(ctx, query)
+
+	var count int64
+	err := row.Scan(&count)
+	if err != nil {
+		ctx.LogError("Error count record in table %s, err = %s", data.GetTableName(), err.Error())
+		return 0, NewError(ERROR_CODE_FROM_DATABASE, err.Error())
+	}
+	return count, nil
+}
