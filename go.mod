@@ -2,14 +2,6 @@ module github.com/dangviethung096/core
 
 go 1.21.5
 
-retract v0.0.1
-
-retract v0.0.2
-
-retract v0.0.3
-
-retract v0.0.4
-
 require (
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/go-redis/redis/v8 v8.11.5

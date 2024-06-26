@@ -9,8 +9,6 @@ import (
 	"net/url"
 	"os"
 	"time"
-
-	"github.com/dangviethung096/hpw_crm/constant"
 )
 
 type bodyType string
@@ -472,7 +470,7 @@ func (builder *httpClientBuilder) GetFile(path string) (string, Error) {
 	req, err := http.NewRequest(builder.method, builder.url, bytes.NewBuffer(body))
 	if err != nil {
 		builder.ctx.LogError("Cannot create new http request: url = %s, method = %s, err = %v", builder.url, builder.method, err)
-		return constant.BLANK, ERROR_CANNOT_CREATE_HTTP_REQUEST
+		return BLANK, ERROR_CANNOT_CREATE_HTTP_REQUEST
 	}
 
 	// Set headers
@@ -507,7 +505,7 @@ func (builder *httpClientBuilder) GetFile(path string) (string, Error) {
 	resp, err := builder.Do(req)
 	if err != nil {
 		builder.ctx.LogError("Cannot send http request: url = %s, method = %s, err = %s", builder.url, builder.method, err.Error())
-		return constant.BLANK, ERROR_SEND_HTTP_REQUEST_FAIL
+		return BLANK, ERROR_SEND_HTTP_REQUEST_FAIL
 	}
 
 	defer resp.Body.Close()
@@ -515,13 +513,13 @@ func (builder *httpClientBuilder) GetFile(path string) (string, Error) {
 	out, err := os.Create(path)
 	if err != nil {
 		builder.ctx.LogError("Cannot create file: url = %s, err = %s", path, err.Error())
-		return constant.BLANK, ERROR_CANNOT_CREATE_FILE
+		return BLANK, ERROR_CANNOT_CREATE_FILE
 	}
 
 	_, err = io.Copy(out, resp.Body)
 	if err != nil {
 		builder.ctx.LogError("Cannot copy file: url = %s, err = %s", path, err.Error())
-		return constant.BLANK, ERROR_CANNOT_COPY_FILE
+		return BLANK, ERROR_CANNOT_COPY_FILE
 	}
 
 	return path, nil
