@@ -88,6 +88,8 @@ func pageHandler(pageInfo pageInfo, w http.ResponseWriter, r *http.Request) {
 	response, err := pageInfo.handler(ctx, &request)
 	if err != nil {
 		ctx.LogError("Error when execute handler of request %s: %s", pageInfo.url, err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	if ctx.isResponseEnd {
@@ -113,6 +115,7 @@ func pageHandler(pageInfo pageInfo, w http.ResponseWriter, r *http.Request) {
 	if originError := tmpl.Execute(w, pageInfo.data); originError != nil {
 		ctx.LogError("Error when execute template: %s", originError)
 		http.Error(w, originError.Error(), http.StatusInternalServerError)
+		return
 	}
 }
 
