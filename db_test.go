@@ -9,7 +9,6 @@ func TestOpenDBWithSuccessResponse(t *testing.T) {
 		dbInfo  DBInfo
 		wantErr bool
 	}{
-		name: "Valid DBInfo",
 		dbInfo: DBInfo{
 			Host:     "localhost",
 			Port:     5432,
@@ -17,7 +16,6 @@ func TestOpenDBWithSuccessResponse(t *testing.T) {
 			Password: "admin@123",
 			Database: "example",
 		},
-		wantErr: false,
 	}
 
 	// Call the function being tested
