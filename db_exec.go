@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"reflect"
+
+	"github.com/lib/pq"
 )
 
 type DBWhere struct {
@@ -57,8 +59,18 @@ func SaveDataToDB[T DataBaseObject](ctx Context, data T) Error {
 
 	ctx.LogInfo("Insert query = %v, args = %v", query, args)
 	if _, err := pgSession.ExecContext(ctx, query, args...); err != nil {
-		ctx.LogError("Error insert data = %#v, err = %v", data, err)
-		return ERROR_INSERT_TO_DB_FAIL
+		pqError, ok := err.(*pq.Error)
+		if ok {
+			ctx.LogError("Error insert data = %#v, err = %v", data, pqError)
+			if pqError.Code.Name() == "unique_violation" {
+				return ERROR_DB_UNIQUE_VIOLATION
+			} else if pqError.Code.Name() == "foreign_key_violation" {
+				return ERROR_DB_FOREIGN_KEY_VIOLATION
+			}
+		} else {
+			ctx.LogError("Error insert data = %#v, err = %v", data, err)
+			return ERROR_INSERT_TO_DB_FAIL
+		}
 	}
 
 	return nil
@@ -82,8 +94,18 @@ func SaveDataToDBWithoutPrimaryKey[T DataBaseObject](ctx Context, data T) Error 
 
 	err := row.Scan(pkAddress)
 	if err != nil {
-		ctx.LogError("Get primary key from query fail: %v", err)
-		return NewError(ERROR_CODE_FROM_DATABASE, err.Error())
+		pqError, ok := err.(*pq.Error)
+		if ok {
+			ctx.LogError("Error insert data = %#v, err = %v", data, pqError)
+			if pqError.Code.Name() == "unique_violation" {
+				return ERROR_DB_UNIQUE_VIOLATION
+			} else if pqError.Code.Name() == "foreign_key_violation" {
+				return ERROR_DB_FOREIGN_KEY_VIOLATION
+			}
+		} else {
+			ctx.LogError("Error insert data = %#v, err = %v", data, err)
+			return ERROR_INSERT_TO_DB_FAIL
+		}
 	}
 
 	return nil

@@ -72,4 +72,6 @@ var (
 	ERROR_CANNOT_CREATE_FILE                    Error = NewError(30, "Cannot create file")
 	ERROR_CANNOT_COPY_FILE                      Error = NewError(31, "Cannot copy file")
 	ERROR_NO_SUPPORT_FOR_MANY_PRIMARY_KEYS      Error = NewError(33, "No support for many primary keys")
+	ERROR_DB_UNIQUE_VIOLATION                   Error = NewError(34, "Unique violation")
+	ERROR_DB_FOREIGN_KEY_VIOLATION              Error = NewError(35, "Foreign key violation")
 )
