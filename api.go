@@ -198,7 +198,7 @@ func buildContext(ctx *HttpContext, writer http.ResponseWriter, request *http.Re
 
 	ctx.requestID = ID.GenerateID()
 	// Get url
-	ctx.URL = request.URL.Path
+	ctx.URL = request.URL
 	ctx.Method = request.Method
 
 	// Get request body

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -15,7 +16,7 @@ import (
  */
 type HttpContext struct {
 	context.Context
-	URL            string
+	URL            *url.URL
 	Method         string
 	requestBody    []byte
 	isRequestEnd   bool

@@ -3,6 +3,7 @@ package core
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/go-playground/validator"
 )
@@ -24,7 +25,8 @@ func TestAPI[T any](apiInfo TestApiInfo[T]) (HttpResponse, HttpError) {
 
 	ctx.requestID = ID.GenerateID()
 	// Get url
-	ctx.URL = apiInfo.URL
+	ctx.URL, _ = url.Parse(apiInfo.URL)
+
 	ctx.Method = apiInfo.Method
 
 	ctx.urlParams = apiInfo.Queries
@@ -48,7 +50,8 @@ func TestAPI[T any](apiInfo TestApiInfo[T]) (HttpResponse, HttpError) {
 func TestAPIWithContext[T any](ctx *HttpContext, apiInfo TestApiInfo[T]) (HttpResponse, HttpError) {
 	ctx.requestID = ID.GenerateID()
 	// Get url
-	ctx.URL = apiInfo.URL
+	ctx.URL, _ = url.Parse(apiInfo.URL)
+
 	ctx.Method = apiInfo.Method
 
 	ctx.urlParams = apiInfo.Queries
