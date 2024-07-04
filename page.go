@@ -67,6 +67,7 @@ func pageHandler(pageInfo pageInfo, w http.ResponseWriter, r *http.Request) {
 
 	ctx.request = r
 	ctx.rw = w
+	ctx.URL = r.URL.Path
 	// Implement common page middleware
 	// Check if middleware is not nil
 	request := PageRequest{}
