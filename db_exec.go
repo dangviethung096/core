@@ -639,3 +639,23 @@ func CountRecordInTable(ctx Context, data DataBaseObject) (int64, Error) {
 	}
 	return count, nil
 }
+
+/*
+* CountRecordInTableWithWhere
+* @params: ctx Context, data DataBaseObject, whereQuery string
+* @return int64, Error
+* @description: count record in table with where query
+ */
+func CountRecordInTableWithWhere(ctx Context, data DataBaseObject, whereQuery string) (int64, Error) {
+	query := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s", data.GetTableName(), whereQuery)
+	ctx.LogInfo("Count record in table with where query: %s", query)
+	row := pgSession.QueryRowContext(ctx, query)
+
+	var count int64
+	err := row.Scan(&count)
+	if err != nil {
+		ctx.LogError("Error count record in table %s, err = %s", data.GetTableName(), err.Error())
+		return 0, NewError(ERROR_CODE_FROM_DATABASE, err.Error())
+	}
+	return count, nil
+}
