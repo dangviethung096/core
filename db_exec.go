@@ -102,6 +102,7 @@ func SaveDataToDBWithoutPrimaryKey[T DataBaseObject](ctx Context, data T) Error 
 			} else if pqError.Code.Name() == "foreign_key_violation" {
 				return ERROR_DB_FOREIGN_KEY_VIOLATION
 			}
+			return ERROR_INSERT_TO_DB_FAIL
 		} else {
 			ctx.LogError("Error insert data = %#v, err = %v", data, err)
 			return ERROR_INSERT_TO_DB_FAIL
