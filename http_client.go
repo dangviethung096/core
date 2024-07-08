@@ -14,9 +14,10 @@ import (
 type bodyType string
 
 const (
-	BodyType_NONE bodyType = "none"
-	BodyType_JSON bodyType = "json"
-	BodyType_XML  bodyType = "xml"
+	BodyType_NONE       bodyType = "none"
+	BodyType_JSON       bodyType = "json"
+	BodyType_XML        bodyType = "xml"
+	BodyType_URLEncoded bodyType = "x-www-form-urlencoded"
 )
 
 type HttpClientCallback func(ctx Context, response HttpClientResponse)
@@ -57,6 +58,7 @@ type HttpClientBuilder interface {
 	GetContext() Context
 	GetUrl() string
 	GetMethod() string
+	SetBodyType(bodyType bodyType) HttpClientBuilder
 
 	/*
 	 * Make a http request and call to server
@@ -154,6 +156,7 @@ func (builder *httpClientBuilder) AddHeader(key string, value string) HttpClient
 }
 
 func (builder *httpClientBuilder) AddFormData(key string, value string) HttpClientBuilder {
+	builder.bodyType = BodyType_URLEncoded
 	if builder.formData == nil {
 		builder.formData = make(map[string][]string)
 	}
@@ -192,6 +195,7 @@ func (builder *httpClientBuilder) SetHeaders(headers map[string][]string) HttpCl
 }
 
 func (builder *httpClientBuilder) SetFormData(formData map[string][]string) HttpClientBuilder {
+	builder.bodyType = BodyType_URLEncoded
 	// If header is nil, assign map of params to header and return
 	if builder.formData == nil {
 		builder.formData = formData
@@ -354,6 +358,11 @@ func (builder *httpClientBuilder) SetProxy(stringProxyUrl string) HttpClientBuil
 	} else if err != nil {
 		builder.ctx.LogError("Set proxy: %s", err.Error())
 	}
+	return builder
+}
+
+func (builder *httpClientBuilder) SetBodyType(bodyType bodyType) HttpClientBuilder {
+	builder.bodyType = bodyType
 	return builder
 }
 

@@ -366,3 +366,28 @@ func (ctx *HttpContext) SetTempData(key string, value any) {
 func (ctx *HttpContext) GetTempData(key string) any {
 	return ctx.tempData[key]
 }
+
+/*
+* EndResponse: End response
+* @params: statusCode int, header *http.Header, body []byte
+* @return: void
+ */
+func (ctx *HttpContext) EndResponse(statusCode int, header *http.Header, body []byte) {
+	if !ctx.isResponseEnd {
+		ctx.isResponseEnd = true
+
+		if header != nil {
+			for key, values := range *header {
+				for _, value := range values {
+					ctx.rw.Header().Set(key, value)
+				}
+			}
+		}
+
+		ctx.rw.WriteHeader(statusCode)
+		if body != nil {
+			fmt.Fprint(ctx.rw, body)
+		}
+		ctx.rw.(http.Flusher).Flush()
+	}
+}
