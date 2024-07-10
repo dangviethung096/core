@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http/httptest"
 	"runtime"
 	"strings"
 	"time"
@@ -150,6 +151,8 @@ func GetHttpContextForTest() *HttpContext {
 	ctx := httpContextPool.Get().(*HttpContext)
 	ctx.Context, ctx.cancelFunc = context.WithTimeout(coreContext, contextTimeout)
 	ctx.requestID = ID.GenerateID()
+	// Init new request
+	ctx.rw = httptest.NewRecorder()
 	return ctx
 }
 
