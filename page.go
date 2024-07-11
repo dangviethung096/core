@@ -9,12 +9,14 @@ import (
 )
 
 type pageInfo struct {
-	middleware []PageMiddleware
-	url        string
-	handler    PageHandler
-	pageFiles  []string
-	data       any
-	cache      bool
+	middleware   []PageMiddleware
+	url          string
+	handler      PageHandler
+	pageFiles    []string
+	data         any
+	cache        bool
+	templateName string
+	functionMap  map[string]any
 }
 
 type PageRequest struct {
@@ -24,9 +26,11 @@ type PageRequest struct {
 }
 
 type PageResponse struct {
-	PageFiles []string
-	Data      any
-	Cache     bool
+	PageFiles    []string
+	Data         any
+	Cache        bool
+	TemplateName string
+	FunctionMap  map[string]any
 }
 
 type PageHandler func(ctx *HttpContext, request *PageRequest) (PageResponse, Error)
@@ -100,6 +104,8 @@ func pageHandler(pageInfo pageInfo, w http.ResponseWriter, r *http.Request) {
 	pageInfo.pageFiles = response.PageFiles
 	pageInfo.data = response.Data
 	pageInfo.cache = response.Cache
+	pageInfo.templateName = response.TemplateName
+	pageInfo.functionMap = response.FunctionMap
 
 	// Render page
 	var tmpl *template.Template
@@ -136,8 +142,15 @@ func parseTemplateFile(pageInfo pageInfo) *template.Template {
 		}
 	}
 
-	coreContext.LogInfo("Parse template file: %#v", newPageFiles)
-	tmpl, err := template.ParseFiles(newPageFiles...)
+	LogInfo("Parse template file: %#v", newPageFiles)
+
+	tmpl := template.New(pageInfo.templateName)
+	tmpl.Funcs(basicFunctionMap)
+	if pageInfo.functionMap != nil {
+		tmpl = tmpl.Funcs(pageInfo.functionMap)
+	}
+
+	tmpl, err := tmpl.ParseFiles(newPageFiles...)
 	if err != nil {
 		panic(err)
 	}
