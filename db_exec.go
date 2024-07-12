@@ -59,18 +59,16 @@ func SaveDataToDB[T DataBaseObject](ctx Context, data T) Error {
 
 	ctx.LogInfo("Insert query = %v, args = %v", query, args)
 	if _, err := pgSession.ExecContext(ctx, query, args...); err != nil {
+		ctx.LogError("Error insert data = %#v, err = %v", data, err)
 		pqError, ok := err.(*pq.Error)
 		if ok {
-			ctx.LogError("Error insert data = %#v, err = %v", data, pqError)
-			if pqError.Code.Name() == "unique_violation" {
+			if pqError.Code.Name() == DB_ERROR_NAME_UNIQUE_VIOLATION {
 				return ERROR_DB_UNIQUE_VIOLATION
-			} else if pqError.Code.Name() == "foreign_key_violation" {
+			} else if pqError.Code.Name() == DB_ERROR_NAME_FOREIGN_KEY_VIOLATION {
 				return ERROR_DB_FOREIGN_KEY_VIOLATION
 			}
-		} else {
-			ctx.LogError("Error insert data = %#v, err = %v", data, err)
-			return ERROR_INSERT_TO_DB_FAIL
 		}
+		return ERROR_INSERT_TO_DB_FAIL
 	}
 
 	return nil
@@ -94,19 +92,16 @@ func SaveDataToDBWithoutPrimaryKey[T DataBaseObject](ctx Context, data T) Error 
 
 	err := row.Scan(pkAddress)
 	if err != nil {
+		ctx.LogError("Error insert data = %#v, err = %v", data, err)
 		pqError, ok := err.(*pq.Error)
 		if ok {
-			ctx.LogError("Error insert data = %#v, err = %v", data, pqError)
 			if pqError.Code.Name() == "unique_violation" {
 				return ERROR_DB_UNIQUE_VIOLATION
 			} else if pqError.Code.Name() == "foreign_key_violation" {
 				return ERROR_DB_FOREIGN_KEY_VIOLATION
 			}
-			return ERROR_INSERT_TO_DB_FAIL
-		} else {
-			ctx.LogError("Error insert data = %#v, err = %v", data, err)
-			return ERROR_INSERT_TO_DB_FAIL
 		}
+		return ERROR_INSERT_TO_DB_FAIL
 	}
 
 	return nil
@@ -127,6 +122,12 @@ func DeleteDataInDB[T DataBaseObject](ctx Context, data T) Error {
 	ctx.LogInfo("Delete query = %v, args = %v", query, args)
 	if _, err := pgSession.ExecContext(ctx, query, args...); err != nil {
 		ctx.LogError("Error delete data = %#v, err = %v", data, err)
+		pqError, ok := err.(*pq.Error)
+		if ok {
+			if pqError.Code.Name() == DB_ERROR_NAME_FOREIGN_KEY_VIOLATION {
+				return ERROR_DB_FOREIGN_KEY_VIOLATION
+			}
+		}
 		return NewError(ERROR_CODE_FROM_DATABASE, err.Error())
 	}
 
