@@ -218,7 +218,7 @@ func (ctx *HttpContext) writeSuccess(httpRes HttpResponse) {
 
 		resBody := responseBody{
 			Code:    httpRes.GetReponseCode(),
-			Message: BLANK,
+			Message: httpRes.GetMessage(),
 			Data:    httpRes.GetBody(),
 		}
 

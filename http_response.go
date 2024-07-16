@@ -8,6 +8,7 @@ type HttpResponse interface {
 	GetReponseCode() int
 	SetResponseContentType(ContentType)
 	GetResponseContentType() ContentType
+	GetMessage() string
 }
 
 type ContentType string
@@ -24,6 +25,7 @@ type httpResponse struct {
 	body         any
 	responseCode int
 	contentType  ContentType
+	message      string
 }
 
 func (resp *httpResponse) GetStatusCode() int {
@@ -46,6 +48,10 @@ func (resp *httpResponse) GetResponseContentType() ContentType {
 	return resp.contentType
 }
 
+func (resp *httpResponse) GetMessage() string {
+	return resp.message
+}
+
 func NewDefaultHttpResponse(body any) HttpResponse {
 	return &httpResponse{
 		statusCode:   http.StatusOK,
@@ -59,6 +65,16 @@ func NewHttpResponse(responseCode int, body any) HttpResponse {
 	return &httpResponse{
 		responseCode: responseCode,
 		body:         body,
+		statusCode:   http.StatusOK,
+		contentType:  JSON_CONTENT_TYPE,
+	}
+}
+
+func NewHttpResponseWithMessage(code int, message string, body any) HttpResponse {
+	return &httpResponse{
+		responseCode: code,
+		body:         body,
+		message:      message,
 		statusCode:   http.StatusOK,
 		contentType:  JSON_CONTENT_TYPE,
 	}
