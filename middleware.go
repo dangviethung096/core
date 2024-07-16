@@ -16,7 +16,7 @@ func corsMiddleware(ctx *HttpContext) HttpError {
 	return nil
 }
 
-func UserCorsMiddleware() {
+func UseCorsMiddleware() {
 	UseMiddleware(corsMiddleware)
 }
 

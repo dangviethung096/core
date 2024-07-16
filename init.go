@@ -16,6 +16,7 @@ import (
 var pgSession dbSession
 var routeMap map[string][]Route
 var routeRegexMap map[string][]Route
+var uploadFileHandlerMap map[string]UploadFileHandler
 var staticFolderMap map[string]staticFolder
 var pageMap map[string]pageInfo
 var httpContextPool sync.Pool
@@ -89,6 +90,7 @@ func Init(configFile string) {
 	staticFolderMap = make(map[string]staticFolder)
 	pageMap = make(map[string]pageInfo)
 	htmlTemplateMap = make(map[string]*template.Template)
+	uploadFileHandlerMap = make(map[string]UploadFileHandler)
 
 	// Context pool
 	contextPool = sync.Pool{
@@ -233,6 +235,9 @@ func handleAPIAndPage() {
 					break
 				}
 			}
+		} else if handler, ok := uploadFileHandlerMap[r.URL.Path]; ok {
+			handler.handler(w, r)
+			isHandled = true
 		} else {
 			for regexPath, routeList := range routeRegexMap {
 				if match, _ := regexp.MatchString(regexPath, r.URL.Path); match {
