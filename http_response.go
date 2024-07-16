@@ -52,6 +52,10 @@ func (resp *httpResponse) GetMessage() string {
 	return resp.message
 }
 
+func (resp *httpResponse) SetMessage(message string) {
+	resp.message = message
+}
+
 func NewDefaultHttpResponse(body any) HttpResponse {
 	return &httpResponse{
 		statusCode:   http.StatusOK,
