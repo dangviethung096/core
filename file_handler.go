@@ -17,11 +17,20 @@ type UploadFileHandler struct {
 }
 
 func ResgisterFileUpload(url string, method string, handler FileHandler, middlewares ...ApiMiddleware) {
+	if err := os.MkdirAll("uploads", os.ModePerm); err != nil {
+		LogFatal("Error creating uploads directory: %v", err)
+	}
+
 	h := func(writer http.ResponseWriter, request *http.Request) {
 		// Create a new context
 		ctx := getHttpContext()
 		defer putHttpContext(ctx)
-		buildContext(ctx, writer, request)
+
+		ctx.rw = writer
+		ctx.request = request
+		ctx.requestID = ID.GenerateID()
+		ctx.URL = request.URL
+		ctx.Method = request.Method
 
 		// Append to common middleware
 		middlewareList := []ApiMiddleware{}

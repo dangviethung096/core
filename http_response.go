@@ -9,6 +9,7 @@ type HttpResponse interface {
 	SetResponseContentType(ContentType)
 	GetResponseContentType() ContentType
 	GetMessage() string
+	SetMessage(message string)
 }
 
 type ContentType string
