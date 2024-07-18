@@ -12,7 +12,8 @@ type SearchTree[T any] interface {
 func NewSearchTree[T any]() SearchTree[T] {
 	return &searchTree[T]{
 		root: &searchTreeNode[T]{
-			children: make(map[rune]*searchTreeNode[T]),
+			children:  make(map[rune]*searchTreeNode[T]),
+			haveValue: false,
 		},
 	}
 }
