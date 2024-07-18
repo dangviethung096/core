@@ -2,32 +2,39 @@ package core
 
 const NEAREST_NODE_COUNT = 10
 
-func NewSearchTree[T any]() *SearchTree[T] {
-	return &SearchTree[T]{
-		root: &SearchTreeNode[T]{
-			children: make(map[rune]*SearchTreeNode[T]),
+type SearchTree[T any] interface {
+	Insert(key string, value T)
+	Search(key string) []T
+	Remove(key string) bool
+	PrintTree()
+}
+
+func NewSearchTree[T any]() SearchTree[T] {
+	return &searchTree[T]{
+		root: &searchTreeNode[T]{
+			children: make(map[rune]*searchTreeNode[T]),
 		},
 	}
 }
 
-type SearchTree[T any] struct {
-	root *SearchTreeNode[T]
+type searchTree[T any] struct {
+	root *searchTreeNode[T]
 }
 
-type SearchTreeNode[T any] struct {
+type searchTreeNode[T any] struct {
 	char      rune
-	children  map[rune]*SearchTreeNode[T]
+	children  map[rune]*searchTreeNode[T]
 	value     T
 	haveValue bool
 }
 
-func (t *SearchTree[T]) Insert(key string, value T) {
+func (t *searchTree[T]) Insert(key string, value T) {
 	node := t.root
 	for _, char := range key {
 		if node.children[char] == nil {
-			node.children[char] = &SearchTreeNode[T]{
+			node.children[char] = &searchTreeNode[T]{
 				char:     char,
-				children: make(map[rune]*SearchTreeNode[T]),
+				children: make(map[rune]*searchTreeNode[T]),
 			}
 		}
 		node = node.children[char]
@@ -36,23 +43,24 @@ func (t *SearchTree[T]) Insert(key string, value T) {
 	node.haveValue = true
 }
 
-func (t *SearchTree[T]) Search(key string) []T {
+func (t *searchTree[T]) Search(key string) []T {
 	node := t.root
 	for _, char := range key {
 		if node.children[char] == nil {
-			break
+			return []T{}
 		}
 		node = node.children[char]
 	}
 
-	if len(node.children) == 0 {
+	if node.haveValue {
 		return []T{node.value}
 	}
 
 	result := []T{}
-	queue := []*SearchTreeNode[T]{
+	queue := []*searchTreeNode[T]{
 		node,
 	}
+
 	// Find 10 nearest left
 	for len(queue) > 0 {
 		node := queue[0]
@@ -72,7 +80,7 @@ func (t *SearchTree[T]) Search(key string) []T {
 	return result
 }
 
-func (t *SearchTree[T]) Remove(key string) bool {
+func (t *searchTree[T]) Remove(key string) bool {
 	node := t.root
 	for _, char := range key {
 		if node.children[char] == nil {
@@ -84,9 +92,9 @@ func (t *SearchTree[T]) Remove(key string) bool {
 	return true
 }
 
-func (t *SearchTree[T]) PrintTree() {
+func (t *searchTree[T]) PrintTree() {
 	type queueElement struct {
-		node   *SearchTreeNode[T]
+		node   *searchTreeNode[T]
 		prefix string
 	}
 	queue := []queueElement{
