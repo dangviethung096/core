@@ -49,7 +49,7 @@ func ResgisterFileUpload(url string, method string, handler FileHandler, middlew
 		}
 
 		// Parse the multipart form
-		err := request.ParseMultipartForm(10 << 20) // 10 MB
+		err := request.ParseMultipartForm(MAX_UPLOAD_FILE_SIZE) // 10 MB
 		if err != nil {
 			ctx.LogError("Error parsing form: %v", err)
 			ctx.writeError(NewHttpError(http.StatusInternalServerError, http.StatusInternalServerError, err.Error(), nil))

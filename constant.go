@@ -39,3 +39,5 @@ const (
 	DB_ERROR_NAME_FOREIGN_KEY_VIOLATION = "foreign_key_violation"
 	DB_ERROR_NAME_NOT_NULL_VIOLATION    = "not_null_violation"
 )
+
+const MAX_UPLOAD_FILE_SIZE = 10 << 20
