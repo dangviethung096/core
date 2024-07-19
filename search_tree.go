@@ -1,7 +1,5 @@
 package core
 
-const DEFAULT_NEAREST_NODE_COUNT = 10
-
 type SearchTree[T any] interface {
 	Insert(key string, value T)
 	Search(key string) []T
