@@ -3,6 +3,8 @@ package core
 type SearchTree[T any] interface {
 	Insert(key string, value T)
 	Search(key string) []T
+	SearchNearestNValue(key string, n int) []T
+	SearchSpecificValue(key string) (T, bool)
 	Remove(key string) bool
 	PrintTree()
 }
