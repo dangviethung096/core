@@ -1,6 +1,6 @@
 package core
 
-const NEAREST_NODE_COUNT = 10
+const DEFAULT_NEAREST_NODE_COUNT = 10
 
 type SearchTree[T any] interface {
 	Insert(key string, value T)
@@ -53,22 +53,69 @@ func (t *searchTree[T]) Search(key string) []T {
 		node = node.children[char]
 	}
 
-	if node.haveValue {
-		return []T{node.value}
-	}
-
 	result := []T{}
-	queue := []*searchTreeNode[T]{
-		node,
+	if node.haveValue {
+		result = append(result, node.value)
 	}
 
-	// Find 10 nearest left
+	// Find all in node
+	queue := []*searchTreeNode[T]{}
+
+	for _, node := range node.children {
+		queue = append(queue, node)
+	}
+
+	// Find all value from node
 	for len(queue) > 0 {
 		node := queue[0]
 		queue = queue[1:]
 		if node.haveValue {
 			result = append(result, node.value)
-			if len(result) == NEAREST_NODE_COUNT {
+		}
+
+		for _, child := range node.children {
+			queue = append(queue, child)
+		}
+	}
+
+	return result
+}
+
+func (t *searchTree[T]) SearchNearestNValue(key string, n int) []T {
+	if n <= 0 {
+		return nil
+	}
+
+	node := t.root
+	for _, char := range key {
+		if node.children[char] == nil {
+			return []T{}
+		}
+		node = node.children[char]
+	}
+
+	result := []T{}
+	if node.haveValue {
+		result = append(result, node.value)
+		if n == 1 {
+			return result
+		}
+	}
+
+	// Find all in node
+	queue := []*searchTreeNode[T]{}
+
+	for _, node := range node.children {
+		queue = append(queue, node)
+	}
+
+	// Find all value from node
+	for len(queue) > 0 {
+		node := queue[0]
+		queue = queue[1:]
+		if node.haveValue {
+			result = append(result, node.value)
+			if len(result) == n {
 				break
 			}
 		}
@@ -79,6 +126,23 @@ func (t *searchTree[T]) Search(key string) []T {
 	}
 
 	return result
+}
+
+func (t *searchTree[T]) SearchSpecificValue(key string) (T, bool) {
+	var emptyValue T
+	node := t.root
+	for _, char := range key {
+		if node.children[char] == nil {
+			return emptyValue, false
+		}
+		node = node.children[char]
+	}
+
+	if node.haveValue {
+		return node.value, true
+	}
+
+	return emptyValue, false
 }
 
 func (t *searchTree[T]) Remove(key string) bool {
