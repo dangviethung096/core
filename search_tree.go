@@ -6,6 +6,7 @@ type SearchTree[T any] interface {
 	SearchNearestNValue(key string, n int) []T
 	SearchSpecificValue(key string) (T, bool)
 	Remove(key string) bool
+	NumberOfElement() int64
 	PrintTree()
 }
 
@@ -15,11 +16,13 @@ func NewSearchTree[T any]() SearchTree[T] {
 			children:  make(map[rune]*searchTreeNode[T]),
 			haveValue: false,
 		},
+		numberOfElement: 0,
 	}
 }
 
 type searchTree[T any] struct {
-	root *searchTreeNode[T]
+	root            *searchTreeNode[T]
+	numberOfElement int64
 }
 
 type searchTreeNode[T any] struct {
@@ -42,6 +45,7 @@ func (t *searchTree[T]) Insert(key string, value T) {
 	}
 	node.value = value
 	node.haveValue = true
+	t.numberOfElement++
 }
 
 func (t *searchTree[T]) Search(key string) []T {
@@ -154,7 +158,12 @@ func (t *searchTree[T]) Remove(key string) bool {
 		node = node.children[char]
 	}
 	node.haveValue = false
+	t.numberOfElement--
 	return true
+}
+
+func (t *searchTree[T]) NumberOfElement() int64 {
+	return t.numberOfElement
 }
 
 func (t *searchTree[T]) PrintTree() {
