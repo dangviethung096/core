@@ -134,6 +134,36 @@ func DeleteDataInDB[T DataBaseObject](ctx Context, data T) Error {
 	return nil
 }
 
+func DeleteDataWithWhereQuery[T DataBaseObject](ctx Context, data T, whereQuery string) Error {
+	query := fmt.Sprintf("DELETE FROM %s WHERE %s", data.GetTableName(), whereQuery)
+
+	ctx.LogInfo("Delete query = %v", query)
+	ret, err := pgSession.ExecContext(ctx, query)
+	if err != nil {
+		ctx.LogError("Error delete data = %#v, err = %v", data, err)
+		pqError, ok := err.(*pq.Error)
+		if ok {
+			if pqError.Code.Name() == DB_ERROR_NAME_FOREIGN_KEY_VIOLATION {
+				return ERROR_DB_FOREIGN_KEY_VIOLATION
+			}
+		}
+		return NewError(ERROR_CODE_FROM_DATABASE, err.Error())
+	}
+
+	rowDeleted, err := ret.RowsAffected()
+	if err != nil {
+		ctx.LogError("Error get rows affected = %v", err)
+		return NewError(ERROR_CODE_FROM_DATABASE, err.Error())
+	}
+
+	if rowDeleted == 0 {
+		ctx.LogInfo("No row deleted in query: %s", query)
+		return nil
+	}
+
+	return nil
+}
+
 /*
 * Update data in database
 * @param data interface{} Data to update
