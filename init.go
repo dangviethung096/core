@@ -130,6 +130,7 @@ func Init(configFile string) {
 				requestID:  BLANK,
 				timeout:    time.Duration(0),
 				cancelFunc: nil,
+				tempData:   make(map[string]any),
 			}
 		},
 	}

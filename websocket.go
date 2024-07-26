@@ -18,17 +18,19 @@ var websocketUpgrader = websocket.Upgrader{
 	WriteBufferSize: MAX_WEBSOCKET_WRITE_BUFFER_SIZE,
 }
 
-type WebsocketWriteMessage struct {
+type WebsocketResponse struct {
 	MessageType int
-	Message     []byte
+	Code        int
+	Message     string
+	Data        any
 }
 
 type WebsocketMiddleware func(ctx WebsocketContext, w http.ResponseWriter, r *http.Request) HttpError
 
-type WebsocketHandler[T any] func(ctx WebsocketContext, data T) (WebsocketWriteMessage, Error)
+type WebsocketHandler[T any] func(ctx WebsocketContext, data T) (*WebsocketResponse, Error)
 
 func RegisterWebsocket[T any](url string, handler WebsocketHandler[T], middlewares ...WebsocketMiddleware) {
-	LogInfo("Registering websocket: %s", url)
+	LogInfo("Register Websocket: %s", url)
 
 	// Check if T is a struct
 	tType := reflect.TypeOf((*T)(nil)).Elem()
@@ -72,7 +74,7 @@ func RegisterWebsocket[T any](url string, handler WebsocketHandler[T], middlewar
 
 			// Unmarshal the received message
 			req := initRequest[T]()
-			err = json.Unmarshal(message, req)
+			err = json.Unmarshal(message, &req)
 			if err != nil {
 				ctx.LogError("Error unmarshalling message: %v", err)
 				connection.Close()
@@ -91,8 +93,21 @@ func RegisterWebsocket[T any](url string, handler WebsocketHandler[T], middlewar
 				res.MessageType = ctx.messageType
 			}
 
+			wsResponse := responseBody{
+				Code:    res.Code,
+				Message: res.Message,
+				Data:    res.Data,
+			}
+
+			resJson, err := json.Marshal(wsResponse)
+			if err != nil {
+				ctx.LogError("Error marshalling response: %v", err)
+				connection.Close()
+				return
+			}
+
 			// Echo the message back
-			if err := connection.WriteMessage(res.MessageType, res.Message); err != nil {
+			if err := connection.WriteMessage(res.MessageType, resJson); err != nil {
 				ctx.LogError("Error writing message: %v", err)
 				connection.Close()
 				return
