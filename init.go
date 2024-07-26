@@ -17,11 +17,20 @@ var pgSession dbSession
 var routeMap map[string][]Route
 var routeRegexMap map[string][]Route
 var uploadFileHandlerMap map[string]UploadFileHandler
+
 var staticFolderMap map[string]staticFolder
+
 var pageMap map[string]pageInfo
-var httpContextPool sync.Pool
-var contextPool sync.Pool
+
 var commonApiMiddlewares []ApiMiddleware
+
+var contextPool sync.Pool
+
+var httpContextPool sync.Pool
+
+var websocketContextPool sync.Pool
+var websocketRouteMap map[string]websocketRoute
+
 var Config CoreConfig
 var redisClient cacheClient
 var rabbitMQClient *messageQueue
@@ -91,6 +100,7 @@ func Init(configFile string) {
 	pageMap = make(map[string]pageInfo)
 	htmlTemplateMap = make(map[string]*template.Template)
 	uploadFileHandlerMap = make(map[string]UploadFileHandler)
+	websocketRouteMap = make(map[string]websocketRoute)
 
 	// Context pool
 	contextPool = sync.Pool{
@@ -110,6 +120,16 @@ func Init(configFile string) {
 				requestBody:    make([]byte, 16384),
 				urlParams:      make(map[string]string),
 				responseHeader: make(map[string][]string),
+			}
+		},
+	}
+
+	websocketContextPool = sync.Pool{
+		New: func() interface{} {
+			return &websocketContext{
+				requestID:  BLANK,
+				timeout:    time.Duration(0),
+				cancelFunc: nil,
 			}
 		},
 	}
@@ -235,6 +255,9 @@ func handleAPIAndPage() {
 					break
 				}
 			}
+		} else if route, ok := websocketRouteMap[r.URL.Path]; ok {
+			route.handler(w, r)
+			isHandled = true
 		} else if handler, ok := uploadFileHandlerMap[r.URL.Path]; ok {
 			handler.handler(w, r)
 			isHandled = true
