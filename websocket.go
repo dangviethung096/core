@@ -71,7 +71,7 @@ func RegisterWebsocket[T any](url string, handler WebsocketHandler[T], middlewar
 				connection.Close()
 				return
 			}
-
+			ctx.LogInfo("Received message: %v", string(message))
 			// Unmarshal the received message
 			req := initRequest[T]()
 			err = json.Unmarshal(message, &req)
