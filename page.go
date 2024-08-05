@@ -23,6 +23,7 @@ type PageRequest struct {
 	RoleID    int64
 	AccountID int64
 	Username  string
+	Children  []int64
 }
 
 type PageResponse struct {
