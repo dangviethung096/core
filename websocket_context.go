@@ -49,8 +49,8 @@ func (w *websocketContext) Value(key any) any {
  */
 func getWebsocketContext() *websocketContext {
 	ctx := websocketContextPool.Get().(*websocketContext)
-	ctx.Context, ctx.cancelFunc = context.WithTimeout(coreContext, contextTimeout)
-	ctx.timeout = contextTimeout
+	ctx.Context, ctx.cancelFunc = context.WithCancel(coreContext)
+	ctx.timeout = time.Duration(0)
 	ctx.requestID = ID.GenerateID()
 
 	return ctx
