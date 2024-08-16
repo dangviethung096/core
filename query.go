@@ -310,3 +310,34 @@ func GetDeleteQuery[T DataBaseObject](model T) (string, []any, Error) {
 
 	return query, pkValues, nil
 }
+
+/*
+* searchPrimaryKey: search primary key in model
+* @params: data DataBaseObject
+* @return: reflect.Value, bool
+ */
+func searchPrimaryKey(data DataBaseObject) ([]any, bool) {
+	t, _ := getTypeOfPointer(data)
+	found := false
+	var idValues []any
+	primaryKeys, numPrimaryKeys := splitPrimaryKey(data)
+	if numPrimaryKeys == 0 {
+		return nil, false
+	}
+
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		tag := field.Tag.Get("db")
+		for _, key := range primaryKeys {
+			if tag == key {
+				idValues = append(idValues, reflect.ValueOf(data).Elem().FieldByIndex(field.Index).Interface())
+				break
+			}
+		}
+	}
+
+	if len(idValues) == numPrimaryKeys {
+		found = true
+	}
+	return idValues, found
+}

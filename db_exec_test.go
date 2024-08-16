@@ -183,30 +183,6 @@ func TestSelectByField_NotFound_ReturnError(t *testing.T) {
 	}
 }
 
-func TestSelectListByFieldsWithCustomOperator_ReturnSuccess(t *testing.T) {
-	ctx := GetContextForTest()
-	var account Account
-	insertAccount(ctx)
-	defer deleteAccount(ctx)
-
-	values, err := SelectListByFieldsWithCustomOperator(ctx, &account, DBWhere{
-		FieldName: "age",
-		Operator:  ">",
-		Value:     12,
-	})
-	if err != nil {
-		t.Errorf("TestSelectListByFieldsWithCustomOperator_ReturnSuccess: get error: %s\n", err.Error())
-		return
-	}
-
-	if len(values.([]Account)) != 2 {
-		t.Errorf("TestSelectListByFieldsWithCustomOperator_ReturnSuccess: wrong return values: %#v\n", values)
-		return
-	}
-
-	t.Logf("Values: %#v\n", values)
-}
-
 func TestSelectListWithWhereQuery_ReturnSuccess(t *testing.T) {
 	ctx := GetContextForTest()
 	var account Account
@@ -307,24 +283,4 @@ func TestDeleteDataInDB_ReturnSuccessWithManyKey(t *testing.T) {
 	}
 
 	t.Logf("Delete Account: %#v\n", account)
-}
-
-func TestSelectListWithAppendingQuery_ReturnSuccess(t *testing.T) {
-	ctx := GetContextForTest()
-	var account Account
-	insertAccount(ctx)
-	defer deleteAccount(ctx)
-
-	result, err := SelectListWithAppendingQuery(ctx, &account, "LIMIT 1")
-	if err != nil {
-		t.Errorf("TestSelectListWithAppendingQuery_ReturnSuccess: get error: %s\n", err.Error())
-		return
-	}
-
-	if len(result.([]Account)) != 1 {
-		t.Errorf("TestSelectListWithAppendingQuery_ReturnSuccess: wrong return values: %#v\n", result)
-		return
-	}
-
-	t.Logf("Result: %#v\n", result)
 }

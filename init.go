@@ -13,7 +13,7 @@ import (
 	"github.com/go-playground/validator"
 )
 
-var pgSession dbSession
+var mainDbSession dbSession
 var routeMap map[string][]Route
 var routeRegexMap map[string][]Route
 var uploadFileHandlerMap map[string]UploadFileHandler
@@ -71,7 +71,7 @@ func Init(configFile string) {
 
 	// Init database connection
 	if Config.Database.Use {
-		pgSession = openDBConnection(DBInfo{
+		mainDbSession = openDBConnection(DBInfo{
 			Host:     Config.Database.Host,
 			Port:     int32(Config.Database.Port),
 			Username: Config.Database.Username,
@@ -168,7 +168,7 @@ func Release() {
 }
 
 func closeDB() {
-	pgSession.Close()
+	mainDbSession.Close()
 }
 
 func releaseCacheDB() {
@@ -233,7 +233,7 @@ func MessageQueue() *messageQueue {
 * @return dbSession
  */
 func DBSession() dbSession {
-	return pgSession
+	return mainDbSession
 }
 
 /*
