@@ -2,12 +2,6 @@ package core
 
 import "reflect"
 
-type DBWhere struct {
-	FieldName string
-	Operator  string
-	Value     interface{}
-}
-
 /*
 * Save data to database
 * @param data interface{} Data to save
