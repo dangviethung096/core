@@ -1,16 +1,55 @@
 package core
 
-import "database/sql"
+import (
+	"database/sql"
+
+	"github.com/lib/pq"
+)
 
 type oracleSession struct {
 	*sql.DB
 }
 
 func (session oracleSession) SaveDataToDB(ctx Context, data DataBaseObject) Error {
+	query, args, insertError := GetInsertQuery(data)
+	if insertError != nil {
+		ctx.LogError("Error when get insert data = %#v, err = %s", data, insertError.Error())
+		return insertError
+	}
+
+	ctx.LogInfo("Insert query = %v, args = %v", query, args)
+	if _, err := session.ExecContext(ctx, query, args...); err != nil {
+		ctx.LogError("Error insert data = %#v, err = %v", data, err)
+		return ERROR_INSERT_TO_DB_FAIL
+	}
+
 	return nil
 }
 
 func (session oracleSession) SaveDataToDBWithoutPrimaryKey(ctx Context, data DataBaseObject) Error {
+	query, args, pkAddress, insertError := GetInsertQueryWithoutPrimaryKey(data)
+	if insertError != nil {
+		ctx.LogError("Error when get insert data = %#v, err = %s", data, insertError.Error())
+		return insertError
+	}
+
+	ctx.LogInfo("Insert query = %v, args = %v", query, args)
+	row := session.QueryRowContext(ctx, query, args...)
+
+	err := row.Scan(pkAddress)
+	if err != nil {
+		ctx.LogError("Error insert data = %#v, err = %v", data, err)
+		pqError, ok := err.(*pq.Error)
+		if ok {
+			if pqError.Code.Name() == "unique_violation" {
+				return ERROR_DB_UNIQUE_VIOLATION
+			} else if pqError.Code.Name() == "foreign_key_violation" {
+				return ERROR_DB_FOREIGN_KEY_VIOLATION
+			}
+		}
+		return ERROR_INSERT_TO_DB_FAIL
+	}
+
 	return nil
 }
 
