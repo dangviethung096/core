@@ -9,16 +9,17 @@ import (
 )
 
 type CoreConfig struct {
-	Debug       bool             `yaml:"debug"`
-	Server      ServerConfig     `yaml:"server"`
-	Context     ContextConfig    `yaml:"context"`
-	IdGenerator IdGenerator      `yaml:"id_generator"`
-	Database    Database         `yaml:"database"`
-	RabbitMQ    RabbitMQConfig   `yaml:"rabbitmq"`
-	Redis       RedisConfig      `yaml:"redis"`
-	Proxy       ProxyConfig      `yaml:"proxy"`
-	HttpClient  HttpClientConfig `yaml:"http_client"`
-	Scheduler   SchedulerConfig  `yaml:"scheduler"`
+	Debug             bool             `yaml:"debug"`
+	Server            ServerConfig     `yaml:"server"`
+	Context           ContextConfig    `yaml:"context"`
+	IdGenerator       IdGenerator      `yaml:"id_generator"`
+	Database          Database         `yaml:"database"`
+	SecondaryDatabase Database         `yaml:"secondary_database"`
+	RabbitMQ          RabbitMQConfig   `yaml:"rabbitmq"`
+	Redis             RedisConfig      `yaml:"redis"`
+	Proxy             ProxyConfig      `yaml:"proxy"`
+	HttpClient        HttpClientConfig `yaml:"http_client"`
+	Scheduler         SchedulerConfig  `yaml:"scheduler"`
 }
 
 type ServerConfig struct {
@@ -65,6 +66,7 @@ type Database struct {
 	Username     string `yaml:"user"`
 	Password     string `yaml:"pass"`
 	DatabaseName string `yaml:"name"`
+	DBType       string `yaml:"db_type"`
 }
 
 type RabbitMQConfig struct {

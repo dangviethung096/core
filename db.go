@@ -13,6 +13,7 @@ import (
 )
 
 type DBInfo struct {
+	DBType   string
 	Host     string
 	Port     int32
 	Username string
@@ -64,28 +65,52 @@ type dbSession interface {
 	CountRecordInTableWithWhere(ctx Context, data DataBaseObject, whereQuery string) (int64, Error)
 }
 
-func (info *DBInfo) buildConnectionString() string {
-	connStr := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable", info.Username, info.Password, info.Host, info.Port, info.Database)
-	// Configure the database connection string with the host, port, user, password, and dbname details
-	return connStr
+func openDBConnection(dbInfo DBInfo) dbSession {
+	var session dbSession
+	if dbInfo.DBType == DB_TYPE_POSTGRES {
+		session = openPostgresDBConnection(dbInfo)
+	} else if dbInfo.DBType == DB_TYPE_ORACLE {
+		session = openOracleDBConnection(dbInfo)
+	}
+	return session
 }
 
-func openDBConnection(dbInfo DBInfo) dbSession {
+func openPostgresDBConnection(dbInfo DBInfo) postgresSession {
 	// Connect to postgres database and return session
-	connectStr := dbInfo.buildConnectionString()
+	connectStr := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable", dbInfo.Username, dbInfo.Password, dbInfo.Host, dbInfo.Port, dbInfo.Database)
+
 	fmt.Printf("Connect to postgres database: %s:%d/%s\n", dbInfo.Host, dbInfo.Port, dbInfo.Database)
 	db, err := sql.Open("postgres", connectStr)
 	if err != nil {
-		log.Panicf("Connect to database fail: %v", err)
+		log.Panicf("Connect to database fail: dbInfo = %v, err = %v", dbInfo, err)
 	}
 
 	err = db.Ping()
 	if err != nil {
-		log.Panicf("Cannot ping to database: %v", err)
+		log.Panicf("Cannot ping to database: dbInfo = %v, err = %v", dbInfo, err)
 	}
 
-	fmt.Println("Connected to database!")
+	fmt.Println("Connected to postgres database!")
 
 	// Optionally, you can use an ORM like GORM to simplify the database operations
 	return postgresSession{db}
+}
+
+func openOracleDBConnection(dbInfo DBInfo) oracleSession {
+	connectStr := fmt.Sprintf(`user="%s" password="%s" connectString="%s:%d/%s"`, dbInfo.Username, dbInfo.Password, dbInfo.Host, dbInfo.Port, dbInfo.Database)
+	// Connect to oracle database and return session
+	db, err := sql.Open("godror", connectStr)
+	if err != nil {
+		log.Panicf("Error opening oracle database: dbInfo = %v, err = %v", dbInfo, err)
+	}
+
+	err = db.Ping()
+	if err != nil {
+		log.Panicf("Cannot ping to database: dbInfo = %v, err = %v", dbInfo, err)
+	}
+
+	fmt.Println("Connected to oracle database")
+	return oracleSession{
+		db,
+	}
 }

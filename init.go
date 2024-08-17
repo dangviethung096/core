@@ -14,6 +14,8 @@ import (
 )
 
 var mainDbSession dbSession
+var secondaryDbSession dbSession
+
 var routeMap map[string][]Route
 var routeRegexMap map[string][]Route
 var uploadFileHandlerMap map[string]UploadFileHandler
@@ -77,6 +79,18 @@ func Init(configFile string) {
 			Username: Config.Database.Username,
 			Password: Config.Database.Password,
 			Database: Config.Database.DatabaseName,
+			DBType:   Config.Database.DBType,
+		})
+	}
+
+	if Config.SecondaryDatabase.Use {
+		secondaryDbSession = openDBConnection(DBInfo{
+			Host:     Config.SecondaryDatabase.Host,
+			Port:     int32(Config.SecondaryDatabase.Port),
+			Username: Config.SecondaryDatabase.Username,
+			Password: Config.SecondaryDatabase.Password,
+			Database: Config.SecondaryDatabase.DatabaseName,
+			DBType:   Config.SecondaryDatabase.DBType,
 		})
 	}
 
@@ -168,7 +182,13 @@ func Release() {
 }
 
 func closeDB() {
-	mainDbSession.Close()
+	if mainDbSession != nil {
+		mainDbSession.Close()
+	}
+
+	if secondaryDbSession != nil {
+		secondaryDbSession.Close()
+	}
 }
 
 func releaseCacheDB() {
