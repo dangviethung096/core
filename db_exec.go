@@ -85,9 +85,10 @@ func SelectByField(ctx Context, data DataBaseObject, fieldName string, fieldValu
 		return err
 	}
 
-	if len(result.([]*DataBaseObject)) != 0 {
+	resultValue := reflect.ValueOf(result)
+	if resultValue.Len() > 0 {
 		// Copy value of result to data
-		reflect.ValueOf(data).Elem().Set(reflect.ValueOf(result.([]*DataBaseObject)[0]))
+		reflect.ValueOf(data).Elem().Set(reflect.ValueOf(resultValue.Index(0).Interface()))
 	}
 
 	return nil
