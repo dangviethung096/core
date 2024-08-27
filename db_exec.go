@@ -89,6 +89,8 @@ func SelectByField(ctx Context, data DataBaseObject, fieldName string, fieldValu
 	if resultValue.Len() > 0 {
 		// Copy value of result to data
 		reflect.ValueOf(data).Elem().Set(reflect.ValueOf(resultValue.Index(0).Interface()))
+	} else {
+		return ERROR_NOT_FOUND_IN_DB
 	}
 
 	return nil
