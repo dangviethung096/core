@@ -14,10 +14,9 @@ database:
   user: postgres
   pass: admin@123
   name: example
-rabbitmq:
-  use: false
-  amqp_server_url: amqp://guest:guest@localhost:5672
-  retry_time: 3
+nats_queue:
+  use: true
+  url: localhost:4222
 redis:
   use: false
   host: localhost
