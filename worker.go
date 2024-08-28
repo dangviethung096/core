@@ -30,12 +30,14 @@ func (w *worker) Start(delay time.Duration, interval time.Duration) {
 	go func() {
 		time.Sleep(delay)
 		ticker := time.NewTicker(interval)
+		LogInfo("Start task!")
 		for {
 			select {
 			case <-done:
 				ticker.Stop()
 				return
 			case <-ticker.C:
+				LogInfo("Loop task")
 				w.execute()
 			}
 		}
@@ -132,36 +134,19 @@ func (w *worker) process(taskKey string, bucket int64, id int64) {
 	}
 
 	// Start run this task: use rabbitmqt
-	session, err := MessageQueue().CreateSimpleSession(QueueConfig{
-		ExchangeName: BLANK,
-		QueueName:    fmt.Sprintf("%s%s", TASK_PREFIX_QUEUE_NAME, t.QueueName),
-		RouteKey:     BLANK,
-		Kind:         MESSAGE_QUEUE_KIND_DIRECT,
-		Durable:      false,
-		AutoDelete:   false,
-		Exclusive:    false,
-		NoWait:       false,
-		Args:         nil,
-	})
-
 	now := time.Now()
+	err = pushTaskToQueue(coreContext, t.QueueName, t.Data)
 	if err != nil {
-		LogError("Fail to run task: %v: %s", t, err.Error())
-		DBSession().ExecContext(coreContext, "INSERT INTO scheduler_done(bucket, task_id, operation_time, status) VALUES ($1, $2, $3, $4)", bucket, t.ID, now.Format(time.RFC3339), TASK_FAIL)
-	} else {
-		// Do task
-		defer session.CloseSession()
-		err = session.publish(t.Data)
+		LogError("Cannot run task: %v, err = %s", t, err.Error())
+		_, err := DBSession().ExecContext(coreContext, "INSERT INTO scheduler_done(bucket, task_id, operation_time, status) VALUES ($1, $2, $3, $4)", bucket, t.ID, now.Format(time.RFC3339), TASK_FAIL)
 		if err != nil {
-			LogError("Cannot run task: %v, err = %s", t, err.Error())
-			DBSession().ExecContext(coreContext, "INSERT INTO scheduler_done(bucket, task_id, operation_time, status) VALUES ($1, $2, $3, $4)", bucket, t.ID, now.Format(time.RFC3339), TASK_FAIL)
-		} else {
-			_, err := DBSession().ExecContext(coreContext, "INSERT INTO scheduler_done(bucket, task_id, operation_time, status) VALUES ($1, $2, $3, $4)", bucket, t.ID, now.Format(time.RFC3339), TASK_DONE)
-			if err != nil {
-				fmt.Println(err.Error())
-			}
+			LogError("Cannot insert task to done table: %v", err)
 		}
-
+	} else {
+		_, err := DBSession().ExecContext(coreContext, "INSERT INTO scheduler_done(bucket, task_id, operation_time, status) VALUES ($1, $2, $3, $4)", bucket, t.ID, now.Format(time.RFC3339), TASK_DONE)
+		if err != nil {
+			LogError("Cannot insert task to done table: %v", err)
+		}
 	}
 
 	t.LoopIndex++

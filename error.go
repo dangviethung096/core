@@ -74,4 +74,6 @@ var (
 	ERROR_NO_SUPPORT_FOR_MANY_PRIMARY_KEYS      Error = NewError(33, "No support for many primary keys")
 	ERROR_DB_UNIQUE_VIOLATION                   Error = NewError(34, "Unique violation")
 	ERROR_DB_FOREIGN_KEY_VIOLATION              Error = NewError(35, "Foreign key violation")
+	ERROR_CANNOT_SUBSCRIBE_QUEUE                Error = NewError(36, "Cannot subscribe queue")
+	ERROR_CANNOT_PUBLISH_MESSAGE                Error = NewError(37, "Cannot publish message")
 )

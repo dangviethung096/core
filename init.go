@@ -35,7 +35,7 @@ var websocketRouteMap map[string]websocketRoute
 
 var Config CoreConfig
 var redisClient cacheClient
-var rabbitMQClient *messageQueue
+var queueClient natsClient
 var coreContext Context
 var validate *validator.Validate
 var contextTimeout time.Duration
@@ -95,12 +95,8 @@ func Init(configFile string) {
 	}
 
 	// Init rabbitmq client
-	if Config.RabbitMQ.RetryTime == 0 {
-		Config.RabbitMQ.RetryTime = 5
-	}
-	// Init rabbitmq client
-	if Config.RabbitMQ.Use {
-		rabbitMQClient = connectRabbitMQ()
+	if Config.NatsQueue.Use {
+		queueClient = connectToNatsQueue(Config.NatsQueue.Url)
 	}
 
 	// Init id generator
@@ -196,7 +192,7 @@ func releaseCacheDB() {
 }
 
 func releaseMessageQueue() {
-	rabbitMQClient.connection.Close()
+	queueClient.nc.Close()
 }
 
 /*
@@ -244,8 +240,8 @@ func CacheClient() cacheClient {
 * MessageQueue: Get message queue client
 * @return messageQueue
  */
-func MessageQueue() *messageQueue {
-	return rabbitMQClient
+func MessageQueue() natsClient {
+	return queueClient
 }
 
 /*

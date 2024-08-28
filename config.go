@@ -15,7 +15,7 @@ type CoreConfig struct {
 	IdGenerator       IdGenerator      `yaml:"id_generator"`
 	Database          Database         `yaml:"database"`
 	SecondaryDatabase Database         `yaml:"secondary_database"`
-	RabbitMQ          RabbitMQConfig   `yaml:"rabbitmq"`
+	NatsQueue         NatsQueue        `yaml:"nats_queue"`
 	Redis             RedisConfig      `yaml:"redis"`
 	Proxy             ProxyConfig      `yaml:"proxy"`
 	HttpClient        HttpClientConfig `yaml:"http_client"`
@@ -69,10 +69,9 @@ type Database struct {
 	DBType       string `yaml:"db_type"`
 }
 
-type RabbitMQConfig struct {
-	Use           bool   `yaml:"use"`
-	AMQPServerURL string `yaml:"amqp_server_url"`
-	RetryTime     int    `yaml:"retry_time"`
+type NatsQueue struct {
+	Use bool   `yaml:"use"`
+	Url string `yaml:"url"`
 }
 
 type RedisConfig struct {
