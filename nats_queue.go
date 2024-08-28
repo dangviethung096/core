@@ -15,7 +15,7 @@ type NatsSubscriberHandler func(topic string, data []byte)
 func connectToNatsQueue(queueUrl string) natsClient {
 	nc, err := nats.Connect(queueUrl)
 	if err != nil {
-		log.Fatal("Cannnot connect to Nats Server: %s, error = %v", queueUrl, err)
+		log.Fatalf("Cannnot connect to Nats Server: %s, error = %v", queueUrl, err)
 	}
 
 	log.Printf("Connected to NATS server successfully: %s", queueUrl)
