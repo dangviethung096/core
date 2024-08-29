@@ -14,6 +14,7 @@ database:
   user: postgres
   pass: admin@123
   name: example
+  db_type: postgres
 nats_queue:
   use: true
   url: localhost:4222
@@ -27,9 +28,9 @@ http_client:
   retry_times:
   wait_times:
 scheduler:
-  use: false
+  use: true
   task_doing_expiration: 60
   delay: 2
-  interval:
+  interval: 2
   bucket_size: 20
   task_timeout: 60
