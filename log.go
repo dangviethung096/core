@@ -15,7 +15,7 @@ func LogInfo(format string, args ...interface{}) {
 }
 
 func LogDebug(format string, args ...interface{}) {
-	coreContext.(*rootContext).LogError(format, args...)
+	coreContext.(*rootContext).LogDebug(format, args...)
 }
 
 func LogWarning(format string, args ...interface{}) {

@@ -100,21 +100,11 @@ func (w *worker) execute() {
 		defer locker.Unlock()
 		// Process data
 		LogDebug("Execute task: %d", todo.taskId)
-		w.process(taskKey, todo.bucket, todo.taskId)
+		w.process(todo.bucket, todo.taskId)
 	}
 }
 
-func (w *worker) process(taskKey string, bucket int64, id int64) {
-	// Remove blocker
-	defer func() {
-		// Remove block this and return
-		if result, err := CacheClient().Del(coreContext, taskKey).Result(); err != nil {
-			LogError("Cannot delete key: %s, error = %v", taskKey, err)
-		} else if result != 1 {
-			LogError("Delete key: %s, return differ than 1 key is deleted = %d", taskKey, result)
-		}
-	}()
-
+func (w *worker) process(bucket int64, id int64) {
 	var t task
 	// Get task detail from database in table: tasks
 	row := DBSession().QueryRowContext(coreContext, "SELECT id, queue_name, data, done, loop_index, loop_count, next, interval FROM scheduler_tasks WHERE id = $1", id)

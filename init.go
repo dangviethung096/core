@@ -253,6 +253,14 @@ func DBSession() dbSession {
 }
 
 /*
+* SecondaryDBSession: Get secondary database session
+* @return dbSession
+ */
+func SecondaryDBSession() dbSession {
+	return secondaryDbSession
+}
+
+/*
 * Handle API
  */
 
