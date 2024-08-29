@@ -90,14 +90,14 @@ func (w *worker) execute() {
 	for _, todo := range todos {
 		// Block this task by redis or lwt in database: use distributed log
 		taskKey := fmt.Sprintf(TASK_TEMPLATE_KEY, todo.taskId)
-		mutex := NewPgMutex(mainDbSession, todo.taskId)
-		err := mutex.Reserve()
+		locker := NewPgLock(mainDbSession, taskKey)
+		err := locker.Lock()
 		if err != nil {
 			LogInfo("Key %s existed: %v", taskKey, err)
 			continue
 		}
 
-		defer mutex.Release()
+		defer locker.Unlock()
 		// Process data
 		LogDebug("Execute task: %d", todo.taskId)
 		w.process(taskKey, todo.bucket, todo.taskId)
