@@ -20,7 +20,7 @@ func (session oracleSession) SaveDataToDB(ctx Context, data DataBaseObject) Erro
 	}
 
 	ctx.LogInfo("Insert query = %v, args = %v", query, args)
-	if _, err := session.ExecContext(ctx, query, args); err != nil {
+	if _, err := session.ExecContext(ctx, query, args...); err != nil {
 		ctx.LogError("Error insert data = %#v, err = %v", data, err)
 		return ERROR_INSERT_TO_DB_FAIL
 	}
@@ -36,7 +36,7 @@ func (session oracleSession) SaveDataToDBWithoutPrimaryKey(ctx Context, data Dat
 	}
 
 	ctx.LogInfo("Insert query = %v, args = %v", query, args)
-	if _, err := session.ExecContext(ctx, query, args); err != nil {
+	if _, err := session.ExecContext(ctx, query, args...); err != nil {
 		ctx.LogError("Error insert data = %#v, err = %v", data, err)
 		return ERROR_INSERT_TO_DB_FAIL
 	}
@@ -52,7 +52,7 @@ func (session oracleSession) DeleteDataInDB(ctx Context, data DataBaseObject) Er
 	}
 
 	ctx.LogInfo("Delete query = %v, args = %v", query, args)
-	if _, err := session.ExecContext(ctx, query, args); err != nil {
+	if _, err := session.ExecContext(ctx, query, args...); err != nil {
 		ctx.LogError("Error delete data = %#v, err = %v", data, err)
 		return NewError(ERROR_CODE_FROM_DATABASE, err.Error())
 	}
@@ -98,7 +98,7 @@ func (session oracleSession) UpdateDataInDB(ctx Context, data DataBaseObject) Er
 	}
 
 	ctx.LogInfo("Update query = %v, args = %v", query, args)
-	if _, err := session.ExecContext(ctx, query, args); err != nil {
+	if _, err := session.ExecContext(ctx, query, args...); err != nil {
 		ctx.LogError("Error update data = %#v, err = %s", data, err.Error())
 		return NewError(ERROR_CODE_FROM_DATABASE, err.Error())
 	}
@@ -127,15 +127,15 @@ func (session oracleSession) SelectById(ctx Context, data DataBaseObject) Error 
 		}
 	}
 
-	args, found := searchMapPrimaryKey(data)
+	args, found := listPrimaryKey(data)
 	if !found {
 		ctx.LogError("Error not found primary key = %#v", data)
-		return ERROR_DB_ERROR
+		return ERROR_NOT_FOUND_PRIMARY_KEY
 	}
 
 	ctx.LogInfo("Select query = %v, args = %v", query, args)
 
-	row := session.QueryRowContext(ctx, query, args)
+	row := session.QueryRowContext(ctx, query, args...)
 	if err := row.Scan(params...); err != nil {
 		ctx.LogError("Error select data = %#v, err = %v", data, err.Error())
 		if err == sql.ErrNoRows {
@@ -184,11 +184,11 @@ func (session oracleSession) SelectListByFields(ctx Context, data DataBaseObject
 	}
 
 	// Handle where params
-	var args map[string]any
+	var args []interface{}
 	var keys []string
 	if len(mapArgs) > 0 {
 		query += " WHERE "
-		args = map[string]any{}
+		args = []interface{}{}
 		keys = []string{}
 	}
 
@@ -200,13 +200,13 @@ func (session oracleSession) SelectListByFields(ctx Context, data DataBaseObject
 			query += fmt.Sprintf("AND %s = :%s ", key, key)
 		}
 
-		args[key] = value
+		args = append(args, sql.Named(key, value))
 		keys = append(keys, key)
 		count++
 	}
 
 	ctx.LogInfo("Select query = %v, args = %#v", query, args)
-	rows, errQuery := session.QueryContext(ctx, query, args)
+	rows, errQuery := session.QueryContext(ctx, query, args...)
 	if errQuery != nil {
 		ctx.LogError("Error select %#v = %#v, err = %s", keys, args, errQuery.Error())
 		return nil, ERROR_DB_ERROR
@@ -268,13 +268,13 @@ func (session oracleSession) ListPagingTable(ctx Context, data DataBaseObject, l
 
 	query += " OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY"
 
-	args := map[string]any{
-		"offset": offset,
-		"limit":  limit,
+	args := []any{
+		sql.Named("offset", offset),
+		sql.Named("limit", limit),
 	}
 
 	ctx.LogInfo("Select query = %v", query)
-	rows, errQuery := session.QueryContext(ctx, query, args)
+	rows, errQuery := session.QueryContext(ctx, query, args...)
 	if errQuery != nil {
 		ctx.LogError("Error select table %s, err = %s", data.GetTableName(), errQuery.Error())
 		return nil, ERROR_DB_ERROR
@@ -303,11 +303,11 @@ func (session oracleSession) SelectPagingListByFields(ctx Context, data DataBase
 	}
 
 	// Handle where params
-	var args map[string]any
+	var args []any
 	var keys []string
 	if len(mapArgs) > 0 {
 		query += " WHERE "
-		args = map[string]any{}
+		args = []any{}
 		keys = []string{}
 	}
 
@@ -319,15 +319,15 @@ func (session oracleSession) SelectPagingListByFields(ctx Context, data DataBase
 			query += fmt.Sprintf("AND %s = $%d ", key, count)
 		}
 
-		args[key] = value
+		args = append(args, sql.Named(key, value))
 		keys = append(keys, key)
 		count++
 	}
 
 	query += " OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY"
 
-	args["offset"] = offset
-	args["limit"] = limit
+	args = append(args, sql.Named("offset", offset))
+	args = append(args, sql.Named("limit", limit))
 
 	ctx.LogInfo("Select query = %v, args = %#v", query, args)
 	rows, errQuery := session.QueryContext(ctx, query, args)

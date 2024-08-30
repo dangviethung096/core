@@ -1,6 +1,7 @@
 package core
 
 import (
+	"database/sql"
 	"fmt"
 	"reflect"
 )
@@ -10,7 +11,7 @@ import (
 * @params: model DataBaseObject
 * @return: string, map[string]any, Error
  */
-func GetInsertQueryForOracle[T DataBaseObject](model T) (string, map[string]any, Error) {
+func GetInsertQueryForOracle[T DataBaseObject](model T) (string, []any, Error) {
 	t, err := getTypeOfPointer(model)
 	if err != nil {
 		return BLANK, nil, err
@@ -21,7 +22,7 @@ func GetInsertQueryForOracle[T DataBaseObject](model T) (string, map[string]any,
 	tableName := model.GetTableName()
 	fields := BLANK
 	questionString := BLANK
-	args := map[string]any{}
+	args := []any{}
 	count := 1
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
@@ -40,7 +41,7 @@ func GetInsertQueryForOracle[T DataBaseObject](model T) (string, map[string]any,
 		}
 
 		count++
-		args[tag] = v.Field(i).Interface()
+		args = append(args, sql.Named(tag, v.Field(i).Interface()))
 	}
 
 	if len(fields) == 0 {
@@ -62,7 +63,7 @@ func GetInsertQueryForOracle[T DataBaseObject](model T) (string, map[string]any,
 * @params: model DataBaseObject
 * @return: string, map[string]any, Error
  */
-func GetInsertQueryWithoutPrimaryKeyForOracle[T DataBaseObject](model T) (string, map[string]any, any, Error) {
+func GetInsertQueryWithoutPrimaryKeyForOracle[T DataBaseObject](model T) (string, []any, any, Error) {
 	t, err := getTypeOfPointer(model)
 	if err != nil {
 		return BLANK, nil, nil, err
@@ -85,7 +86,7 @@ func GetInsertQueryWithoutPrimaryKeyForOracle[T DataBaseObject](model T) (string
 
 	fields := BLANK
 	questionString := BLANK
-	args := map[string]any{}
+	args := []any{}
 	count := 1
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
@@ -110,7 +111,7 @@ func GetInsertQueryWithoutPrimaryKeyForOracle[T DataBaseObject](model T) (string
 		}
 
 		count++
-		args[tag] = v.Field(i).Interface()
+		args = append(args, sql.Named(tag, v.Field(i).Interface()))
 	}
 
 	if len(fields) == 0 {
@@ -129,7 +130,7 @@ func GetInsertQueryWithoutPrimaryKeyForOracle[T DataBaseObject](model T) (string
 	query := fmt.Sprintf("INSERT INTO %s(%s) VALUES(%s) RETURNING %s INTO :%s", tableName, fields, questionString, primaryKeys[0], primaryKeys[0])
 
 	// Append primary key to args
-	args[primaryKeys[0]] = primaryKeyAddress
+	args = append(args, sql.Named(primaryKeys[0], primaryKeyAddress))
 
 	return query, args, primaryKeyAddress, nil
 }
@@ -139,7 +140,7 @@ func GetInsertQueryWithoutPrimaryKeyForOracle[T DataBaseObject](model T) (string
 * @params: model DataBaseObject
 * @return: string, []any, error
  */
-func GetDeleteQueryForOracle[T DataBaseObject](model T) (string, map[string]any, Error) {
+func GetDeleteQueryForOracle[T DataBaseObject](model T) (string, []any, Error) {
 	// Check model is pointer of struct
 	_, err := getTypeOfPointer(model)
 	if err != nil {
@@ -147,7 +148,7 @@ func GetDeleteQueryForOracle[T DataBaseObject](model T) (string, map[string]any,
 	}
 
 	tableName := model.GetTableName()
-	pkValues, found := searchMapPrimaryKey(model)
+	pkValues, found := listPrimaryKey(model)
 	if !found {
 		return BLANK, nil, ERROR_NOT_FOUND_PRIMARY_KEY
 	}
@@ -174,7 +175,7 @@ func GetDeleteQueryForOracle[T DataBaseObject](model T) (string, map[string]any,
 * @params: model DataBaseObject
 * @return: string, map[string]any, Error
  */
-func GetUpdateQueryForOracle[T DataBaseObject](model T) (string, map[string]any, Error) {
+func GetUpdateQueryForOracle[T DataBaseObject](model T) (string, []any, Error) {
 	t, err := getTypeOfPointer(model)
 	if err != nil {
 		return BLANK, nil, err
@@ -189,7 +190,7 @@ func GetUpdateQueryForOracle[T DataBaseObject](model T) (string, map[string]any,
 	primaryValues := map[string]any{}
 
 	var setString string
-	args := map[string]any{}
+	args := []any{}
 	count := 1
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
@@ -219,7 +220,7 @@ func GetUpdateQueryForOracle[T DataBaseObject](model T) (string, map[string]any,
 			setString += fmt.Sprintf("%s = :%s", tag, tag)
 		}
 		count++
-		args[tag] = value
+		args = append(args, sql.Named(tag, value))
 	}
 
 	// Check argument and primary key
@@ -242,21 +243,21 @@ func GetUpdateQueryForOracle[T DataBaseObject](model T) (string, map[string]any,
 			query += fmt.Sprintf(" AND %s = :%s", key, key)
 		}
 
-		args[key] = primaryValues[key]
+		args = append(args, sql.Named(key, primaryValues[key]))
 	}
 
 	return query, args, nil
 }
 
 /*
-* searchMapPrimaryKey: search primary key in model
+* listPrimaryKey: search primary key in model
 * @params: data DataBaseObject
 * @return: map[string]any, bool
  */
-func searchMapPrimaryKey(data DataBaseObject) (map[string]any, bool) {
+func listPrimaryKey(data DataBaseObject) ([]any, bool) {
 	t, _ := getTypeOfPointer(data)
 	found := false
-	idValues := map[string]any{}
+	idValues := []any{}
 	primaryKeys, numPrimaryKeys := splitPrimaryKey(data)
 	if numPrimaryKeys == 0 {
 		return nil, false
@@ -267,7 +268,7 @@ func searchMapPrimaryKey(data DataBaseObject) (map[string]any, bool) {
 		tag := field.Tag.Get("db")
 		for _, key := range primaryKeys {
 			if tag == key {
-				idValues[key] = reflect.ValueOf(data).Elem().FieldByIndex(field.Index).Interface()
+				idValues = append(idValues, sql.Named(key, reflect.ValueOf(data).Elem().FieldByIndex(field.Index).Interface()))
 				break
 			}
 		}

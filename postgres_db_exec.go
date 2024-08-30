@@ -207,7 +207,18 @@ func (session postgresSession) ListPagingTable(ctx Context, data DataBaseObject,
 		return nil, err
 	}
 
-	query += fmt.Sprintf(" LIMIT %d OFFSET %d", limit, offset)
+	primaryKeys, numPrimaryKeys := splitPrimaryKey(data)
+	var primaryKey string
+	if numPrimaryKeys > 1 {
+		primaryKey = primaryKeys[1]
+	} else if numPrimaryKeys == 1 {
+		primaryKey = primaryKeys[0]
+	} else {
+		ctx.LogError("Error not found primary key = %#v", data)
+		return nil, ERROR_NOT_FOUND_PRIMARY_KEY
+	}
+
+	query += fmt.Sprintf(" ORDER BY %s ASC LIMIT %d OFFSET %d", primaryKey, limit, offset)
 
 	ctx.LogInfo("Select query = %v", query)
 	rows, errQuery := session.QueryContext(ctx, query)

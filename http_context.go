@@ -386,7 +386,7 @@ func (ctx *HttpContext) EndResponse(statusCode int, header *http.Header, body []
 
 		ctx.rw.WriteHeader(statusCode)
 		if body != nil {
-			fmt.Fprint(ctx.rw, body)
+			fmt.Fprint(ctx.rw, string(body))
 		}
 		ctx.rw.(http.Flusher).Flush()
 	}

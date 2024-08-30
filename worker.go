@@ -37,7 +37,6 @@ func (w *worker) Start(delay time.Duration, interval time.Duration) {
 				ticker.Stop()
 				return
 			case <-ticker.C:
-				LogInfo("Loop task")
 				w.execute()
 			}
 		}

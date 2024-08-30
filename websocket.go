@@ -67,7 +67,7 @@ func RegisterWebsocket[T any](url string, handler WebsocketHandler[T], middlewar
 			// Read a message
 			messageType, message, err := connection.ReadMessage()
 			if err != nil {
-				ctx.LogError("Error reading message: %v", err)
+				ctx.LogInfo("Reading message end: %v", err)
 				connection.Close()
 				return
 			}
