@@ -167,6 +167,21 @@ func GetContextWithTimeout(timeout time.Duration) Context {
 	return ctx
 }
 
+func GetContextWithoutTimeout() Context {
+	ctx := contextPool.Get().(*rootContext)
+	ctx.Context, ctx.cancelFunc = context.WithCancel(coreContext)
+	ctx.contextID = ID.GenerateID()
+	return ctx
+}
+
+func GetConextWithDefaultTimeout() Context {
+	ctx := contextPool.Get().(*rootContext)
+	ctx.Context, ctx.cancelFunc = context.WithTimeout(coreContext, contextTimeout)
+	ctx.timeout = contextTimeout
+	ctx.contextID = ID.GenerateID()
+	return ctx
+}
+
 /*
 * Get core context
 * Return core context to http context pool

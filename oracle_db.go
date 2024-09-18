@@ -1,18 +1,34 @@
 package core
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"reflect"
+	"sync/atomic"
 
 	"github.com/lib/pq"
 )
 
 type oracleSession struct {
 	*sql.DB
+	queryCount int64
+	DBInfo     DBInfo
 }
 
-func (session oracleSession) SaveDataToDB(ctx Context, data DataBaseObject) Error {
+func (session *oracleSession) resetOracleSession() {
+	atomic.StoreInt64(&session.queryCount, 0)
+}
+
+func (session *oracleSession) incrementQueryCount() {
+	atomic.AddInt64(&session.queryCount, 1)
+}
+
+func (s *oracleSession) getQueryCount() int64 {
+	return atomic.LoadInt64(&s.queryCount)
+}
+
+func (session *oracleSession) SaveDataToDB(ctx Context, data DataBaseObject) Error {
 	query, args, insertError := GetInsertQueryForOracle(data)
 	if insertError != nil {
 		ctx.LogError("Error when get insert data = %#v, err = %s", data, insertError.Error())
@@ -28,7 +44,7 @@ func (session oracleSession) SaveDataToDB(ctx Context, data DataBaseObject) Erro
 	return nil
 }
 
-func (session oracleSession) SaveDataToDBWithoutPrimaryKey(ctx Context, data DataBaseObject) Error {
+func (session *oracleSession) SaveDataToDBWithoutPrimaryKey(ctx Context, data DataBaseObject) Error {
 	query, args, _, insertError := GetInsertQueryWithoutPrimaryKeyForOracle(data)
 	if insertError != nil {
 		ctx.LogError("Error when get insert data = %#v, err = %s", data, insertError.Error())
@@ -44,7 +60,7 @@ func (session oracleSession) SaveDataToDBWithoutPrimaryKey(ctx Context, data Dat
 	return nil
 }
 
-func (session oracleSession) DeleteDataInDB(ctx Context, data DataBaseObject) Error {
+func (session *oracleSession) DeleteDataInDB(ctx Context, data DataBaseObject) Error {
 	query, args, deleteError := GetDeleteQueryForOracle(data)
 	if deleteError != nil {
 		ctx.LogError("Error when get delete data = %#v, err = %s", data, deleteError.Error())
@@ -60,7 +76,11 @@ func (session oracleSession) DeleteDataInDB(ctx Context, data DataBaseObject) Er
 	return nil
 }
 
-func (session oracleSession) DeleteDataWithWhereQuery(ctx Context, data DataBaseObject, whereQuery string) Error {
+func (session *oracleSession) DeleteDataWithWhereQuery(ctx Context, data DataBaseObject, whereQuery string) Error {
+	if whereQuery == BLANK {
+		return ERROR_WHERE_QUERY_IS_EMPTY
+	}
+
 	query := fmt.Sprintf("DELETE FROM %s WHERE %s", data.GetTableName(), whereQuery)
 
 	ctx.LogInfo("Delete query = %v", query)
@@ -90,7 +110,7 @@ func (session oracleSession) DeleteDataWithWhereQuery(ctx Context, data DataBase
 	return nil
 }
 
-func (session oracleSession) UpdateDataInDB(ctx Context, data DataBaseObject) Error {
+func (session *oracleSession) UpdateDataInDB(ctx Context, data DataBaseObject) Error {
 	query, args, updateError := GetUpdateQueryForOracle(data)
 	if updateError != nil {
 		ctx.LogError("Error when get update data = %#v, err = %s", data, updateError.Error())
@@ -106,7 +126,7 @@ func (session oracleSession) UpdateDataInDB(ctx Context, data DataBaseObject) Er
 	return nil
 }
 
-func (session oracleSession) SelectById(ctx Context, data DataBaseObject) Error {
+func (session *oracleSession) SelectById(ctx Context, data DataBaseObject) Error {
 	query, params, err := GetSelectQuery(data)
 	if err != nil {
 		ctx.LogError("Error when get data = %#v, err = %s", data, err.Error())
@@ -147,7 +167,7 @@ func (session oracleSession) SelectById(ctx Context, data DataBaseObject) Error 
 	return nil
 }
 
-func (session oracleSession) ListAllInTable(ctx Context, data DataBaseObject) (any, Error) {
+func (session *oracleSession) ListAllInTable(ctx Context, data DataBaseObject) (any, Error) {
 	query, params, err := GetSelectQuery(data)
 	if err != nil {
 		ctx.LogError("Error when get update data = %#v, err = %s", data, err.Error())
@@ -176,7 +196,7 @@ func (session oracleSession) ListAllInTable(ctx Context, data DataBaseObject) (a
 	return result.Interface(), nil
 }
 
-func (session oracleSession) SelectListByFields(ctx Context, data DataBaseObject, mapArgs map[string]interface{}) (any, Error) {
+func (session *oracleSession) SelectListByFields(ctx Context, data DataBaseObject, mapArgs map[string]interface{}) (any, Error) {
 	query, params, err := GetSelectQuery(data)
 	if err != nil {
 		ctx.LogError("Error when get update data = %#v, err = %s", data, err.Error())
@@ -228,14 +248,14 @@ func (session oracleSession) SelectListByFields(ctx Context, data DataBaseObject
 	return result.Interface(), nil
 }
 
-func (session oracleSession) SelectListWithWhereQuery(ctx Context, data DataBaseObject, whereQuery string) (any, Error) {
+func (session *oracleSession) SelectListWithTailQuery(ctx Context, data DataBaseObject, tailQuery *TailQuery) (any, Error) {
 	query, params, err := GetSelectQuery(data)
 	if err != nil {
 		ctx.LogError("Error when get update data = %#v, err = %s", data, err.Error())
 		return nil, err
 	}
 
-	query += " WHERE " + whereQuery
+	query += tailQuery.GetQuery()
 
 	ctx.LogInfo("Select query = %s", query)
 	rows, errQuery := session.QueryContext(ctx, query)
@@ -259,14 +279,14 @@ func (session oracleSession) SelectListWithWhereQuery(ctx Context, data DataBase
 	return result.Interface(), nil
 }
 
-func (session oracleSession) ListPagingTable(ctx Context, data DataBaseObject, limit int64, offset int64) (any, Error) {
+func (session *oracleSession) ListPagingTable(ctx Context, data DataBaseObject, limit int64, offset int64) (any, Error) {
 	query, params, err := GetSelectQuery(data)
 	if err != nil {
 		ctx.LogError("Error when get update data = %#v, err = %s", data, err.Error())
 		return nil, err
 	}
-
-	query += " OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY"
+	pk := data.GetPrimaryKey()
+	query += fmt.Sprintf(" ORDER BY %s OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY", pk)
 
 	args := []any{
 		sql.Named("offset", offset),
@@ -295,7 +315,7 @@ func (session oracleSession) ListPagingTable(ctx Context, data DataBaseObject, l
 	return result.Interface(), nil
 }
 
-func (session oracleSession) SelectPagingListByFields(ctx Context, data DataBaseObject, mapArgs map[string]interface{}, limit int64, offset int64) (any, Error) {
+func (session *oracleSession) SelectPagingListByFields(ctx Context, data DataBaseObject, mapArgs map[string]interface{}, limit int64, offset int64) (any, Error) {
 	query, params, err := GetSelectQuery(data)
 	if err != nil {
 		ctx.LogError("Error when get update data = %#v, err = %s", data, err.Error())
@@ -352,7 +372,7 @@ func (session oracleSession) SelectPagingListByFields(ctx Context, data DataBase
 	return result.Interface(), nil
 }
 
-func (session oracleSession) CountRecordInTable(ctx Context, data DataBaseObject) (int64, Error) {
+func (session *oracleSession) CountRecordInTable(ctx Context, data DataBaseObject) (int64, Error) {
 	query := fmt.Sprintf("SELECT COUNT(*) FROM %s", data.GetTableName())
 
 	row := session.QueryRowContext(ctx, query)
@@ -366,8 +386,8 @@ func (session oracleSession) CountRecordInTable(ctx Context, data DataBaseObject
 	return count, nil
 }
 
-func (session oracleSession) CountRecordInTableWithWhere(ctx Context, data DataBaseObject, whereQuery string) (int64, Error) {
-	query := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s", data.GetTableName(), whereQuery)
+func (session *oracleSession) CountRecordInTableWithTailQuery(ctx Context, data DataBaseObject, tailQuery *TailQuery) (int64, Error) {
+	query := fmt.Sprintf("SELECT COUNT(*) FROM %s %s", data.GetTableName(), tailQuery.GetQuery())
 	ctx.LogInfo("Count record in table with where query: %s", query)
 	row := session.QueryRowContext(ctx, query)
 
@@ -378,4 +398,52 @@ func (session oracleSession) CountRecordInTableWithWhere(ctx Context, data DataB
 		return 0, NewError(ERROR_CODE_FROM_DATABASE, err.Error())
 	}
 	return count, nil
+}
+
+func (session *oracleSession) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+	session.incrementQueryCount()
+	if session.getQueryCount() > MAXIMIZE_QUERY_COUNT_IN_ORACLE_DATABASE {
+		resetOracleSession(session)
+	}
+	return session.DB.ExecContext(ctx, query, args...)
+}
+
+func (session *oracleSession) Exec(query string, args ...any) (sql.Result, error) {
+	session.incrementQueryCount()
+	if session.getQueryCount() > MAXIMIZE_QUERY_COUNT_IN_ORACLE_DATABASE {
+		resetOracleSession(session)
+	}
+	return session.DB.Exec(query, args...)
+}
+
+func (session *oracleSession) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
+	session.incrementQueryCount()
+	if session.getQueryCount() > MAXIMIZE_QUERY_COUNT_IN_ORACLE_DATABASE {
+		resetOracleSession(session)
+	}
+	return session.DB.QueryContext(ctx, query, args...)
+}
+
+func (session *oracleSession) Query(query string, args ...any) (*sql.Rows, error) {
+	session.incrementQueryCount()
+	if session.getQueryCount() > MAXIMIZE_QUERY_COUNT_IN_ORACLE_DATABASE {
+		resetOracleSession(session)
+	}
+	return session.DB.Query(query, args...)
+}
+
+func (session *oracleSession) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
+	session.incrementQueryCount()
+	if session.getQueryCount() > MAXIMIZE_QUERY_COUNT_IN_ORACLE_DATABASE {
+		resetOracleSession(session)
+	}
+	return session.DB.QueryRowContext(ctx, query, args...)
+}
+
+func (session *oracleSession) QueryRow(query string, args ...any) *sql.Row {
+	session.incrementQueryCount()
+	if session.getQueryCount() > MAXIMIZE_QUERY_COUNT_IN_ORACLE_DATABASE {
+		resetOracleSession(session)
+	}
+	return session.DB.QueryRow(query, args...)
 }

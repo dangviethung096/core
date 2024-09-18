@@ -133,3 +133,7 @@ func StopTask(ctx Context, request *StopTaskRequest) Error {
 	}
 	return nil
 }
+
+func TriggerTask(ctx Context, taskName string, taskData []byte) Error {
+	return pushTaskToQueue(ctx, taskName, taskData)
+}

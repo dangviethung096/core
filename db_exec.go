@@ -119,8 +119,8 @@ func SelectListByFields(ctx Context, data DataBaseObject, mapArgs map[string]int
 * @return []DataBaseObject, Error
 * @description: select list of data by where query
  */
-func SelectListWithWhereQuery(ctx Context, data DataBaseObject, whereQuery string) (any, Error) {
-	return mainDbSession.SelectListWithWhereQuery(ctx, data, whereQuery)
+func SelectListWithWhereQuery(ctx Context, data DataBaseObject, tailQuery *TailQuery) (any, Error) {
+	return mainDbSession.SelectListWithTailQuery(ctx, data, tailQuery)
 }
 
 /*
@@ -150,6 +150,6 @@ func CountRecordInTable(ctx Context, data DataBaseObject) (int64, Error) {
 * @return int64, Error
 * @description: count record in table with where query
  */
-func CountRecordInTableWithWhere(ctx Context, data DataBaseObject, whereQuery string) (int64, Error) {
-	return mainDbSession.CountRecordInTableWithWhere(ctx, data, whereQuery)
+func CountRecordInTableWithTailQuery(ctx Context, data DataBaseObject, tailQuery *TailQuery) (int64, Error) {
+	return mainDbSession.CountRecordInTableWithTailQuery(ctx, data, tailQuery)
 }

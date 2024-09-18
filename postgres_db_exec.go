@@ -316,14 +316,14 @@ func (session postgresSession) SelectListByFields(ctx Context, data DataBaseObje
 	return result.Interface(), nil
 }
 
-func (session postgresSession) SelectListWithWhereQuery(ctx Context, data DataBaseObject, whereQuery string) (any, Error) {
+func (session postgresSession) SelectListWithTailQuery(ctx Context, data DataBaseObject, tailQuery *TailQuery) (any, Error) {
 	query, params, err := GetSelectQuery(data)
 	if err != nil {
 		ctx.LogError("Error when get update data = %#v, err = %s", data, err.Error())
 		return nil, err
 	}
 
-	query += " WHERE " + whereQuery
+	query += tailQuery.GetQuery()
 
 	ctx.LogInfo("Select query = %s", query)
 	rows, errQuery := session.QueryContext(ctx, query)
@@ -415,15 +415,15 @@ func (session postgresSession) CountRecordInTable(ctx Context, data DataBaseObje
 	return count, nil
 }
 
-func (session postgresSession) CountRecordInTableWithWhere(ctx Context, data DataBaseObject, whereQuery string) (int64, Error) {
-	query := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s", data.GetTableName(), whereQuery)
+func (session postgresSession) CountRecordInTableWithTailQuery(ctx Context, data DataBaseObject, tailQuery *TailQuery) (int64, Error) {
+	query := fmt.Sprintf("SELECT COUNT(*) FROM %s %s;", data.GetTableName(), tailQuery.GetQuery())
 	ctx.LogInfo("Count record in table with where query: %s", query)
 	row := session.QueryRowContext(ctx, query)
 
 	var count int64
 	err := row.Scan(&count)
 	if err != nil {
-		ctx.LogError("Error count record in table %s, err = %s", data.GetTableName(), err.Error())
+		ctx.LogError("Error count record in table %s, err = %v", data.GetTableName(), err)
 		return 0, NewError(ERROR_CODE_FROM_DATABASE, err.Error())
 	}
 	return count, nil

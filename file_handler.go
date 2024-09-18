@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 type FileHandler func(ctx *HttpContext, filePath string) (HttpResponse, HttpError)
@@ -16,7 +17,7 @@ type UploadFileHandler struct {
 	handler func(writer http.ResponseWriter, request *http.Request)
 }
 
-func ResgisterFileUpload(url string, method string, handler FileHandler, middlewares ...ApiMiddleware) {
+func RegisterFileUpload(url string, method string, handler FileHandler, middlewares ...ApiMiddleware) {
 	if err := os.MkdirAll("uploads", os.ModePerm); err != nil {
 		LogFatal("Error creating uploads directory: %v", err)
 	}
@@ -49,7 +50,7 @@ func ResgisterFileUpload(url string, method string, handler FileHandler, middlew
 		}
 
 		// Parse the multipart form
-		err := request.ParseMultipartForm(MAX_UPLOAD_FILE_SIZE) // 10 MB
+		err := request.ParseMultipartForm(MAX_UPLOAD_FILE_SIZE) // 50 MB
 		if err != nil {
 			ctx.LogError("Error parsing form: %v", err)
 			ctx.writeError(NewHttpError(http.StatusInternalServerError, http.StatusInternalServerError, err.Error(), nil))
@@ -64,9 +65,12 @@ func ResgisterFileUpload(url string, method string, handler FileHandler, middlew
 			return
 		}
 		defer file.Close()
+		// Append time to file name
+		now := time.Now()
+		fileName := fmt.Sprintf("%s_%s", now.Format("20060102150405"), fileHeader.Filename)
 
 		// Create a new file in the server
-		dst, err := os.Create(filepath.Join("uploads", fileHeader.Filename))
+		dst, err := os.Create(filepath.Join("uploads", fileName))
 		if err != nil {
 			http.Error(writer, "Error creating file", http.StatusInternalServerError)
 			return
@@ -81,7 +85,7 @@ func ResgisterFileUpload(url string, method string, handler FileHandler, middlew
 		}
 
 		ctx.LogInfo("Request upload file: Url = %s, method = %s, header = %#v", ctx.URL, ctx.Method, ctx.request.Header)
-		res, httpErr := handler(ctx, fmt.Sprintf("uploads/%s", fileHeader.Filename))
+		res, httpErr := handler(ctx, fmt.Sprintf("uploads/%s", fileName))
 		if httpErr != nil {
 			ctx.LogError("Response error: Url = %s, body = %s", ctx.URL, httpErr.Error())
 			ctx.writeError(httpErr)

@@ -58,12 +58,12 @@ type dbSession interface {
 	SelectById(ctx Context, data DataBaseObject) Error
 	ListAllInTable(ctx Context, data DataBaseObject) (any, Error)
 	SelectListByFields(ctx Context, data DataBaseObject, mapArgs map[string]interface{}) (any, Error)
-	SelectListWithWhereQuery(ctx Context, data DataBaseObject, whereQuery string) (any, Error)
+	SelectListWithTailQuery(ctx Context, data DataBaseObject, tailQuery *TailQuery) (any, Error)
 	ListPagingTable(ctx Context, data DataBaseObject, limit int64, offset int64) (any, Error)
 	SelectPagingListByFields(ctx Context, data DataBaseObject, mapArgs map[string]interface{}, limit int64, offset int64) (any, Error)
 
 	CountRecordInTable(ctx Context, data DataBaseObject) (int64, Error)
-	CountRecordInTableWithWhere(ctx Context, data DataBaseObject, whereQuery string) (int64, Error)
+	CountRecordInTableWithTailQuery(ctx Context, data DataBaseObject, tailQuery *TailQuery) (int64, Error)
 }
 
 func openDBConnection(dbInfo DBInfo) dbSession {
@@ -76,7 +76,7 @@ func openDBConnection(dbInfo DBInfo) dbSession {
 	return session
 }
 
-func openPostgresDBConnection(dbInfo DBInfo) postgresSession {
+func openPostgresDBConnection(dbInfo DBInfo) *postgresSession {
 	// Connect to postgres database and return session
 	connectStr := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable", dbInfo.Username, dbInfo.Password, dbInfo.Host, dbInfo.Port, dbInfo.Database)
 
@@ -94,24 +94,49 @@ func openPostgresDBConnection(dbInfo DBInfo) postgresSession {
 	fmt.Println("Connected to postgres database!")
 
 	// Optionally, you can use an ORM like GORM to simplify the database operations
-	return postgresSession{db}
+	return &postgresSession{
+		DB: db,
+	}
 }
 
-func openOracleDBConnection(dbInfo DBInfo) oracleSession {
+func connectToOracleDB(dbInfo DBInfo) (*sql.DB, Error) {
 	connectStr := fmt.Sprintf(`user="%s" password="%s" connectString="%s:%d/%s"`, dbInfo.Username, dbInfo.Password, dbInfo.Host, dbInfo.Port, dbInfo.Database)
 	// Connect to oracle database and return session
 	db, err := sql.Open("godror", connectStr)
 	if err != nil {
-		log.Panicf("Error opening oracle database: dbInfo = %v, err = %v", dbInfo, err)
+		return nil, NewError(ERROR_CODE_FROM_DATABASE, fmt.Sprintf("Error opening oracle database: dbInfo = %v, err = %v", dbInfo, err))
 	}
 
 	err = db.Ping()
 	if err != nil {
-		log.Panicf("Cannot ping to database: dbInfo = %v, err = %v", dbInfo, err)
+		return nil, NewError(ERROR_CODE_FROM_DATABASE, fmt.Sprintf("Error opening oracle database: dbInfo = %v, err = %v", dbInfo, err))
 	}
 
-	fmt.Println("Connected to oracle database")
-	return oracleSession{
-		db,
+	return db, nil
+}
+
+func openOracleDBConnection(dbInfo DBInfo) *oracleSession {
+	db, err := connectToOracleDB(dbInfo)
+	if err != nil {
+		log.Panicf("Error opening oracle database: err = %v", err)
 	}
+
+	return &oracleSession{
+		DB:         db,
+		queryCount: 0,
+		DBInfo:     dbInfo,
+	}
+}
+
+func resetOracleSession(oracleSession *oracleSession) {
+	LogInfo("Reset oracle session")
+	err := oracleSession.Close()
+	if err != nil {
+		LogError("Error close oracle session when reset oracle session: %v", err)
+	}
+	oracleSession.resetOracleSession()
+	newSesison := openOracleDBConnection(oracleSession.DBInfo)
+
+	oracleSession.DB = newSesison.DB
+	LogInfo("Reset oracle session success")
 }

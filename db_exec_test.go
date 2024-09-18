@@ -1,7 +1,6 @@
 package core
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -189,8 +188,10 @@ func TestSelectListWithWhereQuery_ReturnSuccess(t *testing.T) {
 	insertAccount(ctx)
 	defer deleteAccount(ctx)
 
-	whereQuery := fmt.Sprintf("age > %d", 18)
-	result, err := SelectListWithWhereQuery(ctx, &account, whereQuery)
+	tailQuery := NewTailQuery()
+	tailQuery.Add("age > 18", OPERATOR_NONE)
+
+	result, err := SelectListWithWhereQuery(ctx, &account, tailQuery)
 	if err != nil {
 		t.Errorf("TestSelectListWithWhereQuery_ReturnSuccess: get error: %s\n", err.Error())
 		return

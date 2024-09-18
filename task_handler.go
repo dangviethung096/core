@@ -18,7 +18,11 @@ func HandleTask(ctx Context, taskQueueName string, handler TaskHandler) Error {
 	group := "TaskGroup"
 
 	natsHandler := func(topic string, data []byte) {
-		handler(ctx, TaskInfo{
+		newCtx := GetContextWithoutTimeout()
+		defer PutContext(newCtx)
+		// Handle task
+		newCtx.LogInfo("Handle task: %s", taskQueueName)
+		handler(newCtx, TaskInfo{
 			Data: data,
 		})
 	}
