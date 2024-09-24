@@ -1,6 +1,6 @@
 module github.com/dangviethung096/core
 
-go 1.22.2
+go 1.23
 
 require (
 	github.com/go-playground/validator v9.31.0+incompatible
