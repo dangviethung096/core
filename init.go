@@ -218,6 +218,16 @@ func Start() {
 		}
 	}()
 
+	go func() {
+		if Config.SecureServer.Use {
+			LogInfo("Start secure server at port: %d", Config.SecureServer.Port)
+			err := http.ListenAndServeTLS(fmt.Sprintf("0.0.0.0:%d", Config.SecureServer.Port), Config.SecureServer.CertFile, Config.SecureServer.KeyFile, nil)
+			if err != nil {
+				log.Fatalln("ListenAndServeTLS fail: ", err)
+			}
+		}
+	}()
+
 	<-blockServerChan
 	// Callback function
 	for _, cb := range callback {

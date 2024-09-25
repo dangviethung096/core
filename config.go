@@ -9,23 +9,33 @@ import (
 )
 
 type CoreConfig struct {
-	Debug             bool             `yaml:"debug"`
-	Server            ServerConfig     `yaml:"server"`
-	Context           ContextConfig    `yaml:"context"`
-	IdGenerator       IdGenerator      `yaml:"id_generator"`
-	Database          Database         `yaml:"database"`
-	SecondaryDatabase Database         `yaml:"secondary_database"`
-	NatsQueue         NatsQueue        `yaml:"nats_queue"`
-	Redis             RedisConfig      `yaml:"redis"`
-	Proxy             ProxyConfig      `yaml:"proxy"`
-	HttpClient        HttpClientConfig `yaml:"http_client"`
-	Scheduler         SchedulerConfig  `yaml:"scheduler"`
+	Debug             bool               `yaml:"debug"`
+	Server            ServerConfig       `yaml:"server"`
+	SecureServer      SecureServerConfig `yaml:"secure_server"`
+	Context           ContextConfig      `yaml:"context"`
+	IdGenerator       IdGenerator        `yaml:"id_generator"`
+	Database          Database           `yaml:"database"`
+	SecondaryDatabase Database           `yaml:"secondary_database"`
+	NatsQueue         NatsQueue          `yaml:"nats_queue"`
+	Redis             RedisConfig        `yaml:"redis"`
+	Proxy             ProxyConfig        `yaml:"proxy"`
+	HttpClient        HttpClientConfig   `yaml:"http_client"`
+	Scheduler         SchedulerConfig    `yaml:"scheduler"`
 }
 
 type ServerConfig struct {
 	Port      int    `yaml:"port"`
 	Name      string `yaml:"name"`
 	CacheHtml bool   `yaml:"cache_html"`
+}
+
+type SecureServerConfig struct {
+	Use       bool   `yaml:"use"`
+	Port      int    `yaml:"port"`
+	Name      string `yaml:"name"`
+	CacheHtml bool   `yaml:"cache_html"`
+	CertFile  string `yaml:"cert_file"`
+	KeyFile   string `yaml:"key_file"`
 }
 
 type ContextConfig struct {
