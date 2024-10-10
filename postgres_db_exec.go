@@ -210,7 +210,7 @@ func (session postgresSession) ListPagingTable(ctx Context, data DataBaseObject,
 	primaryKeys, numPrimaryKeys := splitPrimaryKey(data)
 	var primaryKey string
 	if numPrimaryKeys > 1 {
-		primaryKey = primaryKeys[1]
+		primaryKey = primaryKeys[numPrimaryKeys-1]
 	} else if numPrimaryKeys == 1 {
 		primaryKey = primaryKeys[0]
 	} else {

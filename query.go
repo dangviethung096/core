@@ -214,7 +214,7 @@ func GetUpdateQuery[T DataBaseObject](model T) (string, []any, Error) {
 	if numPrimaryKeys == 0 {
 		return BLANK, nil, ERROR_NOT_FOUND_PRIMARY_KEY
 	}
-	primaryValues := []interface{}{}
+	primaryValues := make([]interface{}, len(primaryKeys))
 
 	var setString string
 	var args []interface{}
@@ -228,10 +228,10 @@ func GetUpdateQuery[T DataBaseObject](model T) (string, []any, Error) {
 		}
 
 		isPrimaryKey := false
-		for _, key := range primaryKeys {
+		for k, key := range primaryKeys {
 			if tag == key {
 				isPrimaryKey = true
-				primaryValues = append(primaryValues, v.Field(i).Interface())
+				primaryValues[k] = v.Field(i).Interface()
 			}
 		}
 
