@@ -47,14 +47,16 @@ func (c *emqxClient) Publish(ctx Context, topic string, payload []byte) Error {
 	return nil
 }
 
-func (c *emqxClient) Subscribe(ctx Context, topic string, handler func(ctx Context, client MqttClient, message MqttMessage[any])) Error {
+func (c *emqxClient) Subscribe(ctx Context, topic string, handler MqttMessageHandler) Error {
 	// Subscribe to the specified topic with QoS 1
 	token := c.Client.Subscribe(topic, MQTT_QOS_EXACTLY_ONCE, func(client mqtt.Client, message mqtt.Message) {
-		payload := message.Payload()
+		newContext := GetContextWithoutTimeout()
+		defer PutContext(newContext)
 
-		handler(ctx, c, MqttMessage[any]{
+		handler(newContext, c, MqttMessage{
 			MessageID: int64(message.MessageID()),
 			Topic:     message.Topic(),
+			Payload:   message.Payload(),
 		})
 	})
 

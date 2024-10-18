@@ -2,7 +2,7 @@ package core
 
 type MqttClient interface {
 	Publish(ctx Context, topic string, payload []byte) Error
-	Subscribe(ctx Context, topic string, payload any, handler MqttMessageHandler) Error
+	Subscribe(ctx Context, topic string, handler MqttMessageHandler) Error
 	Unsubscribe(ctx Context, topic string) Error
 	Disconnect(ctx Context) Error
 }
@@ -13,4 +13,4 @@ type MqttMessage struct {
 	Payload   any
 }
 
-type MqttMessageHandler func(client MqttClient, message MqttMessage)
+type MqttMessageHandler func(ctx Context, client MqttClient, message MqttMessage)
