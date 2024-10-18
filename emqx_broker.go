@@ -88,5 +88,6 @@ func (c *emqxClient) Unsubscribe(ctx Context, topic string) Error {
 }
 
 func (c *emqxClient) Disconnect(ctx Context) Error {
+	c.Client.Disconnect(WAIT_MQTT_DISCONNECT_TIMEOUT)
 	return nil
 }
