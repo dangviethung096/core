@@ -32,7 +32,7 @@ func (c *emqxClient) Connect() Error {
 
 func (c *emqxClient) Publish(ctx Context, topic string, payload []byte) Error {
 	// Publish the message to the specified topic with QoS 0 and no retained message
-	token := c.Client.Publish(topic, 0, false, payload)
+	token := c.Client.Publish(topic, MQTT_QOS_EXACTLY_ONCE, false, payload)
 
 	// Wait for the token to confirm the message was sent
 	token.Wait()
@@ -47,13 +47,14 @@ func (c *emqxClient) Publish(ctx Context, topic string, payload []byte) Error {
 	return nil
 }
 
-func (c *emqxClient) Subscribe(ctx Context, topic string, handler MqttMessageHandler) Error {
+func (c *emqxClient) Subscribe(ctx Context, topic string, handler func(ctx Context, client MqttClient, message MqttMessage[any])) Error {
 	// Subscribe to the specified topic with QoS 1
-	token := c.Client.Subscribe(topic, 1, func(client mqtt.Client, message mqtt.Message) {
-		handler(c, MqttMessage{
+	token := c.Client.Subscribe(topic, MQTT_QOS_EXACTLY_ONCE, func(client mqtt.Client, message mqtt.Message) {
+		payload := message.Payload()
+
+		handler(ctx, c, MqttMessage[any]{
 			MessageID: int64(message.MessageID()),
 			Topic:     message.Topic(),
-			Payload:   message.Payload(),
 		})
 	})
 
