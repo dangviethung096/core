@@ -25,7 +25,10 @@ func NewEmqxClient(emqxConfig EmqxConfig) MqttClient {
 
 	client := mqtt.NewClient(opts)
 	emqxClient := &emqxClient{Client: client}
-	emqxClient.Connect()
+	err := emqxClient.Connect()
+	if err != nil {
+		log.Fatalf("Connect to emqx broker fail: %v\n", err)
+	}
 
 	return emqxClient
 }
