@@ -114,6 +114,7 @@ type SchedulerConfig struct {
 }
 
 type EmqxConfig struct {
+	Use          bool   `yaml:"use"`
 	Broker       string `yaml:"broker"`
 	PrefixClient string `yaml:"prefix_client_id"`
 }

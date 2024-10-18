@@ -40,6 +40,7 @@ var coreContext Context
 var validate *validator.Validate
 var contextTimeout time.Duration
 var htmlTemplateMap map[string]*template.Template
+var emqxBrokerClient MqttClient
 
 func Init(configFile string) {
 	// Init core context
@@ -97,6 +98,11 @@ func Init(configFile string) {
 	// Init rabbitmq client
 	if Config.NatsQueue.Use {
 		queueClient = connectToNatsQueue(Config.NatsQueue.Url)
+	}
+
+	// Init emqx client
+	if Config.Emqx.Use {
+		emqxBrokerClient = NewEmqxClient(Config.Emqx)
 	}
 
 	// Init id generator
