@@ -80,7 +80,7 @@ func openPostgresDBConnection(dbInfo DBInfo) *postgresSession {
 	// Connect to postgres database and return session
 	connectStr := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable", dbInfo.Username, dbInfo.Password, dbInfo.Host, dbInfo.Port, dbInfo.Database)
 
-	fmt.Printf("Connect to postgres database: %s:%d/%s\n", dbInfo.Host, dbInfo.Port, dbInfo.Database)
+	log.Printf("Connect to postgres database: %s:%d/%s\n", dbInfo.Host, dbInfo.Port, dbInfo.Database)
 	db, err := sql.Open("postgres", connectStr)
 	if err != nil {
 		log.Panicf("Connect to database fail: dbInfo = %v, err = %v", dbInfo, err)
@@ -91,7 +91,7 @@ func openPostgresDBConnection(dbInfo DBInfo) *postgresSession {
 		log.Panicf("Cannot ping to database: dbInfo = %v, err = %v", dbInfo, err)
 	}
 
-	fmt.Println("Connected to postgres database!")
+	log.Printf("Connected to postgres database!\n")
 
 	// Optionally, you can use an ORM like GORM to simplify the database operations
 	return &postgresSession{

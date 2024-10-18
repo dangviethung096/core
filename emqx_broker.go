@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -12,6 +13,7 @@ type emqxClient struct {
 }
 
 func NewEmqxClient(emqxConfig EmqxConfig) MqttClient {
+	log.Printf("Connect to emqx broker: %v", emqxConfig.Broker)
 	broker := emqxConfig.Broker
 	prefixClientID := emqxConfig.PrefixClient
 	now := time.Now().UnixNano()
