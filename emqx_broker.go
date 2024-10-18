@@ -22,11 +22,18 @@ func NewEmqxClient(emqxConfig EmqxConfig) MqttClient {
 	opts.SetClientID(clientID)
 
 	client := mqtt.NewClient(opts)
+	emqxClient := &emqxClient{Client: client}
+	emqxClient.Connect()
 
-	return &emqxClient{Client: client}
+	return emqxClient
 }
 
 func (c *emqxClient) Connect() Error {
+	token := c.Client.Connect()
+	token.Wait()
+	if token.Error() != nil {
+		return NewError(ERROR_CODE_FROM_MQTT, token.Error().Error())
+	}
 	return nil
 }
 

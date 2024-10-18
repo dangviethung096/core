@@ -1,6 +1,7 @@
 package core
 
 type MqttClient interface {
+	Connect() Error
 	Publish(ctx Context, topic string, payload []byte) Error
 	Subscribe(ctx Context, topic string, handler MqttMessageHandler) Error
 	Unsubscribe(ctx Context, topic string) Error
