@@ -21,6 +21,7 @@ type CoreConfig struct {
 	Proxy             ProxyConfig        `yaml:"proxy"`
 	HttpClient        HttpClientConfig   `yaml:"http_client"`
 	Scheduler         SchedulerConfig    `yaml:"scheduler"`
+	Emqx              EmqxConfig         `yaml:"emqx"`
 }
 
 type ServerConfig struct {
@@ -110,6 +111,11 @@ type SchedulerConfig struct {
 	Interval            int  `yaml:"interval"`
 	BucketSize          int  `yaml:"bucket_size"`
 	TaskTimeout         int  `yaml:"task_timeout"`
+}
+
+type EmqxConfig struct {
+	Broker       string `yaml:"broker"`
+	PrefixClient string `yaml:"prefix_client_id"`
 }
 
 func loadConfigFile(configFile string) CoreConfig {
