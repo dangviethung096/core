@@ -276,6 +276,10 @@ func SecondaryDBSession() dbSession {
 	return secondaryDbSession
 }
 
+func EmqxBrokerClient() MqttClient {
+	return emqxBrokerClient
+}
+
 /*
 * Handle API
  */
