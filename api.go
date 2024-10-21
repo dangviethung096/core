@@ -130,6 +130,8 @@ func RegisterAPI[T any](url string, method string, handler Handler[T], middlewar
 		if res != nil {
 			ctx.LogInfo("Response: Url = %s, body = %+v", ctx.URL, res.GetBody())
 			ctx.writeSuccess(res)
+		} else {
+			ctx.writeDefaultSuccess()
 		}
 	}
 

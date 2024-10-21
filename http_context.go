@@ -235,6 +235,40 @@ func (ctx *HttpContext) writeSuccess(httpRes HttpResponse) {
 	ctx.endResponse(int(httpRes.GetStatusCode()), string(body))
 }
 
+func (ctx *HttpContext) writeDefaultSuccess() {
+	ctx.rw.Header().Set("Request-Id", ctx.requestID)
+
+	for key, values := range ctx.responseHeader {
+		headerValue := BLANK
+		for i, value := range values {
+			if i == 0 {
+				headerValue = value
+			} else {
+				headerValue += "," + value
+			}
+		}
+
+		ctx.rw.Header().Set(key, headerValue)
+	}
+
+	ctx.rw.Header().Set("Content-Type", JSON_CONTENT_TYPE)
+
+	resBody := responseBody{
+		Code:    DEFAULT_INTEGER,
+		Message: "Success",
+		Data:    nil,
+	}
+
+	body, errOrigin := json.Marshal(resBody)
+	if errOrigin != nil {
+		ctx.LogError("Marshal json. RequestId: %s, Error: %v", ctx.requestID, errOrigin)
+		ctx.endResponse(http.StatusInternalServerError, `{"code":500,"message":"Internal server error(Marshal response data)","errorData":null,"data":null}`)
+		return
+	}
+
+	ctx.endResponse(http.StatusOK, string(body))
+}
+
 /*
 * endResponse: call write header if it is not called before and write body to writer
  */

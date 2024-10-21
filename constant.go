@@ -8,6 +8,7 @@ const (
 	CONTENT_TYPE_KEY       = "Content-Type"
 	ACCEPT_KEY             = "Accept"
 	REGEX_URL_PATH_ELEMENT = "[\\w-]+"
+	DEFAULT_INTEGER        = 0
 )
 
 // Kind of message queue:
