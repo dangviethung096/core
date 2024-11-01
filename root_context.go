@@ -174,7 +174,7 @@ func GetContextWithoutTimeout() Context {
 	return ctx
 }
 
-func GetConextWithDefaultTimeout() Context {
+func GetContextWithDefaultTimeout() Context {
 	ctx := contextPool.Get().(*rootContext)
 	ctx.Context, ctx.cancelFunc = context.WithTimeout(coreContext, contextTimeout)
 	ctx.timeout = contextTimeout

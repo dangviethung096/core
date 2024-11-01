@@ -16,7 +16,8 @@ func RegisterEvent[T any](event string, handler EventHandler[T]) {
 	eventTopic := fmt.Sprintf("event.%s", event)
 
 	err := MessageQueue().Subscribe(coreContext, eventTopic, func(topic string, data []byte) {
-		ctx := GetConextWithDefaultTimeout()
+		ctx := GetContextWithoutTimeout()
+		defer PutContext(ctx)
 
 		request := initRequest[T]()
 		if data != nil {
