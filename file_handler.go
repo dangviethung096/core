@@ -75,6 +75,15 @@ func RegisterFileUpload(url string, method string, handler FileHandler, middlewa
 			http.Error(writer, "Error creating file", http.StatusInternalServerError)
 			return
 		}
+
+		defer func() {
+			// Remove file after handle
+			err = os.Remove(fmt.Sprintf("uploads/%s", fileName))
+			if err != nil {
+				ctx.LogError("Error remove file: %v", err)
+			}
+		}()
+
 		defer dst.Close()
 
 		// Copy the uploaded file to the server
