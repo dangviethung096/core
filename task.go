@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"math"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type StartTaskRequest struct {
@@ -142,7 +144,8 @@ func TriggerTask(ctx Context, taskName string, taskData []byte) Error {
 }
 
 func StartOneTimeTask(ctx Context, queueName string, startTime time.Time, taskData []byte) (string, Error) {
-	taskName := fmt.Sprintf("onetime_%s_%s", queueName, startTime.Format(time.RFC3339))
+	randomId := uuid.New().String()
+	taskName := fmt.Sprintf("onetime_%s_%s", queueName, randomId)
 
 	now := time.Now()
 	if startTime.Before(now) {
