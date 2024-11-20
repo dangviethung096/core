@@ -41,6 +41,7 @@ var validate *validator.Validate
 var contextTimeout time.Duration
 var htmlTemplateMap map[string]*template.Template
 var emqxBrokerClient MqttClient
+var lockerManagerInstance *lockManager
 
 func Init(configFile string) {
 	// Init core context
@@ -170,6 +171,8 @@ func Init(configFile string) {
 	}
 
 	callback = make(map[string]CallbackFunc)
+
+	lockerManagerInstance = newLockManager()
 }
 
 /*
