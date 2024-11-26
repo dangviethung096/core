@@ -31,18 +31,10 @@ func StartTask(ctx Context, request *StartTaskRequest) Error {
 	}
 
 	// Calculate new time
-	nextTime := request.Time
-	now := time.Now().Unix()
-	requestTime := request.Time.Unix()
-	var loopIndex int64 = 0
-	if requestTime < now {
-		loopIndex = (now - requestTime) / request.Interval
-		if loopIndex > request.Loop {
-			ctx.LogError("Task is expired: %#v", *request)
-			return ERROR_TASK_IS_EXPIRED
-		}
-		nextTimeSecond := (((now-requestTime)/request.Interval)+1)*request.Interval + requestTime
-		nextTime = time.Unix(nextTimeSecond, 0)
+	loopIndex, nextTime := calculateNextTime(request.Time, request.Interval)
+	if loopIndex > request.Loop {
+		ctx.LogError("Task is expired: %#v", *request)
+		return ERROR_TASK_IS_EXPIRED
 	}
 	bucket := GetBucket(nextTime) // Generate bucket id
 

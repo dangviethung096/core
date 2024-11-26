@@ -106,8 +106,8 @@ func (w *worker) execute() {
 func (w *worker) process(bucket int64, id int64) {
 	var t task
 	// Get task detail from database in table: tasks
-	row := DBSession().QueryRowContext(coreContext, "SELECT id, queue_name, data, done, loop_index, loop_count, next, interval FROM scheduler_tasks WHERE id = $1", id)
-	err := row.Scan(&t.ID, &t.QueueName, &t.Data, &t.Done, &t.LoopIndex, &t.LoopCount, &t.Next, &t.Interval)
+	row := DBSession().QueryRowContext(coreContext, "SELECT id, queue_name, data, done, loop_index, loop_count, next, interval, start_time FROM scheduler_tasks WHERE id = $1", id)
+	err := row.Scan(&t.ID, &t.QueueName, &t.Data, &t.Done, &t.LoopIndex, &t.LoopCount, &t.Next, &t.Interval, &t.StartTime)
 	if err != nil {
 		LogError("Get task fail: %v", err)
 		return
@@ -138,9 +138,17 @@ func (w *worker) process(bucket int64, id int64) {
 		}
 	}
 
-	t.LoopIndex++
+	startTime, err := time.Parse(time.RFC3339, t.StartTime)
+	if err != nil {
+		LogError("Cannot parse start time: %v", err)
+		return
+	}
+
+	loopIndex, nextTime := calculateNextTime(startTime, t.Interval)
+	t.LoopIndex = uint64(loopIndex)
+	t.Next = nextTime.Unix()
+
 	if t.LoopIndex < t.LoopCount {
-		t.Next = t.Next + t.Interval /* calculate next */
 		next := time.Unix(t.Next, 0)
 		newBucket := GetBucket(next)
 		// Update new task in table: todo, task (time of next task)
@@ -160,7 +168,7 @@ func (w *worker) process(bucket int64, id int64) {
 		}
 
 		// Update in task
-		if _, err := tx.ExecContext(coreContext, "UPDATE scheduler_tasks SET next = $1, loop_index = $2 WHERE id = $3", t.Next, t.LoopIndex, t.ID); err != nil {
+		if _, err := tx.ExecContext(coreContext, "UPDATE scheduler_tasks SET next = $1, loop_index = $2, next_time = $3 WHERE id = $4", t.Next, t.LoopIndex, nextTime.Format(time.RFC3339), t.ID); err != nil {
 			LogError("Update task fail: %v", t)
 		}
 
@@ -193,4 +201,13 @@ func (w *worker) process(bucket int64, id int64) {
 			}
 		}
 	}
+}
+
+func calculateNextTime(start time.Time, interval int64) (int64, time.Time) {
+	now := time.Now().Unix()
+	startTime := start.Unix()
+	loopIndex := ((now - startTime) / interval) + 1
+	nextTime := loopIndex*interval + startTime
+
+	return loopIndex, time.Unix(nextTime, 0)
 }
