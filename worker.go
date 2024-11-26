@@ -204,14 +204,21 @@ func (w *worker) process(bucket int64, id int64) {
 	}
 }
 
-func calculateNextTime(start time.Time, interval int64) (int64, time.Time) {
+func calculateNextTime(start time.Time, interval int64) (uint64, time.Time) {
 	if interval <= 0 {
-		return math.MaxInt64, time.Unix(0, 0)
+		return math.MaxUint64, time.Unix(0, 0)
 	}
 	now := time.Now().Unix()
 	startTime := start.Unix()
-	loopIndex := ((now - startTime) / interval) + 1
-	nextTime := loopIndex*interval + startTime
+	var loopIndex uint64
+	var nextTime time.Time
+	if startTime < now {
+		loopIndex = uint64((now-startTime)/interval) + 1
+		nextTime = time.Unix(int64(loopIndex)*interval+startTime, 0)
+	} else {
+		loopIndex = 0
+		nextTime = start
+	}
 
-	return loopIndex, time.Unix(nextTime, 0)
+	return uint64(loopIndex), nextTime
 }
