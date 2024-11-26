@@ -46,7 +46,7 @@ func StartTask(ctx Context, request *StartTaskRequest) Error {
 	}
 
 	now := time.Now()
-	if nextTime.After(now) {
+	if nextTime.Before(now) {
 		ctx.LogError("Task is expired: %#v", *request)
 		return ERROR_TASK_IS_EXPIRED
 	}

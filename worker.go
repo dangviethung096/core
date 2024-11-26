@@ -208,6 +208,7 @@ func calculateNextTime(start time.Time, interval int64) (uint64, time.Time) {
 	if interval <= 0 {
 		return math.MaxUint64, time.Unix(0, 0)
 	}
+
 	now := time.Now().Unix()
 	startTime := start.Unix()
 	var loopIndex uint64
