@@ -3,6 +3,7 @@ package core
 import (
 	"database/sql"
 	"fmt"
+	"math"
 	"time"
 )
 
@@ -204,6 +205,9 @@ func (w *worker) process(bucket int64, id int64) {
 }
 
 func calculateNextTime(start time.Time, interval int64) (int64, time.Time) {
+	if interval <= 0 {
+		return math.MaxInt64, time.Unix(0, 0)
+	}
 	now := time.Now().Unix()
 	startTime := start.Unix()
 	loopIndex := ((now - startTime) / interval) + 1
