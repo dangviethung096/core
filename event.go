@@ -34,6 +34,28 @@ func RegisterEvent[T any](event string, handler EventHandler[T]) {
 	}
 }
 
+func RegisterEventInGroup[T any](group string, event string, handler EventHandler[T]) {
+	eventTopic := fmt.Sprintf("event.%s", event)
+
+	err := MessageQueue().SubscribeGroup(coreContext, eventTopic, group, func(topic string, data []byte) {
+		ctx := GetContextWithoutTimeout()
+		defer PutContext(ctx)
+
+		request := initRequest[T]()
+		if data != nil {
+			if err := json.Unmarshal(data, &request); err != nil {
+				ctx.LogError("Unmarshal data fail. topic: %s, Error: %v", topic, err)
+				return
+			}
+		}
+
+		handler(ctx, request)
+	})
+	if err != nil {
+		coreContext.LogFatal("Fail to subscribe topic: %s, Error: %v", event, err)
+	}
+}
+
 /*
 Publish event to event bus
 @param: ctx Context
