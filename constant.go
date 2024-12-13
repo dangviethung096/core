@@ -66,3 +66,7 @@ const (
 	MQTT_MESSAGE_PAYLOAD_TYPE_BYTES  = "bytes"
 	MQTT_MESSAGE_PAYLOAD_TYPE_STRING = "string"
 )
+
+const (
+	API_CODE_SUCCESS = 200
+)

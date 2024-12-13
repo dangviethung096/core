@@ -77,4 +77,5 @@ var (
 	ERROR_CANNOT_SUBSCRIBE_QUEUE                Error = NewError(36, "Cannot subscribe queue")
 	ERROR_CANNOT_PUBLISH_MESSAGE                Error = NewError(37, "Cannot publish message")
 	ERROR_WHERE_QUERY_IS_EMPTY                  Error = NewError(38, "Where query is empty")
+	ERROR_INVALID_STRUCTURE_FOR_RESPONSE        Error = NewError(39, "Invalid structure for response")
 )

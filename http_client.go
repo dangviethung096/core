@@ -67,6 +67,13 @@ type HttpClientBuilder interface {
 	 */
 	Request(response any) (HttpClientResponse, Error)
 
+	/*
+	 * Make a http request and call to internal server
+	 * @param response any Response to set
+	 * @return HttpClientResponse, Error
+	 */
+	RequestInternal(response any) (HttpClientResponse, Error)
+
 	GetFile(path string) (string, Error)
 }
 
@@ -532,4 +539,43 @@ func (builder *httpClientBuilder) GetFile(path string) (string, Error) {
 	}
 
 	return path, nil
+}
+
+func (builder *httpClientBuilder) RequestInternal(response any) (HttpClientResponse, Error) {
+	type internalResponse struct {
+		Code    int    `json:"code"`
+		Message string `json:"message"`
+		Data    any    `json:"data"`
+	}
+
+	var internalResponseValue internalResponse
+
+	res, err := builder.Request(&internalResponseValue)
+	if err != nil {
+		return nil, err
+	}
+
+	if internalResponseValue.Code != API_CODE_SUCCESS {
+		builder.ctx.LogError("Request internal: code = %d, message = %s", internalResponseValue.Code, internalResponseValue.Message)
+		return nil, NewError(internalResponseValue.Code, internalResponseValue.Message)
+	}
+
+	responseValue := res.(*httpClientResponse)
+
+	newRawResponse, originError := json.Marshal(internalResponseValue.Data)
+	if originError != nil {
+		builder.ctx.LogError("Cannot marshal data: data = %v, err = %v", internalResponseValue.Data, originError)
+		return nil, ERROR_SERVER_ERROR
+	}
+
+	originError = json.Unmarshal(newRawResponse, response)
+	if originError != nil {
+		builder.ctx.LogError("Cannot unmarshal data: data = %v, err = %v", internalResponseValue.Data, originError)
+		return nil, ERROR_INVALID_STRUCTURE_FOR_RESPONSE
+	}
+
+	responseValue.rawResponse = newRawResponse
+	responseValue.responseBody = response
+
+	return responseValue, nil
 }
