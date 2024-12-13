@@ -548,6 +548,8 @@ func (builder *httpClientBuilder) RequestInternal(response any) (HttpClientRespo
 		Data    any    `json:"data"`
 	}
 
+	ctx := builder.ctx
+
 	var internalResponseValue internalResponse
 
 	res, err := builder.Request(&internalResponseValue)
@@ -556,7 +558,7 @@ func (builder *httpClientBuilder) RequestInternal(response any) (HttpClientRespo
 	}
 
 	if internalResponseValue.Code != API_CODE_SUCCESS {
-		builder.ctx.LogError("Request internal: code = %d, message = %s", internalResponseValue.Code, internalResponseValue.Message)
+		ctx.LogError("Request internal: code = %d, message = %s", internalResponseValue.Code, internalResponseValue.Message)
 		return nil, NewError(internalResponseValue.Code, internalResponseValue.Message)
 	}
 
@@ -564,13 +566,13 @@ func (builder *httpClientBuilder) RequestInternal(response any) (HttpClientRespo
 
 	newRawResponse, originError := json.Marshal(internalResponseValue.Data)
 	if originError != nil {
-		builder.ctx.LogError("Cannot marshal data: data = %v, err = %v", internalResponseValue.Data, originError)
+		ctx.LogError("Cannot marshal data: data = %v, err = %v", internalResponseValue.Data, originError)
 		return nil, ERROR_SERVER_ERROR
 	}
 
 	originError = json.Unmarshal(newRawResponse, response)
 	if originError != nil {
-		builder.ctx.LogError("Cannot unmarshal data: data = %v, err = %v", internalResponseValue.Data, originError)
+		ctx.LogError("Cannot unmarshal data: data = %v, err = %v", internalResponseValue.Data, originError)
 		return nil, ERROR_INVALID_STRUCTURE_FOR_RESPONSE
 	}
 
