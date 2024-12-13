@@ -61,7 +61,7 @@ func NewDefaultHttpResponse(body any) HttpResponse {
 	return &httpResponse{
 		statusCode:   http.StatusOK,
 		body:         body,
-		responseCode: http.StatusOK,
+		responseCode: API_CODE_SUCCESS,
 		contentType:  JSON_CONTENT_TYPE,
 	}
 }
