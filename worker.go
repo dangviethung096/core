@@ -192,7 +192,8 @@ func (w *worker) process(bucket int64, id int64) {
 		}
 
 		// Update task in task table: is it done? => done
-		if _, err := tx.ExecContext(coreContext, "UPDATE scheduler_tasks SET done = true, loop_index = $1 WHERE id = $2", t.LoopIndex, id); err != nil {
+		// Set loop_index = loop_count
+		if _, err := tx.ExecContext(coreContext, "UPDATE scheduler_tasks SET done = true, loop_index = $1 WHERE id = $2", t.LoopCount, id); err != nil {
 			LogError("Update task in table fail: task = %v, err = %s", t, err.Error())
 		}
 
