@@ -41,6 +41,7 @@ func getHttpContext() *HttpContext {
 	ctx.timeout = contextTimeout
 	ctx.isResponseEnd = false
 	ctx.responseHeader = make(map[string][]string)
+	ctx.requestID = ID.GenerateID()
 	return ctx
 }
 

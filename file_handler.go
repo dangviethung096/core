@@ -29,7 +29,6 @@ func RegisterFileUpload(url string, method string, handler FileHandler, middlewa
 
 		ctx.rw = writer
 		ctx.request = request
-		ctx.requestID = ID.GenerateID()
 		ctx.URL = request.URL
 		ctx.Method = request.Method
 

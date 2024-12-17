@@ -23,7 +23,6 @@ func TestAPI[T any](apiInfo TestApiInfo[T]) (HttpResponse, HttpError) {
 	ctx := getHttpContext()
 	defer putHttpContext(ctx)
 
-	ctx.requestID = ID.GenerateID()
 	// Get url
 	ctx.URL, _ = url.Parse(apiInfo.URL)
 
@@ -48,7 +47,6 @@ func TestAPI[T any](apiInfo TestApiInfo[T]) (HttpResponse, HttpError) {
 }
 
 func TestAPIWithContext[T any](ctx *HttpContext, apiInfo TestApiInfo[T]) (HttpResponse, HttpError) {
-	ctx.requestID = ID.GenerateID()
 	// Get url
 	ctx.URL, _ = url.Parse(apiInfo.URL)
 
