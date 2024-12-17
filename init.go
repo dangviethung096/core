@@ -291,7 +291,6 @@ func handleAPIAndPage() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		isHandled := false
 		if page, ok := pageMap[r.URL.Path]; ok && r.Method == http.MethodGet {
-			LogInfo("Handle request page: %s", r.URL.Path)
 			pageHandler(page, w, r)
 			isHandled = true
 		} else if routeList, ok := routeMap[r.URL.Path]; ok {
