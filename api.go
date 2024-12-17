@@ -119,7 +119,7 @@ func RegisterAPI[T any](url string, method string, handler Handler[T], middlewar
 		requestBody := strings.ReplaceAll(string(ctx.requestBody), "\r", "")
 		requestBody = strings.ReplaceAll(requestBody, "\n", "")
 
-		ctx.LogInfo("Request: Url = %s, method = %s, header = %#v, body = %s", ctx.URL, ctx.Method, ctx.request.Header, requestBody)
+		ctx.LogInfo("Request: Url = %s, method = %s, header = %#v, body = %s", request.URL.String(), ctx.Method, ctx.request.Header, requestBody)
 		res, err := handler(ctx, req)
 		if err != nil {
 			ctx.LogError("Response error: Url = %s, body = %s", ctx.URL, err.Error())

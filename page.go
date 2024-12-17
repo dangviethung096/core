@@ -69,6 +69,7 @@ func pageHandler(pageInfo pageInfo, w http.ResponseWriter, r *http.Request) {
 	// Get http context
 	ctx := getHttpContext()
 	defer putHttpContext(ctx)
+	ctx.LogInfo("Handle page: %s, requestID = %s", r.URL.String(), ctx.requestID)
 
 	ctx.request = r
 	ctx.rw = w
