@@ -120,6 +120,8 @@ func pageHandler(pageInfo pageInfo, w http.ResponseWriter, r *http.Request) {
 		htmlTemplateMap[pageInfo.url] = tmpl
 	}
 
+	w.Header().Set("Request-ID", ctx.requestID)
+
 	// Execute template
 	if originError := tmpl.Execute(w, pageInfo.data); originError != nil {
 		ctx.LogError("Error when execute template: %s", originError)
