@@ -91,6 +91,7 @@ func pageHandler(pageInfo pageInfo, w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	ctx.LogInfo("Execute handler of request %s, requestID = %s", pageInfo.url, ctx.requestID)
 	response, err := pageInfo.handler(ctx, &request)
 	if err != nil {
 		ctx.LogError("Error when execute handler of request %s: %s", pageInfo.url, err)
@@ -125,6 +126,8 @@ func pageHandler(pageInfo pageInfo, w http.ResponseWriter, r *http.Request) {
 		http.Error(w, originError.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	ctx.LogInfo("Render page successfully: %s, requestID = %s", pageInfo.url, ctx.requestID)
 }
 
 func parseTemplateFile(pageInfo pageInfo) *template.Template {
