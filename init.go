@@ -197,11 +197,15 @@ func closeDB() {
 }
 
 func releaseCacheDB() {
-	redisClient.Close()
+	if redisClient.Client != nil {
+		redisClient.Close()
+	}
 }
 
 func releaseMessageQueue() {
-	queueClient.nc.Close()
+	if queueClient.nc != nil {
+		queueClient.nc.Close()
+	}
 }
 
 /*
