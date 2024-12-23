@@ -180,7 +180,7 @@ func (t *searchTree[T]) PrintTree() {
 		queue = queue[1:]
 		LogInfo("Browse: %s: value = %v", element.prefix+string(element.node.char), element.node.value)
 		if element.node.haveValue {
-			LogInfo(element.prefix + string(element.node.char))
+			LogInfo("%s", element.prefix+string(element.node.char))
 
 		}
 
