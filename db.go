@@ -102,6 +102,7 @@ func openPostgresDBConnection(dbInfo DBInfo) *postgresSession {
 func connectToOracleDB(dbInfo DBInfo) (*sql.DB, Error) {
 	connectStr := fmt.Sprintf(`user="%s" password="%s" connectString="%s:%d/%s"`, dbInfo.Username, dbInfo.Password, dbInfo.Host, dbInfo.Port, dbInfo.Database)
 	// Connect to oracle database and return session
+	log.Printf("Connect to oracle database: %s:%d/%s\n", dbInfo.Host, dbInfo.Port, dbInfo.Database)
 	db, err := sql.Open("godror", connectStr)
 	if err != nil {
 		return nil, NewError(ERROR_CODE_FROM_DATABASE, fmt.Sprintf("Error opening oracle database: dbInfo = %v, err = %v", dbInfo, err))
@@ -111,6 +112,8 @@ func connectToOracleDB(dbInfo DBInfo) (*sql.DB, Error) {
 	if err != nil {
 		return nil, NewError(ERROR_CODE_FROM_DATABASE, fmt.Sprintf("Error opening oracle database: dbInfo = %v, err = %v", dbInfo, err))
 	}
+
+	log.Printf("Connected to oracle database!\n")
 
 	return db, nil
 }
