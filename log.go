@@ -11,25 +11,25 @@ type logger interface {
 
 // Implement the logger interface
 func LogInfo(format string, args ...interface{}) {
-	coreContext.(*rootContext).LogInfo(format, args...)
+	coreContext.(*rootContext).LogInfoWithCallStack(format, 3, args...)
 }
 
 func LogDebug(format string, args ...interface{}) {
-	coreContext.(*rootContext).LogDebug(format, args...)
+	coreContext.(*rootContext).LogDebugWithCallStack(format, 3, args...)
 }
 
 func LogWarning(format string, args ...interface{}) {
-	coreContext.(*rootContext).LogWarning(format, args...)
+	coreContext.(*rootContext).LogWarningWithCallStack(format, 3, args...)
 }
 
 func LogError(format string, args ...interface{}) {
-	coreContext.(*rootContext).LogError(format, args...)
+	coreContext.(*rootContext).LogErrorWithCallStack(format, 3, args...)
 }
 
 func LogFatal(format string, args ...interface{}) {
-	coreContext.(*rootContext).LogFatal(format, args...)
+	coreContext.(*rootContext).LogFatalWithCallStack(format, 3, args...)
 }
 
 func LogPanic(format string, args ...interface{}) {
-	coreContext.(*rootContext).LogPanic(format, args...)
+	coreContext.(*rootContext).LogPanicWithCallStack(format, 3, args...)
 }
