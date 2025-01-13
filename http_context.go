@@ -175,7 +175,7 @@ func (ctx *HttpContext) writeError(httpErr HttpError) {
 
 	resBody := responseBody{
 		Code:    httpErr.GetCode(),
-		Message: httpErr.GetMessage(),
+		Message: httpErr.GetMessage() + " (RequestID: " + ctx.requestID + ")",
 		Data:    httpErr.GetErrorData(),
 	}
 
