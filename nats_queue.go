@@ -31,7 +31,7 @@ func (client natsClient) Subscribe(ctx Context, topic string, handler NatsSubscr
 
 	_, err := client.nc.Subscribe(topic, natsHandler)
 	if err != nil {
-		ctx.LogInfo("Fail to subscribe topic: %s", topic)
+		ctx.LogInfo("Fail to subscribe topic: %s, err = %v", topic, err)
 		return ERROR_CANNOT_SUBSCRIBE_QUEUE
 	}
 
@@ -46,7 +46,7 @@ func (client natsClient) SubscribeGroup(ctx Context, topic string, group string,
 
 	_, err := client.nc.QueueSubscribe(topic, group, natsHandler)
 	if err != nil {
-		ctx.LogInfo("Fail to subscribe topic: %s", topic)
+		ctx.LogInfo("Fail to subscribe topic: %s, err = %v", topic, err)
 		return ERROR_CANNOT_SUBSCRIBE_QUEUE
 	}
 
@@ -56,7 +56,7 @@ func (client natsClient) SubscribeGroup(ctx Context, topic string, group string,
 func (client natsClient) Publish(ctx Context, topic string, data []byte) Error {
 	err := client.nc.Publish(topic, data)
 	if err != nil {
-		ctx.LogInfo("Fail to publish message to topic: %s", topic)
+		ctx.LogInfo("Fail to publish message to topic: %s, err = %v", topic, err)
 		return ERROR_CANNOT_PUBLISH_MESSAGE
 	}
 
