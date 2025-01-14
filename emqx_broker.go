@@ -30,6 +30,10 @@ func NewEmqxClient(emqxConfig EmqxConfig) MqttClient {
 		log.Fatalf("Connect to emqx broker fail: %v\n", err)
 	}
 
+	if !emqxClient.IsConnected() || !emqxClient.IsConnectionOpen() {
+		log.Fatalf("Connect to emqx broker fail: %#v\n", emqxConfig)
+	}
+
 	return emqxClient
 }
 
