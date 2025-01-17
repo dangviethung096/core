@@ -123,6 +123,10 @@ func SelectListWithWhereQuery(ctx Context, data DataBaseObject, tailQuery *TailQ
 	return mainDbSession.SelectListWithTailQuery(ctx, data, tailQuery)
 }
 
+func SelectListWithTailQuery(ctx Context, data DataBaseObject, tailQuery *TailQuery) (any, Error) {
+	return mainDbSession.SelectListWithTailQuery(ctx, data, tailQuery)
+}
+
 /*
 * SelectPagingListByFields
 * @params: ctx Context, data DataBaseObject, mapArgs map[string]interface{}, limit int64, offset int64
