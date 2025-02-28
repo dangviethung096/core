@@ -267,7 +267,7 @@ func (builder *httpClientBuilder) Request(response any) (HttpClientResponse, Err
 		}
 		builder.ctx.LogInfo("HttpRequest: url = %s, body: %s", builder.url, string(bodyBytes))
 		body = bytes.NewBuffer(bodyBytes)
-	} else if builder.bodyType == BodyType_FORM_DATA {
+	} else if builder.bodyType == BodyType_URLEncoded {
 		// Handle form data
 		if builder.formData != nil {
 			data := url.Values{}
