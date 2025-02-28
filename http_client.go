@@ -303,8 +303,10 @@ func (builder *httpClientBuilder) Request(response any) (HttpClientResponse, Err
 	builder.ctx.LogInfo("HttpRequest: url = %s, headers: %#v", builder.url, builder.headers)
 
 	//Set Form Data
-	if builder.bodyType == BodyType_FORM_DATA {
-		req.Header.Add(CONTENT_TYPE_KEY, FORMDATA_CONTENT_TYPE)
+	if builder.bodyType == BodyType_URLEncoded {
+		req.Header.Set(CONTENT_TYPE_KEY, FORM_URLENCODED_CONTENT_TYPE)
+	} else if builder.bodyType == BodyType_JSON {
+		req.Header.Set(CONTENT_TYPE_KEY, JSON_CONTENT_TYPE)
 	}
 
 	// Set query
@@ -514,7 +516,7 @@ func (builder *httpClientBuilder) GetFile(path string) (string, Error) {
 
 	//Set Form Data
 	if builder.formData != nil {
-		req.Header.Add(CONTENT_TYPE_KEY, FORMDATA_CONTENT_TYPE)
+		req.Header.Add(CONTENT_TYPE_KEY, FORM_URLENCODED_CONTENT_TYPE)
 	}
 
 	// Set query

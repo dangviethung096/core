@@ -97,7 +97,7 @@ func RegisterAPI[T any](url string, method string, handler Handler[T], middlewar
 					ctx.writeError(NewDefaultHttpError(400, "Bad request (Marshal requeset body)"))
 					return
 				}
-			} else if strings.Contains(requestContentType, FORMDATA_CONTENT_TYPE) {
+			} else if strings.Contains(requestContentType, FORM_URLENCODED_CONTENT_TYPE) {
 				buffer := bytes.NewBuffer(ctx.requestBody)
 				ctx.request.Body = io.NopCloser(buffer)
 				ctx.request.ParseForm()

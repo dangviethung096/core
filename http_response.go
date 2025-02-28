@@ -15,10 +15,10 @@ type HttpResponse interface {
 type ContentType string
 
 const (
-	JSON_CONTENT_TYPE       = "application/json"
-	FORMDATA_CONTENT_TYPE   = "application/x-www-form-urlencoded"
-	TEXT_HTML_CONTENT_TYPE  = "text/html"
-	TEXT_PLAIN_CONTENT_TYPE = "text/plain"
+	JSON_CONTENT_TYPE            = "application/json"
+	FORM_URLENCODED_CONTENT_TYPE = "application/x-www-form-urlencoded"
+	TEXT_HTML_CONTENT_TYPE       = "text/html"
+	TEXT_PLAIN_CONTENT_TYPE      = "text/plain"
 )
 
 type httpResponse struct {
