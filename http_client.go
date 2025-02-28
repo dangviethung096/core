@@ -18,6 +18,7 @@ const (
 	BodyType_JSON       bodyType = "json"
 	BodyType_XML        bodyType = "xml"
 	BodyType_URLEncoded bodyType = "x-www-form-urlencoded"
+	BodyType_FORM_DATA  bodyType = "multipart/form-data"
 )
 
 type HttpClientCallback func(ctx Context, response HttpClientResponse)
@@ -49,6 +50,7 @@ type HttpClientBuilder interface {
 	SetHeaders(headers map[string][]string) HttpClientBuilder
 	AddFormData(key string, value string) HttpClientBuilder
 	SetFormData(formData map[string][]string) HttpClientBuilder
+	SetMultiPartFormData(contentType string) HttpClientBuilder
 	SetCallback(callback HttpClientCallback) HttpClientBuilder
 	SetContext(ctx Context) HttpClientBuilder
 	SetRetry() HttpClientBuilder
@@ -215,6 +217,12 @@ func (builder *httpClientBuilder) SetFormData(formData map[string][]string) Http
 	return builder
 }
 
+func (builder *httpClientBuilder) SetMultiPartFormData(contentType string) HttpClientBuilder {
+	builder.bodyType = BodyType_FORM_DATA
+	builder.AddHeader(CONTENT_TYPE_KEY, contentType)
+	return builder
+}
+
 /*
 * Set error body: set error reponse, client will save error data struct
 * if status code > 399, and errorResponse is a point of struct type
@@ -252,28 +260,30 @@ func (builder *httpClientBuilder) Request(response any) (HttpClientResponse, Err
 
 	var body *bytes.Buffer
 	if builder.body != nil && builder.bodyType == BodyType_JSON {
+		// Handle json body
 		bodyBytes, err := json.Marshal(builder.body)
 		if err != nil {
 			builder.ctx.LogError("Cannot marshal body: body = %v, err = %v", builder.body, err)
 		}
 		builder.ctx.LogInfo("HttpRequest: url = %s, body: %s", builder.url, string(bodyBytes))
 		body = bytes.NewBuffer(bodyBytes)
-	} else {
-		body = builder.body.(*bytes.Buffer)
-	}
-
-	if builder.formData != nil {
-		data := url.Values{}
-		for key, values := range builder.formData {
-			for _, value := range values {
-				if data.Get(key) == BLANK {
-					data.Set(key, value)
-				} else {
-					data.Add(key, value)
+	} else if builder.bodyType == BodyType_FORM_DATA {
+		// Handle form data
+		if builder.formData != nil {
+			data := url.Values{}
+			for key, values := range builder.formData {
+				for _, value := range values {
+					if data.Get(key) == BLANK {
+						data.Set(key, value)
+					} else {
+						data.Add(key, value)
+					}
 				}
 			}
+			body = bytes.NewBuffer([]byte(data.Encode()))
 		}
-		body = bytes.NewBuffer([]byte(data.Encode()))
+	} else {
+		body = builder.body.(*bytes.Buffer)
 	}
 
 	// Init a request
