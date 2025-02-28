@@ -250,14 +250,16 @@ func (builder *httpClientBuilder) Request(response any) (HttpClientResponse, Err
 		return nil, err
 	}
 
-	var body []byte
+	var body *bytes.Buffer
 	if builder.body != nil && builder.bodyType == BodyType_JSON {
-		var err error
-		body, err = json.Marshal(builder.body)
+		bodyBytes, err := json.Marshal(builder.body)
 		if err != nil {
 			builder.ctx.LogError("Cannot marshal body: body = %v, err = %v", builder.body, err)
 		}
-		builder.ctx.LogInfo("HttpRequest: url = %s, body: %s", builder.url, string(body))
+		builder.ctx.LogInfo("HttpRequest: url = %s, body: %s", builder.url, string(bodyBytes))
+		body = bytes.NewBuffer(bodyBytes)
+	} else {
+		body = builder.body.(*bytes.Buffer)
 	}
 
 	if builder.formData != nil {
@@ -271,11 +273,11 @@ func (builder *httpClientBuilder) Request(response any) (HttpClientResponse, Err
 				}
 			}
 		}
-		body = []byte(data.Encode())
+		body = bytes.NewBuffer([]byte(data.Encode()))
 	}
 
 	// Init a request
-	req, err := http.NewRequest(builder.method, builder.url, bytes.NewBuffer(body))
+	req, err := http.NewRequest(builder.method, builder.url, body)
 	if err != nil {
 		builder.ctx.LogError("Cannot create new http request: url = %s, method = %s, err = %v", builder.url, builder.method, err)
 		return nil, ERROR_CANNOT_CREATE_HTTP_REQUEST
