@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"io"
+	"maps"
 	"net/http"
 	"net/url"
 	"os"
@@ -48,8 +49,8 @@ type HttpClientBuilder interface {
 	AddQuery(key string, value string) HttpClientBuilder
 	AddHeader(key string, value string) HttpClientBuilder
 	SetHeaders(headers map[string][]string) HttpClientBuilder
-	AddFormData(key string, value string) HttpClientBuilder
-	SetFormData(formData map[string][]string) HttpClientBuilder
+	AddFormUrlEnCoded(key string, value string) HttpClientBuilder
+	SetFormUrlEnCoded(formData map[string][]string) HttpClientBuilder
 	SetMultiPartFormData(contentType string) HttpClientBuilder
 	SetCallback(callback HttpClientCallback) HttpClientBuilder
 	SetContext(ctx Context) HttpClientBuilder
@@ -164,7 +165,7 @@ func (builder *httpClientBuilder) AddHeader(key string, value string) HttpClient
 	return builder
 }
 
-func (builder *httpClientBuilder) AddFormData(key string, value string) HttpClientBuilder {
+func (builder *httpClientBuilder) AddFormUrlEnCoded(key string, value string) HttpClientBuilder {
 	builder.bodyType = BodyType_URLEncoded
 	if builder.formData == nil {
 		builder.formData = make(map[string][]string)
@@ -203,7 +204,7 @@ func (builder *httpClientBuilder) SetHeaders(headers map[string][]string) HttpCl
 	return builder
 }
 
-func (builder *httpClientBuilder) SetFormData(formData map[string][]string) HttpClientBuilder {
+func (builder *httpClientBuilder) SetFormUrlEnCoded(formData map[string][]string) HttpClientBuilder {
 	builder.bodyType = BodyType_URLEncoded
 	// If header is nil, assign map of params to header and return
 	if builder.formData == nil {
@@ -211,9 +212,7 @@ func (builder *httpClientBuilder) SetFormData(formData map[string][]string) Http
 		return builder
 	}
 
-	for key, value := range formData {
-		builder.formData[key] = value
-	}
+	maps.Copy(builder.formData, formData)
 	return builder
 }
 
@@ -267,22 +266,20 @@ func (builder *httpClientBuilder) Request(response any) (HttpClientResponse, Err
 		}
 		builder.ctx.LogInfo("HttpRequest: url = %s, body: %s", builder.url, string(bodyBytes))
 		body = bytes.NewBuffer(bodyBytes)
-	} else if builder.bodyType == BodyType_URLEncoded {
+	} else if builder.formData != nil && builder.bodyType == BodyType_URLEncoded {
 		// Handle form data
-		if builder.formData != nil {
-			data := url.Values{}
-			for key, values := range builder.formData {
-				for _, value := range values {
-					if data.Get(key) == BLANK {
-						data.Set(key, value)
-					} else {
-						data.Add(key, value)
-					}
+		data := url.Values{}
+		for key, values := range builder.formData {
+			for _, value := range values {
+				if data.Get(key) == BLANK {
+					data.Set(key, value)
+				} else {
+					data.Add(key, value)
 				}
 			}
-			body = bytes.NewBuffer([]byte(data.Encode()))
 		}
-	} else {
+		body = bytes.NewBuffer([]byte(data.Encode()))
+	} else if builder.bodyType == BodyType_FORM_DATA && builder.body != nil {
 		body = builder.body.(*bytes.Buffer)
 	}
 
@@ -306,7 +303,7 @@ func (builder *httpClientBuilder) Request(response any) (HttpClientResponse, Err
 	builder.ctx.LogInfo("HttpRequest: url = %s, headers: %#v", builder.url, builder.headers)
 
 	//Set Form Data
-	if builder.formData != nil {
+	if builder.bodyType == BodyType_FORM_DATA {
 		req.Header.Add(CONTENT_TYPE_KEY, FORMDATA_CONTENT_TYPE)
 	}
 
@@ -470,17 +467,17 @@ func (builder *httpClientBuilder) GetFile(path string) (string, Error) {
 		builder.ctx.LogInfo("Request time: %fs", time.Duration(diff).Seconds())
 	}()
 
-	var body []byte
+	var body *bytes.Buffer
 	if builder.body != nil && builder.bodyType == BodyType_JSON {
-		var err error
-		body, err = json.Marshal(builder.body)
+		// Handle json body
+		bodyBytes, err := json.Marshal(builder.body)
 		if err != nil {
 			builder.ctx.LogError("Cannot marshal body: body = %v, err = %v", builder.body, err)
 		}
-		builder.ctx.LogInfo("HttpRequest: url = %s, body: %s", builder.url, string(body))
-	}
-
-	if builder.formData != nil {
+		builder.ctx.LogInfo("HttpRequest: url = %s, body: %s", builder.url, string(bodyBytes))
+		body = bytes.NewBuffer(bodyBytes)
+	} else if builder.formData != nil && builder.bodyType == BodyType_URLEncoded {
+		// Handle form data
 		data := url.Values{}
 		for key, values := range builder.formData {
 			for _, value := range values {
@@ -491,11 +488,13 @@ func (builder *httpClientBuilder) GetFile(path string) (string, Error) {
 				}
 			}
 		}
-		body = []byte(data.Encode())
+		body = bytes.NewBuffer([]byte(data.Encode()))
+	} else if builder.bodyType == BodyType_FORM_DATA && builder.body != nil {
+		body = builder.body.(*bytes.Buffer)
 	}
 
 	// Init a request
-	req, err := http.NewRequest(builder.method, builder.url, bytes.NewBuffer(body))
+	req, err := http.NewRequest(builder.method, builder.url, body)
 	if err != nil {
 		builder.ctx.LogError("Cannot create new http request: url = %s, method = %s, err = %v", builder.url, builder.method, err)
 		return BLANK, ERROR_CANNOT_CREATE_HTTP_REQUEST
