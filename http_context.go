@@ -1,7 +1,6 @@
 package core
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -26,7 +25,6 @@ type HttpContext struct {
 	isResponseEnd  bool
 	urlParams      map[string]string
 	responseHeader map[string][]string
-	cancelFunc     context.CancelFunc
 	requestID      string
 	timeout        time.Duration
 	tempData       map[string]any
@@ -52,7 +50,6 @@ func getHttpContext(c *gin.Context) *HttpContext {
 * @return: void
  */
 func putHttpContext(ctx *HttpContext) {
-	ctx.cancelFunc()
 	// Release memory of context: urlParams, responseHeader, tempData
 	ctx.urlParams = nil
 	ctx.responseHeader = nil
@@ -298,15 +295,6 @@ func (ctx *HttpContext) GetUrlParam(key string) string {
  */
 func (ctx *HttpContext) GetContextID() string {
 	return ctx.requestID
-}
-
-/*
-* GetCancelFunc: Get the cancel function
-* @params: void
-* @return: func()
- */
-func (ctx *HttpContext) GetCancelFunc() func() {
-	return ctx.cancelFunc
 }
 
 /*

@@ -77,12 +77,10 @@ func RegisterAPI[T any](url string, method string, handler Handler[T], middlewar
 					ctx.writeError(NewHttpError(http.StatusBadRequest, ERROR_BAD_BODY_REQUEST, err.Error(), nil))
 					return
 				}
-
 			} else if strings.Contains(requestContentType, FORM_URLENCODED_CONTENT_TYPE) {
 				buffer := bytes.NewBuffer(ctx.requestBody)
 				ctx.request.Body = io.NopCloser(buffer)
 				ctx.request.ParseForm()
-
 			}
 		}
 
