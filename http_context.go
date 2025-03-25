@@ -276,8 +276,8 @@ func (ctx *HttpContext) endResponse(statusCode int, body string) {
 		ctx.isResponseEnd = true
 		// end response
 		ctx.rw.WriteHeader(statusCode)
-		fmt.Fprint(ctx.rw, body)
-		ctx.rw.(http.Flusher).Flush()
+		ctx.Writer.Write([]byte(body))
+		ctx.Writer.(http.Flusher).Flush()
 	}
 }
 

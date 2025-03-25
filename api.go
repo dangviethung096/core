@@ -2,6 +2,7 @@ package core
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -73,7 +74,7 @@ func RegisterAPI[T any](url string, method string, handler Handler[T], middlewar
 		requestContentType := strings.ToLower(ctx.GetRequestHeader(CONTENT_TYPE_KEY))
 		if len(ctx.requestBody) != 0 {
 			if strings.Contains(requestContentType, JSON_CONTENT_TYPE) {
-				if err := ctx.ShouldBindJSON(&req); err != nil {
+				if err := json.Unmarshal(ctx.requestBody, &req); err != nil {
 					ctx.writeError(NewHttpError(http.StatusBadRequest, ERROR_BAD_BODY_REQUEST, err.Error(), nil))
 					return
 				}
