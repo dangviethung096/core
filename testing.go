@@ -3,8 +3,10 @@ package core
 import (
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 
+	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator"
 )
 
@@ -19,8 +21,10 @@ type TestApiInfo[T any] struct {
 }
 
 func TestAPI[T any](apiInfo TestApiInfo[T]) (HttpResponse, HttpError) {
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
 	// Create a new context
-	ctx := getHttpContext()
+	ctx := getHttpContext(c)
 	defer putHttpContext(ctx)
 
 	// Get url

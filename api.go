@@ -2,27 +2,20 @@ package core
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"reflect"
-	"regexp"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator"
 )
-
-type optionalParams struct {
-	haveUrlParam bool
-	urlPattern   string
-	urlParamKeys []string
-}
 
 type Route struct {
 	URL     Url
 	Method  string
-	handler func(writer http.ResponseWriter, request *http.Request, optional optionalParams)
+	handler gin.HandlerFunc
 }
 
 type Url struct {
@@ -34,8 +27,6 @@ type ApiMiddleware func(ctx *HttpContext) HttpError
 
 type Handler[T any] func(ctx *HttpContext, request T) (HttpResponse, HttpError)
 
-var urlRegex = regexp.MustCompile(`.*[{].*[}].*`)
-
 /*
 * Register api: register api to routeMap
 * @param url: url of api
@@ -44,12 +35,6 @@ var urlRegex = regexp.MustCompile(`.*[{].*[}].*`)
 * @return void
  */
 func RegisterAPI[T any](url string, method string, handler Handler[T], middlewares ...ApiMiddleware) {
-	var isRegexPath = false
-	var urlParams []string
-	if urlRegex.MatchString(url) {
-		url, urlParams = convertRegexUrl(url)
-		isRegexPath = true
-	}
 	LogInfo("Register api: %s %s", method, url)
 
 	// Check if T is a struct
@@ -58,11 +43,14 @@ func RegisterAPI[T any](url string, method string, handler Handler[T], middlewar
 		LogFatal("Handler request parameter must be a struct, got: %s", tType.Kind())
 	}
 	// Create a new handler
-	h := func(writer http.ResponseWriter, request *http.Request, optional optionalParams) {
+	ginHandler := func(c *gin.Context) {
 		// Create a new context
-		ctx := getHttpContext()
+		ctx := getHttpContext(c)
+
 		defer putHttpContext(ctx)
-		buildContext(ctx, writer, request)
+		buildContext(ctx)
+
+		ctx.LogInfo("Request: Url = %s, method = %s, header = %#v", ctx.URL, ctx.Method, ctx.request.Header)
 
 		// Append to common middleware
 		middlewareList := []ApiMiddleware{}
@@ -80,27 +68,21 @@ func RegisterAPI[T any](url string, method string, handler Handler[T], middlewar
 			}
 		}
 
-		if optional.haveUrlParam {
-			// Init url params map
-			ctx.urlParams = make(map[string]string)
-			// convert param
-			ctx.convertUrlParams(optional.urlPattern, request.URL.Path, optional.urlParamKeys)
-		}
-
 		// Unmarshal json request body to model T
 		req := initRequest[T]()
 		requestContentType := strings.ToLower(ctx.GetRequestHeader(CONTENT_TYPE_KEY))
 		if len(ctx.requestBody) != 0 {
 			if strings.Contains(requestContentType, JSON_CONTENT_TYPE) {
-				if err := json.Unmarshal(ctx.requestBody, &req); err != nil {
-					LogInfo("Unmarshal request body fail. RequestId: %s, Error: %s", ctx.requestID, err.Error())
-					ctx.writeError(NewDefaultHttpError(400, "Bad request (Marshal requeset body)"))
+				if err := ctx.ShouldBindJSON(&req); err != nil {
+					ctx.writeError(NewHttpError(http.StatusBadRequest, ERROR_BAD_BODY_REQUEST, err.Error(), nil))
 					return
 				}
+
 			} else if strings.Contains(requestContentType, FORM_URLENCODED_CONTENT_TYPE) {
 				buffer := bytes.NewBuffer(ctx.requestBody)
 				ctx.request.Body = io.NopCloser(buffer)
 				ctx.request.ParseForm()
+
 			}
 		}
 
@@ -119,7 +101,7 @@ func RegisterAPI[T any](url string, method string, handler Handler[T], middlewar
 		requestBody := strings.ReplaceAll(string(ctx.requestBody), "\r", "")
 		requestBody = strings.ReplaceAll(requestBody, "\n", "")
 
-		ctx.LogInfo("Request: Url = %s, method = %s, header = %#v, body = %s", request.URL.String(), ctx.Method, ctx.request.Header, requestBody)
+		ctx.LogInfo("Request: Url = %s, method = %s, header = %#v, body = %s", ctx.URL, ctx.Method, ctx.request.Header, requestBody)
 		res, err := handler(ctx, req)
 		if err != nil {
 			ctx.LogError("Response error: Url = %s, body = %s", ctx.URL, err.Error())
@@ -135,56 +117,28 @@ func RegisterAPI[T any](url string, method string, handler Handler[T], middlewar
 		}
 	}
 
-	if !isRegexPath {
-		routeSlice, ok := routeMap[url]
-		if ok {
-			routeSlice = append(routeSlice, Route{
-				Method: method,
-				URL: Url{
-					Path:   url,
-					Params: nil,
-				},
-				handler: h,
-			})
-			routeMap[url] = routeSlice
-		} else {
-			routeMap[url] = []Route{
-				{
-					Method: method,
-					URL: Url{
-						Path:   url,
-						Params: nil,
-					},
-					handler: h,
-				},
-			}
-		}
-	} else {
-		routeSlice, ok := routeRegexMap[url]
-		if ok {
-			routeSlice = append(routeSlice, Route{
-				Method: method,
-				URL: Url{
-					Path:   url,
-					Params: urlParams,
-				},
-
-				handler: h,
-			})
-			routeRegexMap[url] = routeSlice
-		} else {
-			routeRegexMap[url] = []Route{
-				{
-					Method: method,
-					URL: Url{
-						Path:   url,
-						Params: urlParams,
-					},
-					handler: h,
-				},
-			}
-		}
+	switch method {
+	case http.MethodGet:
+		router.GET(url, ginHandler)
+	case http.MethodPost:
+		router.POST(url, ginHandler)
+	case http.MethodPut:
+		router.PUT(url, ginHandler)
+	case http.MethodDelete:
+		router.DELETE(url, ginHandler)
 	}
+
+	key := getRouteKey(url, method)
+
+	routeMap[key] = Route{
+		Method: method,
+		URL: Url{
+			Path:   url,
+			Params: nil,
+		},
+		handler: ginHandler,
+	}
+
 }
 
 func initRequest[T any]() T {
@@ -193,56 +147,25 @@ func initRequest[T any]() T {
 	return ref.Interface().(T)
 }
 
-func buildContext(ctx *HttpContext, writer http.ResponseWriter, request *http.Request) HttpError {
+func buildContext(ctx *HttpContext) HttpError {
 	// Assign response writer and request
-	ctx.rw = writer
-	ctx.request = request
+	ctx.rw = ctx.Writer
+	ctx.request = ctx.Request
 
 	// Get url
-	ctx.URL = request.URL
-	ctx.Method = request.Method
+	ctx.URL = ctx.Request.URL
+	ctx.Method = ctx.Request.Method
 
-	// Get request body
-	buffer := bytes.NewBuffer(ctx.requestBody)
-	buffer.Reset()
-
-	if _, err := io.Copy(buffer, request.Body); err != nil {
+	bodyData, err := ctx.GetRawData()
+	if err != nil {
 		LogError("Read request body fail. RequestId: %s, Error: %s", ctx.requestID, err.Error())
 		return HTTP_ERROR_READ_BODY_REQUEST_FAIL
 	}
 
-	if err := request.Body.Close(); err != nil {
-		LogError("Close request body fail. RequestId: %s, Error: %s", ctx.requestID, err.Error())
-		return HTTP_ERROR_CLOSE_BODY_REQUEST_FAIL
-	}
-
-	ctx.requestBody = buffer.Bytes()
+	ctx.requestBody = bodyData
 	return nil
 }
 
-func convertRegexUrl(url string) (string, []string) {
-	params := make([]string, 0)
-	param := BLANK
-	// Convert url
-	newUrl := "^"
-	start := false
-	for _, letter := range url {
-		if letter == '{' && !start {
-			newUrl += REGEX_URL_PATH_ELEMENT
-			start = !start
-			continue
-		} else if letter == '}' && start {
-			start = !start
-			params = append(params, param)
-			param = BLANK
-			continue
-		}
-
-		if !start {
-			newUrl += string(letter)
-		} else {
-			param += string(letter)
-		}
-	}
-	return newUrl + "$", params
+func getRouteKey(url string, method string) string {
+	return fmt.Sprintf("%s:%s", url, method)
 }

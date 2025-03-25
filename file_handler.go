@@ -7,30 +7,26 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 type FileHandler func(ctx *HttpContext, filePath string) (HttpResponse, HttpError)
-
-type UploadFileHandler struct {
-	URL     Url
-	Method  string
-	handler func(writer http.ResponseWriter, request *http.Request)
-}
 
 func RegisterFileUpload(url string, method string, handler FileHandler, middlewares ...ApiMiddleware) {
 	if err := os.MkdirAll("uploads", os.ModePerm); err != nil {
 		LogFatal("Error creating uploads directory: %v", err)
 	}
 
-	h := func(writer http.ResponseWriter, request *http.Request) {
+	h := func(c *gin.Context) {
 		// Create a new context
-		ctx := getHttpContext()
+		ctx := getHttpContext(c)
 		defer putHttpContext(ctx)
 
-		ctx.rw = writer
-		ctx.request = request
-		ctx.URL = request.URL
-		ctx.Method = request.Method
+		ctx.rw = ctx.Writer
+		ctx.request = ctx.Request
+		ctx.URL = ctx.Request.URL
+		ctx.Method = ctx.Request.Method
 
 		// Append to common middleware
 		middlewareList := []ApiMiddleware{}
@@ -49,7 +45,7 @@ func RegisterFileUpload(url string, method string, handler FileHandler, middlewa
 		}
 
 		// Parse the multipart form
-		err := request.ParseMultipartForm(MAX_UPLOAD_FILE_SIZE) // 50 MB
+		err := ctx.request.ParseMultipartForm(MAX_UPLOAD_FILE_SIZE) // 50 MB
 		if err != nil {
 			ctx.LogError("Error parsing form: %v", err)
 			ctx.writeError(NewHttpError(http.StatusInternalServerError, http.StatusInternalServerError, err.Error(), nil))
@@ -57,7 +53,7 @@ func RegisterFileUpload(url string, method string, handler FileHandler, middlewa
 		}
 
 		// Retrieve the file from form data
-		file, fileHeader, err := request.FormFile("file")
+		file, fileHeader, err := ctx.request.FormFile("file")
 		if err != nil {
 			ctx.LogError("Error retrieving file: %v", err)
 			ctx.writeError(NewHttpError(http.StatusInternalServerError, http.StatusInternalServerError, err.Error(), nil))
@@ -71,7 +67,7 @@ func RegisterFileUpload(url string, method string, handler FileHandler, middlewa
 		// Create a new file in the server
 		dst, err := os.Create(filepath.Join("uploads", fileName))
 		if err != nil {
-			http.Error(writer, "Error creating file", http.StatusInternalServerError)
+			http.Error(ctx.Writer, "Error creating file", http.StatusInternalServerError)
 			return
 		}
 
@@ -88,7 +84,7 @@ func RegisterFileUpload(url string, method string, handler FileHandler, middlewa
 		// Copy the uploaded file to the server
 		_, err = io.Copy(dst, file)
 		if err != nil {
-			http.Error(writer, "Error saving file", http.StatusInternalServerError)
+			http.Error(ctx.Writer, "Error saving file", http.StatusInternalServerError)
 			return
 		}
 
@@ -107,11 +103,14 @@ func RegisterFileUpload(url string, method string, handler FileHandler, middlewa
 		}
 	}
 
-	uploadFileHandlerMap[url] = UploadFileHandler{
-		handler: h,
-		URL: Url{
-			Path: url,
-		},
-		Method: method,
+	switch method {
+	case http.MethodPost:
+		router.POST(url, h)
+	case http.MethodGet:
+		router.GET(url, h)
+	case http.MethodPut:
+		router.PUT(url, h)
+	case http.MethodDelete:
+		router.DELETE(url, h)
 	}
 }

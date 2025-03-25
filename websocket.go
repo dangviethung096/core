@@ -5,13 +5,9 @@ import (
 	"net/http"
 	"reflect"
 
+	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
-
-type websocketRoute struct {
-	url     string
-	handler func(w http.ResponseWriter, r *http.Request)
-}
 
 var websocketUpgrader = websocket.Upgrader{
 	ReadBufferSize:  MAX_WEBSOCKET_READ_BUFFER_SIZE,
@@ -38,18 +34,18 @@ func RegisterWebsocket[T any](url string, handler WebsocketHandler[T], middlewar
 		LogFatal("Handler request parameter must be a struct, got: %s", tType.Kind())
 	}
 
-	h := func(w http.ResponseWriter, r *http.Request) {
+	h := func(c *gin.Context) {
 		// Get context
-		ctx := getWebsocketContext()
+		ctx := getWebsocketContext(c)
 		defer putWebsocketContext(ctx)
 
 		// Run middlewares
 		for _, middleware := range middlewares {
-			err := middleware(ctx, w, r)
+			err := middleware(ctx, ctx.Writer, ctx.Request)
 			if err != nil {
 				// Return error
-				handshakeContext := getHttpContext()
-				buildContext(handshakeContext, w, r)
+				handshakeContext := getHttpContext(ctx.Context)
+				buildContext(handshakeContext)
 				handshakeContext.requestID = ctx.GetContextID()
 				handshakeContext.writeError(err)
 				putHttpContext(handshakeContext)
@@ -57,7 +53,7 @@ func RegisterWebsocket[T any](url string, handler WebsocketHandler[T], middlewar
 			}
 		}
 
-		connection, err := websocketUpgrader.Upgrade(w, r, nil)
+		connection, err := websocketUpgrader.Upgrade(ctx.Writer, ctx.Request, nil)
 		if err != nil {
 			ctx.LogError("websocket upgrade failed: %v", err)
 			return
@@ -115,5 +111,6 @@ func RegisterWebsocket[T any](url string, handler WebsocketHandler[T], middlewar
 		}
 	}
 
-	websocketRouteMap[url] = websocketRoute{url: url, handler: h}
+	router.GET(url, h)
+
 }

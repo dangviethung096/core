@@ -3,6 +3,8 @@ package core
 import (
 	"context"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 type WebsocketContext interface {
@@ -19,7 +21,7 @@ type WebsocketContext interface {
 }
 
 type websocketContext struct {
-	context.Context
+	*gin.Context
 	requestID   string
 	timeout     time.Duration
 	cancelFunc  context.CancelFunc
@@ -47,9 +49,9 @@ func (w *websocketContext) Value(key any) any {
 * GetContext: Get context from pool
 * @return: Context
  */
-func getWebsocketContext() *websocketContext {
+func getWebsocketContext(c *gin.Context) *websocketContext {
 	ctx := websocketContextPool.Get().(*websocketContext)
-	ctx.Context, ctx.cancelFunc = context.WithCancel(coreContext)
+	ctx.Context = c
 	ctx.timeout = time.Duration(0)
 	ctx.requestID = ID.GenerateID()
 

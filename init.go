@@ -13,11 +13,7 @@ import (
 var mainDbSession dbSession
 var secondaryDbSession dbSession
 
-var routeMap map[string][]Route
-var routeRegexMap map[string][]Route
-var uploadFileHandlerMap map[string]UploadFileHandler
-
-var staticFolderMap map[string]staticFolder
+var routeMap map[string]Route
 
 var pageMap map[string]pageInfo
 
@@ -28,7 +24,6 @@ var contextPool sync.Pool
 var httpContextPool sync.Pool
 
 var websocketContextPool sync.Pool
-var websocketRouteMap map[string]websocketRoute
 
 var Config CoreConfig
 var redisClient cacheClient
@@ -40,7 +35,7 @@ var htmlTemplateMap map[string]*template.Template
 var emqxBrokerClient MqttClient
 var lockerManagerInstance *lockManager
 
-var ginEngine *gin.Engine
+var router *gin.Engine
 
 func Init(configFile string) {
 	// Init core context
@@ -110,13 +105,9 @@ func Init(configFile string) {
 	// Core context will hold first id from instance
 	coreContext.(*rootContext).contextID = ID.GenerateID()
 
-	routeMap = make(map[string][]Route)
-	routeRegexMap = make(map[string][]Route)
-	staticFolderMap = make(map[string]staticFolder)
+	routeMap = make(map[string]Route)
 	pageMap = make(map[string]pageInfo)
 	htmlTemplateMap = make(map[string]*template.Template)
-	uploadFileHandlerMap = make(map[string]UploadFileHandler)
-	websocketRouteMap = make(map[string]websocketRoute)
 
 	// Context pool
 	contextPool = sync.Pool{
@@ -173,7 +164,10 @@ func Init(configFile string) {
 
 	lockerManagerInstance = newLockManager()
 
-	ginEngine = gin.Default()
+	router = gin.Default()
+
+	api := router.Group("/api")
+	api.Use(TimeoutMiddleware(contextTimeout))
 }
 
 /*
@@ -215,7 +209,8 @@ func releaseMessageQueue() {
 * @return void
  */
 func Start() {
-	ginEngine.Run()
+
+	router.Run()
 }
 
 /*

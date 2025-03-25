@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strings"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 /*
@@ -15,7 +16,7 @@ import (
 * and other request-scoped values across API boundaries and between processes.
  */
 type HttpContext struct {
-	context.Context
+	*gin.Context
 	URL            *url.URL
 	Method         string
 	requestBody    []byte
@@ -35,9 +36,9 @@ type HttpContext struct {
 * GetContext: Get context from pool
 * @return: Context
  */
-func getHttpContext() *HttpContext {
+func getHttpContext(c *gin.Context) *HttpContext {
 	ctx := httpContextPool.Get().(*HttpContext)
-	ctx.Context, ctx.cancelFunc = context.WithTimeout(coreContext, contextTimeout)
+	ctx.Context = c
 	ctx.timeout = contextTimeout
 	ctx.isResponseEnd = false
 	ctx.responseHeader = make(map[string][]string)
@@ -288,24 +289,6 @@ func (ctx *HttpContext) endResponse(statusCode int, body string) {
  */
 func (ctx *HttpContext) GetUrlParam(key string) string {
 	return ctx.urlParams[key]
-}
-
-func (ctx *HttpContext) convertUrlParams(pattern string, url string, params []string) {
-	pattern = pattern[1 : len(pattern)-1]
-	patternArray := strings.Split(pattern, "/")
-	urlArray := strings.Split(url, "/")
-	if len(urlArray) != len(patternArray) {
-		LogError("Cannot convert url params: %s, %s", pattern, url)
-		return
-	}
-
-	count := 0
-	for i, patternElement := range patternArray {
-		if patternElement == REGEX_URL_PATH_ELEMENT {
-			ctx.urlParams[params[count]] = urlArray[i]
-			count++
-		}
-	}
 }
 
 /*

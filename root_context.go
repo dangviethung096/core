@@ -180,7 +180,6 @@ func GetContextForTest() Context {
 
 func GetHttpContextForTest() *HttpContext {
 	ctx := httpContextPool.Get().(*HttpContext)
-	ctx.Context, ctx.cancelFunc = context.WithTimeout(coreContext, contextTimeout)
 	ctx.requestID = ID.GenerateID()
 	// Init new request
 	ctx.rw = httptest.NewRecorder()
