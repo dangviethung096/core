@@ -2,14 +2,11 @@ package core
 
 import (
 	"context"
-	"fmt"
 	"html/template"
-	"log"
-	"net/http"
-	"regexp"
 	"sync"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator"
 )
 
@@ -42,6 +39,8 @@ var contextTimeout time.Duration
 var htmlTemplateMap map[string]*template.Template
 var emqxBrokerClient MqttClient
 var lockerManagerInstance *lockManager
+
+var ginEngine *gin.Engine
 
 func Init(configFile string) {
 	// Init core context
@@ -173,6 +172,8 @@ func Init(configFile string) {
 	callback = make(map[string]CallbackFunc)
 
 	lockerManagerInstance = newLockManager()
+
+	ginEngine = gin.Default()
 }
 
 /*
@@ -214,41 +215,7 @@ func releaseMessageQueue() {
 * @return void
  */
 func Start() {
-	// Register all static folders
-	handleStaticFolder()
-
-	// Register all routes
-	handleAPIAndPage()
-
-	blockServerChan := make(chan string)
-	// Listen and serve
-	go func() {
-		LogInfo("Start server at port: %d", Config.Server.Port)
-		blockServerChan <- "Start server"
-		err := http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", Config.Server.Port), nil)
-		if err != nil {
-			log.Fatalln("ListenAndServe fail: ", err)
-		}
-	}()
-
-	go func() {
-		if Config.SecureServer.Use {
-			LogInfo("Start secure server at port: %d", Config.SecureServer.Port)
-			err := http.ListenAndServeTLS(fmt.Sprintf("0.0.0.0:%d", Config.SecureServer.Port), Config.SecureServer.CertFile, Config.SecureServer.KeyFile, nil)
-			if err != nil {
-				log.Fatalln("ListenAndServeTLS fail: ", err)
-			}
-		}
-	}()
-
-	<-blockServerChan
-	// Callback function
-	for _, cb := range callback {
-		cb()
-	}
-
-	// Wait for stop server signal
-	<-blockServerChan
+	ginEngine.Run()
 }
 
 /*
@@ -285,70 +252,4 @@ func SecondaryDBSession() dbSession {
 
 func EmqxBrokerClient() MqttClient {
 	return emqxBrokerClient
-}
-
-/*
-* Handle API
- */
-
-func handleAPIAndPage() {
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		isHandled := false
-		if page, ok := pageMap[r.URL.Path]; ok && r.Method == http.MethodGet {
-			pageHandler(page, w, r)
-			isHandled = true
-		} else if routeList, ok := routeMap[r.URL.Path]; ok {
-			LogInfo("Handle API: %s", r.URL.Path)
-			for _, route := range routeList {
-				if route.Method == r.Method {
-					route.handler(w, r, optionalParams{})
-					isHandled = true
-					break
-				}
-			}
-		} else if route, ok := websocketRouteMap[r.URL.Path]; ok {
-			route.handler(w, r)
-			isHandled = true
-		} else if handler, ok := uploadFileHandlerMap[r.URL.Path]; ok {
-			handler.handler(w, r)
-			isHandled = true
-		} else {
-			for regexPath, routeList := range routeRegexMap {
-				if match, _ := regexp.MatchString(regexPath, r.URL.Path); match {
-					LogInfo("Handle Regex API: %s", r.URL.Path)
-					for _, route := range routeList {
-						if route.Method == r.Method {
-							route.handler(w, r, optionalParams{
-								haveUrlParam: true,
-								urlPattern:   regexPath,
-								urlParamKeys: route.URL.Params,
-							})
-							isHandled = true
-							break
-						}
-					}
-
-					if isHandled {
-						break
-					}
-				}
-			}
-		}
-
-		if !isHandled {
-			http.NotFound(w, r)
-		}
-
-	})
-}
-
-/*
-* Handle Static Folder
- */
-
-func handleStaticFolder() {
-	for _, staticFolder := range staticFolderMap {
-		LogInfo("Register static folder: url = %s, path = %s", staticFolder.url, staticFolder.path)
-		http.Handle(staticFolder.url, http.StripPrefix(staticFolder.prefix, http.FileServer(http.Dir(staticFolder.path))))
-	}
 }
