@@ -136,7 +136,6 @@ func RegisterAPI[T any](url string, method string, handler Handler[T], middlewar
 		},
 		handler: ginHandler,
 	}
-
 }
 
 func initRequest[T any]() T {
