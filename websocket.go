@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"reflect"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -35,15 +36,12 @@ func RegisterWebsocket[T any](url string, handler WebsocketHandler[T], middlewar
 	}
 
 	h := func(c *gin.Context) {
-		// Get context
 		ctx := getWebsocketContext(c)
 		defer putWebsocketContext(ctx)
 
 		// Run middlewares
 		for _, middleware := range middlewares {
-			err := middleware(ctx, ctx.Writer, ctx.Request)
-			if err != nil {
-				// Return error
+			if err := middleware(ctx, ctx.Writer, ctx.Request); err != nil {
 				handshakeContext := getHttpContext(ctx.Context)
 				buildContext(handshakeContext)
 				handshakeContext.requestID = ctx.GetContextID()
@@ -53,63 +51,84 @@ func RegisterWebsocket[T any](url string, handler WebsocketHandler[T], middlewar
 			}
 		}
 
-		connection, err := websocketUpgrader.Upgrade(ctx.Writer, ctx.Request, nil)
+		conn, err := websocketUpgrader.Upgrade(ctx.Writer, ctx.Request, nil)
 		if err != nil {
 			ctx.LogError("websocket upgrade failed: %v", err)
 			return
 		}
+		defer conn.Close()
 
-		for {
-			// Read a message
-			messageType, message, err := connection.ReadMessage()
-			if err != nil {
-				ctx.LogInfo("Reading message end: %v", err)
-				connection.Close()
-				return
-			}
-			ctx.LogInfo("Received message: %v", string(message))
-			// Unmarshal the received message
-			req := initRequest[T]()
-			err = json.Unmarshal(message, &req)
-			if err != nil {
-				ctx.LogError("Error unmarshalling message: %v", err)
-				connection.Close()
-				return
-			}
-			ctx.messageType = messageType
+		// Create channels for communication
+		done := make(chan struct{})
+		errChan := make(chan error)
 
-			res, err := handler(ctx, req)
-			if err != nil {
-				ctx.LogError("Error handling message: %v", err)
-				connection.Close()
-				return
-			}
+		// Start read pump in a separate goroutine
+		go func() {
+			defer close(done)
+			for {
+				messageType, message, err := conn.ReadMessage()
+				if err != nil {
+					if !websocket.IsCloseError(err, websocket.CloseGoingAway, websocket.CloseNormalClosure) {
+						ctx.LogError("read error: %v", err)
+						errChan <- err
+					}
+					return
+				}
 
-			if res.MessageType == 0 {
-				res.MessageType = ctx.messageType
-			}
+				// Handle message in a separate goroutine
+				go func() {
+					req := initRequest[T]()
+					if err := json.Unmarshal(message, &req); err != nil {
+						ctx.LogError("unmarshal error: %v", err)
+						errChan <- err
+						return
+					}
+					ctx.messageType = messageType
 
-			wsResponse := responseBody{
-				Code:    res.Code,
-				Message: res.Message,
-				Data:    res.Data,
-			}
+					res, err := handler(ctx, req)
+					if err != nil {
+						ctx.LogError("handler error: %v", err)
+						errChan <- err
+						return
+					}
 
-			resJson, err := json.Marshal(wsResponse)
-			if err != nil {
-				ctx.LogError("Error marshalling response: %v", err)
-				connection.Close()
-				return
-			}
+					if res.MessageType == 0 {
+						res.MessageType = ctx.messageType
+					}
 
-			// Echo the message back
-			if err := connection.WriteMessage(res.MessageType, resJson); err != nil {
-				ctx.LogError("Error writing message: %v", err)
-				connection.Close()
-				return
+					wsResponse := responseBody{
+						Code:    res.Code,
+						Message: res.Message,
+						Data:    res.Data,
+					}
+
+					// Use connection write mutex
+					conn.SetWriteDeadline(time.Now().Add(writeWait))
+					if err := conn.WriteJSON(wsResponse); err != nil {
+						ctx.LogError("write error: %v", err)
+						errChan <- err
+					}
+				}()
 			}
+		}()
+
+		// Handle connection closure
+		select {
+		case <-done:
+			return
+		case err := <-errChan:
+			ctx.LogError("websocket error: %v", err)
+			return
 		}
 	}
 
 	router.GET(url, h)
 }
+
+// Constants for websocket handling
+const (
+	writeWait      = 10 * time.Second
+	pongWait       = 60 * time.Second
+	pingPeriod     = (pongWait * 9) / 10
+	maxMessageSize = 512
+)
