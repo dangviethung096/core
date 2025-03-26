@@ -13,8 +13,8 @@ import (
 * @return void
 * @example RegisterFolder("/static/", "/static/", "./static")
  */
-func RegisterFolder(url string, prefix string, path string) {
-	LogInfo("Register folder: url = %s, prefix = %s, path = %s", url, prefix, path)
+func RegisterFolder(url string, path string) {
+	LogInfo("Register folder: url = %s, path = %s", url, path)
 
 	router.Static(url, sanitizeFilePath(path))
 }
