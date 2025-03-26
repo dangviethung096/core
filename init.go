@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"fmt"
 	"html/template"
 	"sync"
 	"time"
@@ -12,19 +13,10 @@ import (
 
 var mainDbSession dbSession
 var secondaryDbSession dbSession
-
-var routeMap map[string]Route
-
-var pageMap map[string]pageInfo
-
 var commonApiMiddlewares []ApiMiddleware
-
 var contextPool sync.Pool
-
 var httpContextPool sync.Pool
-
 var websocketContextPool sync.Pool
-
 var Config CoreConfig
 var redisClient cacheClient
 var queueClient natsClient
@@ -105,10 +97,6 @@ func Init(configFile string) {
 	// Core context will hold first id from instance
 	coreContext.(*rootContext).contextID = ID.GenerateID()
 
-	routeMap = make(map[string]Route)
-	pageMap = make(map[string]pageInfo)
-	htmlTemplateMap = make(map[string]*template.Template)
-
 	// Context pool
 	contextPool = sync.Pool{
 		New: func() interface{} {
@@ -164,7 +152,15 @@ func Init(configFile string) {
 
 	lockerManagerInstance = newLockManager()
 
+	if Config.Debug {
+		gin.SetMode(gin.DebugMode)
+	} else {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	router = gin.Default()
+
+	router.LoadHTMLGlob("html/*")
 
 	api := router.Group("/api")
 	api.Use(TimeoutMiddleware(contextTimeout))
@@ -209,8 +205,13 @@ func releaseMessageQueue() {
 * @return void
  */
 func Start() {
+	// Start secure server
+	if Config.SecureServer.Use {
+		router.RunTLS(":"+fmt.Sprintf("%d", Config.SecureServer.Port), Config.SecureServer.CertFile, Config.SecureServer.KeyFile)
+	}
 
-	router.Run()
+	// Start http server
+	router.Run(":" + fmt.Sprintf("%d", Config.Server.Port))
 }
 
 /*

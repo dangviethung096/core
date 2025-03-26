@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -28,6 +29,7 @@ type HttpContext struct {
 	requestID      string
 	timeout        time.Duration
 	tempData       map[string]any
+	cancelFunc     context.CancelFunc
 }
 
 /*
@@ -41,6 +43,9 @@ func getHttpContext(c *gin.Context) *HttpContext {
 	ctx.isResponseEnd = false
 	ctx.responseHeader = make(map[string][]string)
 	ctx.requestID = ID.GenerateID()
+	ctx.cancelFunc = func() {
+		ctx.LogInfo("Cancel context")
+	}
 	return ctx
 }
 
@@ -54,6 +59,7 @@ func putHttpContext(ctx *HttpContext) {
 	ctx.urlParams = nil
 	ctx.responseHeader = nil
 	ctx.tempData = nil
+	ctx.cancelFunc = nil
 	// Put context to pool
 	httpContextPool.Put(ctx)
 }
@@ -150,6 +156,15 @@ func (ctx *HttpContext) GetResponseHeader(key string) []string {
 func (ctx *HttpContext) RedirectURL(url string) {
 	ctx.isResponseEnd = true
 	http.Redirect(ctx.rw, ctx.request, url, http.StatusSeeOther)
+}
+
+/*
+* GetCancelFunc: Get the cancel function
+* @params: void
+* @return: func()
+ */
+func (ctx *HttpContext) GetCancelFunc() func() {
+	return ctx.cancelFunc
 }
 
 /*

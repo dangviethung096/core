@@ -126,17 +126,6 @@ func RegisterAPI[T any](url string, method string, handler Handler[T], middlewar
 	case http.MethodDelete:
 		router.DELETE(url, ginHandler)
 	}
-
-	key := getRouteKey(url, method)
-
-	routeMap[key] = Route{
-		Method: method,
-		URL: Url{
-			Path:   url,
-			Params: nil,
-		},
-		handler: ginHandler,
-	}
 }
 
 func initRequest[T any]() T {

@@ -112,5 +112,4 @@ func RegisterWebsocket[T any](url string, handler WebsocketHandler[T], middlewar
 	}
 
 	router.GET(url, h)
-
 }
