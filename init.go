@@ -23,7 +23,6 @@ var queueClient natsClient
 var coreContext Context
 var validate *validator.Validate
 var contextTimeout time.Duration
-var htmlTemplateMap map[string]*template.Template
 var emqxBrokerClient MqttClient
 var lockerManagerInstance *lockManager
 
@@ -161,7 +160,13 @@ func Init(configFile string) {
 	router = gin.Default()
 
 	if Config.HtmlFolder.Use {
-		router.LoadHTMLGlob(Config.HtmlFolder.Path)
+		templ := template.New(BLANK).Funcs(basicFunctionMap)
+
+		for _, pattern := range Config.HtmlFolder.Path {
+			templ.ParseGlob(pattern)
+		}
+
+		router.SetHTMLTemplate(templ)
 	}
 
 	api := router.Group("/api")
@@ -207,9 +212,18 @@ func releaseMessageQueue() {
 * @return void
  */
 func Start() {
+	// Callback function
+	for _, cb := range callback {
+		cb()
+	}
 	// Start secure server
 	if Config.SecureServer.Use {
-		router.RunTLS(":"+fmt.Sprintf("%d", Config.SecureServer.Port), Config.SecureServer.CertFile, Config.SecureServer.KeyFile)
+		go func() {
+			err := router.RunTLS(":"+fmt.Sprintf("%d", Config.SecureServer.Port), Config.SecureServer.CertFile, Config.SecureServer.KeyFile)
+			if err != nil {
+				coreContext.LogFatal("Fail to start secure server. Error: %v", err)
+			}
+		}()
 	}
 
 	// Start http server

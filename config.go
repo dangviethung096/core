@@ -121,8 +121,8 @@ type EmqxConfig struct {
 }
 
 type HtmlFolderConfig struct {
-	Use  bool   `yaml:"use"`
-	Path string `yaml:"path"`
+	Use  bool     `yaml:"use"`
+	Path []string `yaml:"path"`
 }
 
 func loadConfigFile(configFile string) CoreConfig {

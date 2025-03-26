@@ -1,11 +1,7 @@
 package core
 
 import (
-	"html/template"
 	"net/http"
-	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -96,17 +92,6 @@ func RegisterPage(url string, handler PageHandler, middleware ...PageMiddleware)
 		pageInfo.templateName = response.TemplateName
 		pageInfo.functionMap = response.FunctionMap
 
-		// Render page
-		// var tmpl *template.Template
-
-		// if Config.Server.CacheHtml && pageInfo.cache && htmlTemplateMap[pageInfo.url] != nil {
-		// 	tmpl = htmlTemplateMap[pageInfo.url]
-		// } else {
-		// 	tmpl = parseTemplateFile(pageInfo)
-		// 	// Set for cache
-		// 	htmlTemplateMap[pageInfo.url] = tmpl
-		// }
-
 		ctx.Header("Request-ID", ctx.requestID)
 
 		ctx.HTML(http.StatusOK, pageInfo.templateName, pageInfo.data)
@@ -114,52 +99,4 @@ func RegisterPage(url string, handler PageHandler, middleware ...PageMiddleware)
 		ctx.LogInfo("Render page successfully: %s, requestID = %s", pageInfo.url, ctx.requestID)
 	})
 
-}
-
-func parseTemplateFile(pageInfo pageInfo) *template.Template {
-	pageFiles := pageInfo.pageFiles
-	newPageFiles := []string{}
-	for _, filePath := range pageFiles {
-		if strings.HasSuffix(filePath, "/*") {
-			filePath := strings.TrimSuffix(filePath, "/*")
-			files, err := listFiles(filePath)
-			if err != nil {
-				panic(err)
-			}
-			newPageFiles = append(newPageFiles, files...)
-		} else {
-			newPageFiles = append(newPageFiles, filePath)
-		}
-	}
-
-	LogInfo("Parse template file: %#v", newPageFiles)
-
-	tmpl := template.New(pageInfo.templateName)
-	tmpl.Funcs(basicFunctionMap)
-	if pageInfo.functionMap != nil {
-		tmpl = tmpl.Funcs(pageInfo.functionMap)
-	}
-
-	tmpl, err := tmpl.ParseFiles(newPageFiles...)
-	if err != nil {
-		panic(err)
-	}
-	return tmpl
-}
-
-func listFiles(folderPath string) ([]string, Error) {
-	folder, err := os.ReadDir(folderPath)
-	if err != nil {
-		coreContext.LogError("Error when read dir %s: %v", folderPath, err)
-		return nil, ERROR_SERVER_ERROR
-	}
-
-	filePaths := []string{}
-	for _, file := range folder {
-		if !file.IsDir() {
-			filePaths = append(filePaths, filepath.Join(folderPath, file.Name()))
-		}
-	}
-
-	return filePaths, nil
 }

@@ -13,12 +13,6 @@ import (
 	"github.com/go-playground/validator"
 )
 
-type Route struct {
-	URL     Url
-	Method  string
-	handler gin.HandlerFunc
-}
-
 type Url struct {
 	Path   string
 	Params []string
@@ -151,8 +145,4 @@ func buildContext(ctx *HttpContext) HttpError {
 
 	ctx.requestBody = bodyData
 	return nil
-}
-
-func getRouteKey(url string, method string) string {
-	return fmt.Sprintf("%s:%s", url, method)
 }
