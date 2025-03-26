@@ -160,7 +160,9 @@ func Init(configFile string) {
 
 	router = gin.Default()
 
-	router.LoadHTMLGlob("html/*")
+	if Config.HtmlFolder.Use {
+		router.LoadHTMLGlob(Config.HtmlFolder.Path)
+	}
 
 	api := router.Group("/api")
 	api.Use(TimeoutMiddleware(contextTimeout))

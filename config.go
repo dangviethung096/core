@@ -22,6 +22,7 @@ type CoreConfig struct {
 	HttpClient        HttpClientConfig   `yaml:"http_client"`
 	Scheduler         SchedulerConfig    `yaml:"scheduler"`
 	Emqx              EmqxConfig         `yaml:"emqx"`
+	HtmlFolder        HtmlFolderConfig   `yaml:"html_config"`
 }
 
 type ServerConfig struct {
@@ -117,6 +118,11 @@ type EmqxConfig struct {
 	Use          bool   `yaml:"use"`
 	Broker       string `yaml:"broker"`
 	PrefixClient string `yaml:"prefix_client_id"`
+}
+
+type HtmlFolderConfig struct {
+	Use  bool   `yaml:"use"`
+	Path string `yaml:"path"`
 }
 
 func loadConfigFile(configFile string) CoreConfig {
