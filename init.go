@@ -98,7 +98,7 @@ func Init(configFile string) {
 
 	// Context pool
 	contextPool = sync.Pool{
-		New: func() interface{} {
+		New: func() any {
 			return &rootContext{
 				contextID:  BLANK,
 				timeout:    0,
@@ -109,7 +109,7 @@ func Init(configFile string) {
 
 	// Http context pool
 	httpContextPool = sync.Pool{
-		New: func() interface{} {
+		New: func() any {
 			return &HttpContext{
 				requestBody:    make([]byte, 16384),
 				urlParams:      make(map[string]string),
@@ -119,7 +119,7 @@ func Init(configFile string) {
 	}
 
 	websocketContextPool = sync.Pool{
-		New: func() interface{} {
+		New: func() any {
 			return &websocketContext{
 				requestID:  BLANK,
 				timeout:    time.Duration(0),

@@ -63,12 +63,23 @@ func RegisterAPI[T any](url string, method string, handler Handler[T], middlewar
 			}
 		}
 
-		// Unmarshal json request body to model T
+		// Init request
 		req := initRequest[T]()
+
+		ctx.LogInfo("Parse uri tag to req")
+		// Parse uri tag to req
+		if err := ctx.ShouldBindUri(&req); err != nil {
+			ctx.LogError("Bind uri error: %s", err.Error())
+			ctx.writeError(NewHttpError(http.StatusBadRequest, ERROR_BAD_BODY_REQUEST, err.Error(), nil))
+			return
+		}
+
+		ctx.LogInfo("Parse json tag to req")
 		requestContentType := strings.ToLower(ctx.GetRequestHeader(CONTENT_TYPE_KEY))
 		if len(ctx.requestBody) != 0 {
 			if strings.Contains(requestContentType, JSON_CONTENT_TYPE) {
 				if err := json.Unmarshal(ctx.requestBody, &req); err != nil {
+					ctx.LogError("Bind json error: %s", err.Error())
 					ctx.writeError(NewHttpError(http.StatusBadRequest, ERROR_BAD_BODY_REQUEST, err.Error(), nil))
 					return
 				}
@@ -79,6 +90,7 @@ func RegisterAPI[T any](url string, method string, handler Handler[T], middlewar
 			}
 		}
 
+		ctx.LogInfo("Validate go struct with tag")
 		// Validate go struct with tag
 		errValidate := validate.StructCtx(ctx, req)
 		if errValidate != nil {
@@ -86,10 +98,12 @@ func RegisterAPI[T any](url string, method string, handler Handler[T], middlewar
 			for _, err := range errValidate.(validator.ValidationErrors) {
 				errMessage = fmt.Sprintf("%s {Field: %s, Tag: %s, Value: %s}", errMessage, err.Field(), err.Tag(), err.Value())
 			}
+			ctx.LogError("Validate go struct with tag error: %s", errMessage)
 			ctx.writeError(NewHttpError(http.StatusBadRequest, ERROR_BAD_BODY_REQUEST, errMessage, nil))
 			return
 		}
 
+		ctx.LogInfo("Call handler")
 		// Call handler
 		requestBody := strings.ReplaceAll(string(ctx.requestBody), "\r", "")
 		requestBody = strings.ReplaceAll(requestBody, "\n", "")
@@ -105,9 +119,11 @@ func RegisterAPI[T any](url string, method string, handler Handler[T], middlewar
 		if res != nil {
 			ctx.LogInfo("Response: Url = %s, body = %+v", ctx.URL, res.GetBody())
 			ctx.writeSuccess(res)
-		} else {
-			ctx.writeDefaultSuccess()
+			return
 		}
+
+		ctx.LogInfo("Response: Url = %s, body = nil", ctx.URL)
+		ctx.writeDefaultSuccess()
 	}
 
 	switch method {
