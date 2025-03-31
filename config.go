@@ -23,6 +23,7 @@ type CoreConfig struct {
 	Scheduler         SchedulerConfig    `yaml:"scheduler"`
 	Emqx              EmqxConfig         `yaml:"emqx"`
 	HtmlFolder        HtmlFolderConfig   `yaml:"html_config"`
+	UseCorsOrigin     bool               `yaml:"use_cors_origin"`
 }
 
 type ServerConfig struct {

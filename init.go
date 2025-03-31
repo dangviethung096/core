@@ -169,6 +169,10 @@ func Init(configFile string) {
 		router.SetHTMLTemplate(templ)
 	}
 
+	if Config.UseCorsOrigin {
+		router.Use(corsMiddleware())
+	}
+
 	api := router.Group("/api")
 	api.Use(TimeoutMiddleware(contextTimeout))
 }

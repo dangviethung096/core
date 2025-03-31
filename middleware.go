@@ -1,23 +1,21 @@
 package core
 
-import "net/http"
+import "github.com/gin-gonic/gin"
 
-func corsMiddleware(ctx *HttpContext) HttpError {
-	ctx.rw.Header().Set("Access-Control-Allow-Origin", "*")
-	ctx.rw.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-	ctx.rw.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+func corsMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
 
-	if ctx.Method == http.MethodOptions {
-		ctx.rw.WriteHeader(http.StatusOK)
-		return nil
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+
+		c.Next()
 	}
-
-	ctx.Next()
-	return nil
-}
-
-func UseCorsMiddleware() {
-	UseMiddleware(corsMiddleware)
 }
 
 func UseMiddleware(middleware ApiMiddleware) {
