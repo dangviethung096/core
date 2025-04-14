@@ -35,7 +35,7 @@ func initIdGenerator() {
 	flag := false
 	now := time.Now()
 	bucket := now.Hour()*10000 + now.Minute()*100 + now.Second()
-	for i := 0; i < ALLOCATE_ID_BUCKET_RETRY; i++ {
+	for range ALLOCATE_ID_BUCKET_RETRY {
 		log.Printf("Try to allocate bucket: %d", bucket)
 		if flag = allocateIdBucket(ID, int64(bucket)); flag {
 			break
@@ -61,7 +61,7 @@ func (generator *idGenerator) GenerateID() string {
 		now := time.Now()
 		bucket := now.Hour()*10000 + now.Minute()*100 + now.Second()
 		flag := false
-		for i := 0; i < ALLOCATE_ID_BUCKET_RETRY; i++ {
+		for range ALLOCATE_ID_BUCKET_RETRY {
 			log.Printf("Try to allocate bucket: %d", bucket)
 			if flag = allocateIdBucket(ID, int64(bucket)); flag {
 				break
