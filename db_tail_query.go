@@ -43,6 +43,14 @@ func (dbWhere *TailQuery) GetQuery() string {
 		return whereQuery
 	}
 
+	dbWhere.isHasWhere = false
+	for _, operator := range dbWhere.operator {
+		if operator != OPERATOR_NONE {
+			dbWhere.isHasWhere = true
+			break
+		}
+	}
+
 	if dbWhere.isHasWhere {
 		whereQuery += "WHERE "
 	}
@@ -53,8 +61,4 @@ func (dbWhere *TailQuery) GetQuery() string {
 	}
 
 	return whereQuery
-}
-
-func (dbWhere *TailQuery) HasWhere(val bool) {
-	dbWhere.isHasWhere = val
 }
