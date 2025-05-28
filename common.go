@@ -45,3 +45,19 @@ func paramIsPointerOfStruct(p any) Error {
 	}
 	return nil
 }
+
+func paramIsPointerOfSlice(p any) Error {
+	if p == nil {
+		return ERROR_NIL_PARAM
+	}
+
+	t := reflect.TypeOf(p)
+	if !(t.Kind() == reflect.Pointer) {
+		return ERROR_PARAM_IS_NOT_A_POINTER_OF_STRUCT
+	}
+	t = t.Elem()
+	if !(t.Kind() == reflect.Slice) {
+		return ERROR_PARAM_IS_NOT_A_POINTER_OF_STRUCT
+	}
+	return nil
+}

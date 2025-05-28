@@ -252,9 +252,9 @@ func (builder *httpClientBuilder) Request(response any) (HttpClientResponse, Err
 	}()
 
 	// Check if response is a pointer of struct
-	if err := paramIsPointerOfStruct(response); err != nil {
-		builder.ctx.LogError("Response param is not a pointer of struct, error: %v", err)
-		return nil, err
+	if paramIsPointerOfStruct(response) != nil && paramIsPointerOfSlice(response) != nil {
+		builder.ctx.LogError("Response param is not a pointer of struct or slice")
+		return nil, ERROR_INVALID_STRUCTURE_FOR_RESPONSE
 	}
 
 	var body *bytes.Buffer
