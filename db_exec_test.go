@@ -115,8 +115,8 @@ func deleteAccountWithManyKey(ctx Context) {
 // migrateTables performs database migrations
 func migrateTables(ctx Context) Error {
 	// Drop table if exists
-	DBSession().GetConnection().Exec("DROP TABLE IF EXISTS test_accounts")
-	DBSession().GetConnection().Exec("DROP TABLE IF EXISTS test_account_many_key")
+	DBSession().Connection().Exec("DROP TABLE IF EXISTS test_accounts")
+	DBSession().Connection().Exec("DROP TABLE IF EXISTS test_account_many_key")
 
 	// Migrate Account table
 	if err := DBSession().AutoMigrate(ctx, &Account{}); err != nil {

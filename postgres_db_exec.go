@@ -141,7 +141,7 @@ func (session postgresSession) Close() {
 	sqlDB.Close()
 }
 
-func (session postgresSession) GetConnection() *gorm.DB {
+func (session postgresSession) Connection() *gorm.DB {
 	return session.DB
 }
 

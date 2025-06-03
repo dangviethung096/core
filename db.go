@@ -42,8 +42,8 @@ type dbSession interface {
 	CountRecordInTable(ctx Context, data DataBaseObject) (int64, Error)
 	CountRecordInTableWithWhereQuery(ctx Context, data DataBaseObject, whereQuery string, args ...any) (int64, Error)
 
-	// Get connection
-	GetConnection() *gorm.DB
+	// onnection
+	Connection() *gorm.DB
 	GetOriginConnection(ctx Context) *sql.DB
 
 	// Auto migrate
