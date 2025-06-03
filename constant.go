@@ -9,6 +9,7 @@ const (
 	ACCEPT_KEY             = "Accept"
 	REGEX_URL_PATH_ELEMENT = "[\\w-]+"
 	DEFAULT_INTEGER        = 0
+	AUTHORIZATION          = "Authorization"
 )
 
 // Kind of message queue:
