@@ -80,6 +80,7 @@ type Database struct {
 	Password     string `yaml:"pass"`
 	DatabaseName string `yaml:"name"`
 	DBType       string `yaml:"db_type"`
+	SSLMode      string `yaml:"ssl_mode"`
 }
 
 type NatsQueue struct {

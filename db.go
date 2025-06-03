@@ -1,16 +1,14 @@
 package core
 
 import (
-	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"time"
 
-	"database/sql"
-	"database/sql/driver"
-
-	_ "github.com/godror/godror"
-	_ "github.com/lib/pq"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+	gormlogger "gorm.io/gorm/logger"
 )
 
 type DBInfo struct {
@@ -21,125 +19,76 @@ type DBInfo struct {
 	Password string
 	Database string
 	Timeout  int64
-	// TODO
+	SSLMode  string
+}
+
+type DataBaseObject interface {
+	TableName() string
 }
 
 type dbSession interface {
-	// Method for sql.DB
-	PingContext(ctx context.Context) error
-	Ping() error
-	Close() error
-	SetMaxIdleConns(n int)
-	SetMaxOpenConns(n int)
-	SetConnMaxLifetime(d time.Duration)
-	SetConnMaxIdleTime(d time.Duration)
-	Stats() sql.DBStats
-	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
-	Prepare(query string) (*sql.Stmt, error)
-	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
-	Exec(query string, args ...any) (sql.Result, error)
-	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
-	Query(query string, args ...any) (*sql.Rows, error)
-	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
-	QueryRow(query string, args ...any) *sql.Row
-	BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error)
-	Begin() (*sql.Tx, error)
-	Driver() driver.Driver
-	Conn(ctx context.Context) (*sql.Conn, error)
+	// Command
+	InsertDataToDB(ctx Context, data DataBaseObject) Error
+	DeleteDataFromDBByID(ctx Context, data DataBaseObject) Error
+	DeleteDataFromDBWithWhereQuery(ctx Context, data DataBaseObject, whereQuery string, args ...any) Error
+	UpdateDataToDB(ctx Context, data DataBaseObject) Error
 
-	// Additional methods for dbSession
-	SaveDataToDB(ctx Context, data DataBaseObject) Error
-	SaveDataToDBWithoutPrimaryKey(ctx Context, data DataBaseObject) Error
-	DeleteDataInDB(ctx Context, data DataBaseObject) Error
-	// TODO: Should change in the future
-	DeleteDataWithWhereQuery(ctx Context, data DataBaseObject, whereQuery string) Error
-	UpdateDataInDB(ctx Context, data DataBaseObject) Error
-
-	SelectById(ctx Context, data DataBaseObject) Error
-	ListAllInTable(ctx Context, data DataBaseObject) (any, Error)
-	SelectListByFields(ctx Context, data DataBaseObject, mapArgs map[string]interface{}) (any, Error)
-	SelectListWithTailQuery(ctx Context, data DataBaseObject, tailQuery *TailQuery) (any, Error)
-	ListPagingTable(ctx Context, data DataBaseObject, limit int64, offset int64) (any, Error)
-	SelectPagingListByFields(ctx Context, data DataBaseObject, mapArgs map[string]interface{}, limit int64, offset int64) (any, Error)
+	// Query
+	SelectListByFields(ctx Context, data DataBaseObject, whereQuery string, args ...any) ([]DataBaseObject, Error)
+	SelectListByFieldWithPaging(ctx Context, data DataBaseObject, limit int64, offset int64, whereQuery string, args ...any) ([]DataBaseObject, Error)
+	SelectPaging(ctx Context, data DataBaseObject, orderQuery string, limit int64, offset int64) ([]DataBaseObject, Error)
+	SelectByID(ctx Context, data DataBaseObject) Error
 
 	CountRecordInTable(ctx Context, data DataBaseObject) (int64, Error)
-	CountRecordInTableWithTailQuery(ctx Context, data DataBaseObject, tailQuery *TailQuery) (int64, Error)
+	CountRecordInTableWithWhereQuery(ctx Context, data DataBaseObject, whereQuery string, args ...any) (int64, Error)
+
+	// Get connection
+	GetConnection() *gorm.DB
+	GetOriginConnection(ctx Context) *sql.DB
+
+	// Auto migrate
+	AutoMigrate(ctx Context, data DataBaseObject) Error
+
+	// Close
+	Close()
 }
 
 func openDBConnection(dbInfo DBInfo) dbSession {
 	var session dbSession
 	if dbInfo.DBType == DB_TYPE_POSTGRES {
 		session = openPostgresDBConnection(dbInfo)
-	} else if dbInfo.DBType == DB_TYPE_ORACLE {
-		session = openOracleDBConnection(dbInfo)
 	}
 	return session
 }
 
 func openPostgresDBConnection(dbInfo DBInfo) *postgresSession {
 	// Connect to postgres database and return session
-	connectStr := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable", dbInfo.Username, dbInfo.Password, dbInfo.Host, dbInfo.Port, dbInfo.Database)
+	connectionStr := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=%s", dbInfo.Host, dbInfo.Username, dbInfo.Password, dbInfo.Database, dbInfo.Port, dbInfo.SSLMode)
 
 	log.Printf("Connect to postgres database: %s:%d/%s\n", dbInfo.Host, dbInfo.Port, dbInfo.Database)
-	db, err := sql.Open("postgres", connectStr)
-	if err != nil {
-		log.Panicf("Connect to database fail: dbInfo = %v, err = %v", dbInfo, err)
+
+	// Configure GORM logger
+	gormConfig := &gorm.Config{
+		Logger: gormlogger.New(
+			log.New(log.Writer(), "\r\n", log.LstdFlags), // io writer
+			gormlogger.Config{
+				SlowThreshold:             time.Second,     // Slow SQL threshold
+				LogLevel:                  gormlogger.Info, // Log level (Silent, Error, Warn, Info)
+				IgnoreRecordNotFoundError: true,            // Ignore ErrRecordNotFound error for logger
+				Colorful:                  true,            // Enable color
+				ParameterizedQueries:      true,            // Don't include params in the SQL log
+			},
+		),
 	}
 
-	err = db.Ping()
+	db, err := gorm.Open(postgres.Open(connectionStr), gormConfig)
 	if err != nil {
-		log.Panicf("Cannot ping to database: dbInfo = %v, err = %v", dbInfo, err)
+		log.Panicf("Cannot connect to database: dbInfo = %v, err = %v", dbInfo, err)
 	}
 
 	log.Printf("Connected to postgres database!\n")
 
-	// Optionally, you can use an ORM like GORM to simplify the database operations
 	return &postgresSession{
 		DB: db,
 	}
-}
-
-func connectToOracleDB(dbInfo DBInfo) (*sql.DB, Error) {
-	connectStr := fmt.Sprintf(`user="%s" password="%s" connectString="%s:%d/%s"`, dbInfo.Username, dbInfo.Password, dbInfo.Host, dbInfo.Port, dbInfo.Database)
-	// Connect to oracle database and return session
-	log.Printf("Connect to oracle database: %s:%d/%s\n", dbInfo.Host, dbInfo.Port, dbInfo.Database)
-	db, err := sql.Open("godror", connectStr)
-	if err != nil {
-		return nil, NewError(ERROR_CODE_FROM_DATABASE, fmt.Sprintf("Error opening oracle database: dbInfo = %v, err = %v", dbInfo, err))
-	}
-
-	err = db.Ping()
-	if err != nil {
-		return nil, NewError(ERROR_CODE_FROM_DATABASE, fmt.Sprintf("Error opening oracle database: dbInfo = %v, err = %v", dbInfo, err))
-	}
-
-	log.Printf("Connected to oracle database!\n")
-
-	return db, nil
-}
-
-func openOracleDBConnection(dbInfo DBInfo) *oracleSession {
-	db, err := connectToOracleDB(dbInfo)
-	if err != nil {
-		log.Panicf("Error opening oracle database: err = %v", err)
-	}
-
-	return &oracleSession{
-		DB:         db,
-		queryCount: 0,
-		DBInfo:     dbInfo,
-	}
-}
-
-func resetOracleSession(oracleSession *oracleSession) {
-	LogInfo("Reset oracle session")
-	err := oracleSession.Close()
-	if err != nil {
-		LogError("Error close oracle session when reset oracle session: %v", err)
-	}
-	oracleSession.resetOracleSession()
-	newSesison := openOracleDBConnection(oracleSession.DBInfo)
-
-	oracleSession.DB = newSesison.DB
-	LogInfo("Reset oracle session success")
 }

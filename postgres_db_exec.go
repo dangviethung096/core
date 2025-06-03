@@ -2,429 +2,184 @@ package core
 
 import (
 	"database/sql"
-	"fmt"
 	"reflect"
 
-	"github.com/lib/pq"
+	"gorm.io/gorm"
 )
 
 type postgresSession struct {
-	*sql.DB
+	*gorm.DB
 }
 
-func (session postgresSession) SaveDataToDB(ctx Context, data DataBaseObject) Error {
-	query, args, insertError := GetInsertQuery(data)
-	if insertError != nil {
-		ctx.LogError("Error when get insert data = %#v, err = %s", data, insertError.Error())
-		return insertError
-	}
-
-	ctx.LogInfo("Insert query = %v, args = %v", query, args)
-	if _, err := session.ExecContext(ctx, query, args...); err != nil {
+func (session postgresSession) InsertDataToDB(ctx Context, data DataBaseObject) Error {
+	ctx.LogInfo("Insert data table = %s, data = %#v", data.TableName(), data)
+	if err := session.Create(data).Error; err != nil {
 		ctx.LogError("Error insert data = %#v, err = %v", data, err)
-		pqError, ok := err.(*pq.Error)
-		if ok {
-			if pqError.Code.Name() == DB_ERROR_NAME_UNIQUE_VIOLATION {
-				return ERROR_DB_UNIQUE_VIOLATION
-			} else if pqError.Code.Name() == DB_ERROR_NAME_FOREIGN_KEY_VIOLATION {
-				return ERROR_DB_FOREIGN_KEY_VIOLATION
-			}
-		}
 		return ERROR_INSERT_TO_DB_FAIL
 	}
 
 	return nil
 }
 
-func (session postgresSession) SaveDataToDBWithoutPrimaryKey(ctx Context, data DataBaseObject) Error {
-	query, args, pkAddress, insertError := GetInsertQueryWithoutPrimaryKey(data)
-	if insertError != nil {
-		ctx.LogError("Error when get insert data = %#v, err = %s", data, insertError.Error())
-		return insertError
+func (session postgresSession) DeleteDataFromDBByID(ctx Context, data DataBaseObject) Error {
+	if data == nil {
+		return NewError(ERROR_CODE_FROM_DATABASE, "data is nil")
 	}
-
-	ctx.LogInfo("Insert query = %v, args = %v", query, args)
-	row := session.QueryRowContext(ctx, query, args...)
-
-	err := row.Scan(pkAddress)
-	if err != nil {
-		ctx.LogError("Error insert data = %#v, err = %v", data, err)
-		pqError, ok := err.(*pq.Error)
-		if ok {
-			if pqError.Code.Name() == "unique_violation" {
-				return ERROR_DB_UNIQUE_VIOLATION
-			} else if pqError.Code.Name() == "foreign_key_violation" {
-				return ERROR_DB_FOREIGN_KEY_VIOLATION
-			}
-		}
-		return ERROR_INSERT_TO_DB_FAIL
-	}
-
-	return nil
-}
-
-func (session postgresSession) DeleteDataInDB(ctx Context, data DataBaseObject) Error {
-	query, args, deleteError := GetDeleteQuery(data)
-	if deleteError != nil {
-		ctx.LogError("Error when get delete data = %#v, err = %s", data, deleteError.Error())
-		return deleteError
-	}
-
-	ctx.LogInfo("Delete query = %v, args = %v", query, args)
-	if _, err := session.ExecContext(ctx, query, args...); err != nil {
+	ctx.LogInfo("Delete data table = %s", data.TableName())
+	if err := session.Delete(data).Error; err != nil {
 		ctx.LogError("Error delete data = %#v, err = %v", data, err)
-		pqError, ok := err.(*pq.Error)
-		if ok {
-			if pqError.Code.Name() == DB_ERROR_NAME_FOREIGN_KEY_VIOLATION {
-				return ERROR_DB_FOREIGN_KEY_VIOLATION
-			}
-		}
-		return NewError(ERROR_CODE_FROM_DATABASE, err.Error())
+		return ERROR_DELETE_FROM_DB_FAIL
 	}
 
 	return nil
 }
 
-func (session postgresSession) DeleteDataWithWhereQuery(ctx Context, data DataBaseObject, whereQuery string) Error {
-	query := fmt.Sprintf("DELETE FROM %s WHERE %s", data.GetTableName(), whereQuery)
-
-	ctx.LogInfo("Delete query = %v", query)
-	ret, err := session.ExecContext(ctx, query)
-	if err != nil {
+func (session postgresSession) DeleteDataFromDBWithWhereQuery(ctx Context, data DataBaseObject, whereQuery string, args ...any) Error {
+	if data == nil {
+		return NewError(ERROR_CODE_FROM_DATABASE, "data is nil")
+	}
+	ctx.LogInfo("Delete data table = %s, conditions = %v", data.TableName(), whereQuery)
+	if err := session.Where(whereQuery, args...).Delete(data).Error; err != nil {
 		ctx.LogError("Error delete data = %#v, err = %v", data, err)
-		pqError, ok := err.(*pq.Error)
-		if ok {
-			if pqError.Code.Name() == DB_ERROR_NAME_FOREIGN_KEY_VIOLATION {
-				return ERROR_DB_FOREIGN_KEY_VIOLATION
-			}
-		}
-		return NewError(ERROR_CODE_FROM_DATABASE, err.Error())
-	}
-
-	rowDeleted, err := ret.RowsAffected()
-	if err != nil {
-		ctx.LogError("Error get rows affected = %v", err)
-		return NewError(ERROR_CODE_FROM_DATABASE, err.Error())
-	}
-
-	if rowDeleted == 0 {
-		ctx.LogInfo("No row deleted in query: %s", query)
-		return nil
+		return ERROR_DELETE_FROM_DB_FAIL
 	}
 
 	return nil
 }
 
-func (session postgresSession) UpdateDataInDB(ctx Context, data DataBaseObject) Error {
-	query, args, updateError := GetUpdateQuery(data)
-	if updateError != nil {
-		ctx.LogError("Error when get update data = %#v, err = %s", data, updateError.Error())
-		return updateError
+func (session postgresSession) UpdateDataToDB(ctx Context, data DataBaseObject) Error {
+	if data == nil {
+		return NewError(ERROR_CODE_FROM_DATABASE, "data is nil")
 	}
-
-	ctx.LogInfo("Update query = %v, args = %v", query, args)
-	if _, err := session.ExecContext(ctx, query, args...); err != nil {
+	ctx.LogInfo("Update data table = %s, data = %#v", data.TableName(), data)
+	if err := session.Save(data).Error; err != nil {
 		ctx.LogError("Error update data = %#v, err = %s", data, err.Error())
-		return NewError(ERROR_CODE_FROM_DATABASE, err.Error())
+		return ERROR_UPDATE_TO_DB_FAIL
 	}
 
 	return nil
 }
 
-func (session postgresSession) SelectById(ctx Context, data DataBaseObject) Error {
-	query, params, err := GetSelectQuery(data)
-	if err != nil {
-		ctx.LogError("Error when get data = %#v, err = %s", data, err.Error())
-		return err
+func (session postgresSession) SelectListByFields(ctx Context, data DataBaseObject, whereQuery string, args ...interface{}) ([]DataBaseObject, Error) {
+	if data == nil {
+		return nil, NewError(ERROR_CODE_FROM_DATABASE, "data is nil")
 	}
 
-	primaryKeys, numPrimaryKeys := splitPrimaryKey(data)
-	if numPrimaryKeys == 0 {
-		ctx.LogError("Error not found primary key = %#v", data)
-		return ERROR_NOT_FOUND_PRIMARY_KEY
+	// Get the type of the input data
+	dataType := reflect.TypeOf(data)
+
+	// Create a slice of the same type
+	sliceType := reflect.SliceOf(dataType)
+	result := reflect.MakeSlice(sliceType, 0, 0).Interface()
+
+	ctx.LogInfo("SelectListByFields, table = %s, conditions = %v", data.TableName(), whereQuery)
+
+	if err := session.Where(whereQuery, args...).Find(&result).Error; err != nil {
+		ctx.LogError("Error select list by fields = %#v, err = %s", data, err.Error())
+		return nil, NewError(ERROR_CODE_FROM_DATABASE, err.Error())
 	}
 
-	for i, key := range primaryKeys {
-		if i == 0 {
-			query += fmt.Sprintf(" WHERE %s = $%d", key, i+1)
-		} else {
-			query += fmt.Sprintf(" AND %s = $%d", key, i+1)
-		}
+	// Convert the result to []DataBaseObject
+	resultValue := reflect.ValueOf(result)
+	dataBaseObjects := make([]DataBaseObject, resultValue.Len())
+	for i := 0; i < resultValue.Len(); i++ {
+		dataBaseObjects[i] = resultValue.Index(i).Interface().(DataBaseObject)
 	}
 
-	args, found := searchPrimaryKey(data)
-	if !found {
-		ctx.LogError("Error not found primary key = %#v", data)
-		return ERROR_DB_ERROR
-	}
-
-	ctx.LogInfo("Select query = %v, args = %v", query, args)
-
-	row := session.QueryRowContext(ctx, query, args...)
-	if err := row.Scan(params...); err != nil {
-		ctx.LogError("Error select data = %#v, err = %v", data, err.Error())
-		if err == sql.ErrNoRows {
-			return ERROR_NOT_FOUND_IN_DB
-		}
-		return NewError(ERROR_CODE_FROM_DATABASE, err.Error())
-	}
-
-	return nil
+	return dataBaseObjects, nil
 }
 
-func (session postgresSession) ListAllInTable(ctx Context, data DataBaseObject) (any, Error) {
-	query, params, err := GetSelectQuery(data)
-	if err != nil {
-		ctx.LogError("Error when get update data = %#v, err = %s", data, err.Error())
-		return nil, err
+func (session postgresSession) SelectListByFieldWithPaging(ctx Context, data DataBaseObject, limit int64, offset int64, whereQuery string, args ...any) ([]DataBaseObject, Error) {
+	var result []DataBaseObject
+
+	ctx.LogInfo("SelectListByFieldWithPaging, table = %s, conditions = %v, limit = %d, offset = %d", data.TableName(), whereQuery, limit, offset)
+	if err := session.Where(whereQuery, args...).Limit(int(limit)).Offset(int(offset)).Find(&result).Error; err != nil {
+		ctx.LogError("Error select list by fields = %#v, err = %s", data, err.Error())
+		return nil, NewError(ERROR_CODE_FROM_DATABASE, err.Error())
 	}
 
-	ctx.LogInfo("Select query = %v", query)
-	rows, errQuery := session.QueryContext(ctx, query)
-	if errQuery != nil {
-		ctx.LogError("Error select table %s, err = %s", data.GetTableName(), errQuery.Error())
-		return nil, ERROR_DB_ERROR
-	}
-
-	// Get list of struct
-	resultType := reflect.SliceOf(reflect.TypeOf(data).Elem())
-	result := reflect.MakeSlice(resultType, 0, 5)
-	for rows.Next() {
-		if err := rows.Scan(params...); err != nil {
-			ctx.LogError("Error select data = %#v, err = %s", data, err.Error())
-			return nil, ERROR_DB_ERROR
-		}
-
-		result = reflect.Append(result, reflect.ValueOf(data).Elem())
-	}
-
-	return result.Interface(), nil
-}
-func (session postgresSession) ListPagingTable(ctx Context, data DataBaseObject, limit int64, offset int64) (any, Error) {
-	query, params, err := GetSelectQuery(data)
-	if err != nil {
-		ctx.LogError("Error when get update data = %#v, err = %s", data, err.Error())
-		return nil, err
-	}
-
-	primaryKeys, numPrimaryKeys := splitPrimaryKey(data)
-	var primaryKey string
-	if numPrimaryKeys > 1 {
-		primaryKey = primaryKeys[numPrimaryKeys-1]
-	} else if numPrimaryKeys == 1 {
-		primaryKey = primaryKeys[0]
-	} else {
-		ctx.LogError("Error not found primary key = %#v", data)
-		return nil, ERROR_NOT_FOUND_PRIMARY_KEY
-	}
-
-	query += fmt.Sprintf(" ORDER BY %s ASC LIMIT %d OFFSET %d", primaryKey, limit, offset)
-
-	ctx.LogInfo("Select query = %v", query)
-	rows, errQuery := session.QueryContext(ctx, query)
-	if errQuery != nil {
-		ctx.LogError("Error select table %s, err = %s", data.GetTableName(), errQuery.Error())
-		return nil, ERROR_DB_ERROR
-	}
-
-	// Get list of struct
-	resultType := reflect.SliceOf(reflect.TypeOf(data).Elem())
-	result := reflect.MakeSlice(resultType, 0, 5)
-	for rows.Next() {
-		if err := rows.Scan(params...); err != nil {
-			ctx.LogError("Error select data = %#v, err = %s", data, err.Error())
-			return nil, ERROR_DB_ERROR
-		}
-
-		result = reflect.Append(result, reflect.ValueOf(data).Elem())
-	}
-
-	return result.Interface(), nil
-}
-
-func (session postgresSession) SelectByField(ctx Context, data DataBaseObject, fieldName string, fieldValue any) Error {
-	query, params, err := GetSelectQuery(data)
-	if err != nil {
-		ctx.LogError("Error when get update data = %#v, err = %s", data, err.Error())
-		return err
-	}
-
-	query += fmt.Sprintf(" WHERE %s = $1", fieldName)
-
-	ctx.LogInfo("Select query = %v, args = %v", query, fieldValue)
-	row := session.QueryRowContext(ctx, query, fieldValue)
-	if err := row.Scan(params...); err != nil {
-		ctx.LogError("Error select data = %#v, err = %s", data, err.Error())
-		if err == sql.ErrNoRows {
-			return ERROR_NOT_FOUND_IN_DB
-		}
-		return ERROR_DB_ERROR
-	}
-
-	return nil
-}
-
-func (session postgresSession) SelectListByFields(ctx Context, data DataBaseObject, mapArgs map[string]interface{}) (any, Error) {
-	query, params, err := GetSelectQuery(data)
-	if err != nil {
-		ctx.LogError("Error when get update data = %#v, err = %s", data, err.Error())
-		return nil, err
-	}
-
-	// Handle where params
-	var args []interface{}
-	var keys []string
-	if len(mapArgs) > 0 {
-		query += " WHERE "
-		args = []interface{}{}
-		keys = []string{}
-	}
-
-	count := 1
-	for key, value := range mapArgs {
-		if count == 1 {
-			query += fmt.Sprintf("%s = $%d ", key, count)
-		} else {
-			query += fmt.Sprintf("AND %s = $%d ", key, count)
-		}
-
-		args = append(args, value)
-		keys = append(keys, key)
-		count++
-	}
-
-	ctx.LogInfo("Select query = %v, args = %#v", query, args)
-	rows, errQuery := session.QueryContext(ctx, query, args...)
-	if errQuery != nil {
-		ctx.LogError("Error select %#v = %#v, err = %s", keys, args, errQuery.Error())
-		return nil, ERROR_DB_ERROR
-	}
-
-	// Get list of struct
-	resultType := reflect.SliceOf(reflect.TypeOf(data).Elem())
-	result := reflect.MakeSlice(resultType, 0, 5)
-	for rows.Next() {
-		if err := rows.Scan(params...); err != nil {
-			ctx.LogError("Error select data = %#v, err = %s", data, err.Error())
-			return nil, ERROR_DB_ERROR
-		}
-
-		result = reflect.Append(result, reflect.ValueOf(data).Elem())
-
-	}
-
-	return result.Interface(), nil
-}
-
-func (session postgresSession) SelectListWithTailQuery(ctx Context, data DataBaseObject, tailQuery *TailQuery) (any, Error) {
-	query, params, err := GetSelectQuery(data)
-	if err != nil {
-		ctx.LogError("Error when get update data = %#v, err = %s", data, err.Error())
-		return nil, err
-	}
-
-	query += tailQuery.GetQuery()
-
-	ctx.LogInfo("Select query = %s", query)
-	rows, errQuery := session.QueryContext(ctx, query)
-	if errQuery != nil {
-		ctx.LogError("Error select query: %s | err = %s", query, errQuery.Error())
-		return nil, ERROR_DB_ERROR
-	}
-
-	// Get list of struct
-	resultType := reflect.SliceOf(reflect.TypeOf(data).Elem())
-	result := reflect.MakeSlice(resultType, 0, 5)
-	for rows.Next() {
-		if err := rows.Scan(params...); err != nil {
-			ctx.LogError("Error select data = %#v, err = %s", data, err.Error())
-			return nil, ERROR_DB_ERROR
-		}
-
-		result = reflect.Append(result, reflect.ValueOf(data).Elem())
-	}
-
-	return result.Interface(), nil
-}
-
-func (session postgresSession) SelectPagingListByFields(ctx Context, data DataBaseObject, mapArgs map[string]interface{}, limit int64, offset int64) (any, Error) {
-	query, params, err := GetSelectQuery(data)
-	if err != nil {
-		ctx.LogError("Error when get update data = %#v, err = %s", data, err.Error())
-		return nil, err
-	}
-
-	// Handle where params
-	var args []interface{}
-	var keys []string
-	if len(mapArgs) > 0 {
-		query += " WHERE "
-		args = []interface{}{}
-		keys = []string{}
-	}
-
-	count := 1
-	for key, value := range mapArgs {
-		if count == 1 {
-			query += fmt.Sprintf("%s = $%d ", key, count)
-		} else {
-			query += fmt.Sprintf("AND %s = $%d ", key, count)
-		}
-
-		args = append(args, value)
-		keys = append(keys, key)
-		count++
-	}
-
-	query = fmt.Sprintf("%s LIMIT %d OFFSET %d", query, limit, offset)
-
-	ctx.LogInfo("Select query = %v, args = %#v", query, args)
-	rows, errQuery := session.QueryContext(ctx, query, args...)
-	if errQuery != nil {
-		ctx.LogError("Error select %#v = %#v, err = %s", keys, args, errQuery.Error())
-		return nil, ERROR_DB_ERROR
-	}
-
-	// Get list of struct
-	resultType := reflect.SliceOf(reflect.TypeOf(data).Elem())
-	result := reflect.MakeSlice(resultType, 0, 5)
-	for rows.Next() {
-		if err := rows.Scan(params...); err != nil {
-			ctx.LogError("Error select data = %#v, err = %s", data, err.Error())
-			return nil, ERROR_DB_ERROR
-		}
-
-		result = reflect.Append(result, reflect.ValueOf(data).Elem())
-
-	}
-
-	return result.Interface(), nil
+	return result, nil
 }
 
 func (session postgresSession) CountRecordInTable(ctx Context, data DataBaseObject) (int64, Error) {
-	query := fmt.Sprintf("SELECT COUNT(*) FROM %s", data.GetTableName())
-
-	row := session.QueryRowContext(ctx, query)
-
+	ctx.LogInfo("CountRecordInTable, table = %s", data.TableName())
 	var count int64
-	err := row.Scan(&count)
-	if err != nil {
-		ctx.LogError("Error count record in table %s, err = %s", data.GetTableName(), err.Error())
+	if err := session.Model(&data).Count(&count).Error; err != nil {
+		ctx.LogError("Error count record in table = %#v, err = %s", data, err.Error())
 		return 0, NewError(ERROR_CODE_FROM_DATABASE, err.Error())
 	}
 	return count, nil
 }
 
-func (session postgresSession) CountRecordInTableWithTailQuery(ctx Context, data DataBaseObject, tailQuery *TailQuery) (int64, Error) {
-	query := fmt.Sprintf("SELECT COUNT(*) FROM %s %s;", data.GetTableName(), tailQuery.GetQuery())
-	ctx.LogInfo("Count record in table with where query: %s", query)
-	row := session.QueryRowContext(ctx, query)
-
+func (session postgresSession) CountRecordInTableWithWhereQuery(ctx Context, data DataBaseObject, whereQuery string, args ...any) (int64, Error) {
+	ctx.LogInfo("CountRecordInTableWithWhereQuery, table = %s, conditions = %v", data.TableName(), whereQuery)
 	var count int64
-	err := row.Scan(&count)
-	if err != nil {
-		ctx.LogError("Error count record in table %s, err = %v", data.GetTableName(), err)
+	if err := session.Model(&data).Where(whereQuery, args...).Count(&count).Error; err != nil {
+		ctx.LogError("Error count record in table = %#v, err = %s", data, err.Error())
 		return 0, NewError(ERROR_CODE_FROM_DATABASE, err.Error())
 	}
 	return count, nil
+}
+
+func (session postgresSession) SelectPaging(ctx Context, data DataBaseObject, orderQuery string, limit int64, offset int64) ([]DataBaseObject, Error) {
+	var result []DataBaseObject
+
+	ctx.LogInfo("SelectPaging, table = %s, limit = %d, offset = %d", data.TableName(), limit, offset)
+
+	if err := session.Order(orderQuery).Limit(int(limit)).Offset(int(offset)).Find(&result).Error; err != nil {
+		ctx.LogError("Error select list by fields = %#v, err = %s", data, err.Error())
+		return nil, NewError(ERROR_CODE_FROM_DATABASE, err.Error())
+	}
+	return result, nil
+}
+
+func (session postgresSession) Close() {
+	sqlDB, err := session.DB.DB()
+	if err != nil {
+		return
+	}
+	sqlDB.Close()
+}
+
+func (session postgresSession) GetConnection() *gorm.DB {
+	return session.DB
+}
+
+// Transaction executes the given function within a transaction
+func (session postgresSession) Transaction(ctx Context, fn func(tx *gorm.DB) error) Error {
+	err := session.DB.Transaction(func(tx *gorm.DB) error {
+		return fn(tx)
+	})
+	if err != nil {
+		return NewError(ERROR_CODE_FROM_DATABASE, err.Error())
+	}
+	return nil
+}
+
+func (session postgresSession) GetOriginConnection(ctx Context) *sql.DB {
+	sqlDB, err := session.DB.DB()
+	if err != nil {
+		ctx.LogError("Error get origin connection = %s", err.Error())
+		return nil
+	}
+	return sqlDB
+}
+
+func (session postgresSession) AutoMigrate(ctx Context, data DataBaseObject) Error {
+	if err := session.DB.AutoMigrate(data); err != nil {
+		ctx.LogError("Error auto migrate table = %#v, err = %s", data, err.Error())
+		return NewError(ERROR_CODE_FROM_DATABASE, err.Error())
+	}
+	return nil
+}
+
+func (session postgresSession) SelectByID(ctx Context, data DataBaseObject) Error {
+	if data == nil {
+		return NewError(ERROR_CODE_FROM_DATABASE, "data is nil")
+	}
+	if err := session.First(data).Error; err != nil {
+		ctx.LogError("Error select by id = %#v, err = %s", data, err.Error())
+		return NewError(ERROR_CODE_FROM_DATABASE, err.Error())
+	}
+	return nil
 }

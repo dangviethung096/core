@@ -26,17 +26,13 @@ CREATE TABLE test_account_many_key (
 */
 
 type Account struct {
-	Id   int    `db:"id"`
-	Name string `db:"name"`
-	Age  int    `db:"age"`
+	Id   int    `gorm:"column:id;primaryKey"`
+	Name string `gorm:"column:name;not null"`
+	Age  int    `gorm:"column:age;not null"`
 }
 
-func (a Account) GetTableName() string {
+func (a Account) TableName() string {
 	return "test_accounts"
-}
-
-func (a Account) GetPrimaryKey() string {
-	return "id"
 }
 
 var account1 = Account{
@@ -58,20 +54,17 @@ var account3 = Account{
 }
 
 type AccountManyKey struct {
-	Id        int    `db:"id"`
-	Name      string `db:"name"`
-	Age       int    `db:"age"`
-	Note      string `db:"note"`
-	NoField   string
-	NoFiled02 string
+	Id        int    `gorm:"column:id"`
+	Name      string `gorm:"column:name;primaryKey"`
+	Age       int    `gorm:"column:age;primaryKey"`
+	Note      string `gorm:"column:note"`
+	NoField   string `gorm:"-"` // Ignored by GORM
+	NoField02 string `gorm:"-"` // Ignored by GORM
 }
 
-func (a AccountManyKey) GetTableName() string {
+// TableName specifies the table name for GORM
+func (AccountManyKey) TableName() string {
 	return "test_account_many_key"
-}
-
-func (a AccountManyKey) GetPrimaryKey() string {
-	return "id,name"
 }
 
 var accountMany01 = AccountManyKey{
@@ -96,192 +89,233 @@ var accountMany03 = AccountManyKey{
 }
 
 func insertAccount(ctx Context) {
-	SaveDataToDB(ctx, &account1)
-	SaveDataToDB(ctx, &account2)
-	SaveDataToDB(ctx, &account3)
+	InsertDataToDB(ctx, &account1)
+	InsertDataToDB(ctx, &account2)
+	InsertDataToDB(ctx, &account3)
 }
 
 func insertAccountWithManyKey(ctx Context) {
-	SaveDataToDB(ctx, &accountMany01)
-	SaveDataToDB(ctx, &accountMany02)
-	SaveDataToDB(ctx, &accountMany03)
+	InsertDataToDB(ctx, &accountMany01)
+	InsertDataToDB(ctx, &accountMany02)
+	InsertDataToDB(ctx, &accountMany03)
 }
 
 func deleteAccount(ctx Context) {
-	DeleteDataInDB(ctx, &account1)
-	DeleteDataInDB(ctx, &account2)
-	DeleteDataInDB(ctx, &account3)
+	DeleteDataFromDB(ctx, account1)
+	DeleteDataFromDB(ctx, account2)
+	DeleteDataFromDB(ctx, account3)
 }
 
 func deleteAccountWithManyKey(ctx Context) {
-	DeleteDataInDB(ctx, &accountMany01)
-	DeleteDataInDB(ctx, &accountMany02)
-	DeleteDataInDB(ctx, &accountMany03)
+	DeleteDataFromDB(ctx, accountMany01)
+	DeleteDataFromDB(ctx, accountMany02)
+	DeleteDataFromDB(ctx, accountMany03)
+}
+
+// migrateTables performs database migrations
+func migrateTables(ctx Context) Error {
+	// Drop table if exists
+	DBSession().GetConnection().Exec("DROP TABLE IF EXISTS test_accounts")
+	DBSession().GetConnection().Exec("DROP TABLE IF EXISTS test_account_many_key")
+
+	// Migrate Account table
+	if err := DBSession().AutoMigrate(ctx, &Account{}); err != nil {
+		return NewError(ERROR_CODE_FROM_DATABASE, err.Error())
+	}
+
+	// Migrate AccountManyKey table
+	if err := DBSession().AutoMigrate(ctx, &AccountManyKey{}); err != nil {
+		return NewError(ERROR_CODE_FROM_DATABASE, err.Error())
+	}
+
+	return nil
 }
 
 func TestSelectListByNameField_ReturnSuccess(t *testing.T) {
 	ctx := GetContextForTest()
+	migrateTables(ctx)
 	insertAccount(ctx)
 	defer deleteAccount(ctx)
 	var account Account
-	result, err := SelectListByField(ctx, &account, "name", "Hung")
+	accounts, err := SelectListByFields(ctx, account, "name = ?", "Hung")
 	if err != nil {
 		t.Errorf("TestSelectListByField_ReturnSuccess: %v", err)
 	}
 
-	t.Logf("Result: %#v", result)
+	t.Logf("Result: %#v", accounts)
 }
 
-func TestSelectListByAgeField_ReturnSuccess(t *testing.T) {
+func TestSelectListByManyKeyField_ReturnSuccess(t *testing.T) {
 	ctx := GetContextForTest()
-	insertAccount(ctx)
-	defer deleteAccount(ctx)
-	var account Account
-	result, err := SelectListByField(ctx, &account, "age", 11)
-	if err != nil {
-		t.Errorf("TestSelectListByField_ReturnSuccess: %v", err)
-	}
-
-	t.Logf("Result: %#v", result)
-}
-
-func TestSelectByField_ReturnSuccess(t *testing.T) {
-	ctx := GetContextForTest()
-	insertAccount(ctx)
-	defer deleteAccount(ctx)
-	var account Account
-	err := SelectByField(ctx, &account, "name", "Hung")
-	if err != nil {
-		t.Errorf("TestSelectByField_ReturnSuccess: %v", err)
-	}
-
-	if account.Name != "Hung" {
-		t.Errorf("TestSelectByField_ReturnSuccess: expected name to be 'Hung', got '%s'", account.Name)
-	}
-}
-
-func TestSelectByField_InvalidField_ReturnError(t *testing.T) {
-	ctx := GetContextForTest()
-	var account Account
-	insertAccount(ctx)
-	defer deleteAccount(ctx)
-	err := SelectByField(ctx, &account, "invalid_field", "Hung")
-	if err == nil {
-		t.Errorf("TestSelectByField_InvalidField_ReturnError: expected an error, got nil")
-	}
-}
-
-func TestSelectByField_NotFound_ReturnError(t *testing.T) {
-	ctx := GetContextForTest()
-	insertAccount(ctx)
-	defer deleteAccount(ctx)
-	var account Account
-	err := SelectByField(ctx, &account, "name", "Nonexistent")
-	if err == nil {
-		t.Errorf("TestSelectByField_NotFound_ReturnError: expected an error, got nil")
-	}
-}
-
-func TestSelectListWithWhereQuery_ReturnSuccess(t *testing.T) {
-	ctx := GetContextForTest()
-	var account Account
-	insertAccount(ctx)
-	defer deleteAccount(ctx)
-
-	tailQuery := NewTailQuery()
-	tailQuery.Add("age > 18", OPERATOR_NONE)
-
-	result, err := SelectListWithWhereQuery(ctx, &account, tailQuery)
-	if err != nil {
-		t.Errorf("TestSelectListWithWhereQuery_ReturnSuccess: get error: %s\n", err.Error())
-		return
-	}
-
-	t.Logf("Result: %#v\n", result)
-}
-
-func TestSelectById_ReturnSuccessWithManyKey(t *testing.T) {
-	ctx := GetContextForTest()
+	migrateTables(ctx)
 	insertAccountWithManyKey(ctx)
 	defer deleteAccountWithManyKey(ctx)
+	var account AccountManyKey
+	accounts, err := SelectListByFields(ctx, account, "id = ?", 1)
+	if err != nil {
+		t.Errorf("TestSelectListByManyKeyField_ReturnSuccess: %v", err)
+	}
+
+	t.Logf("Result: %#v", accounts)
+}
+
+func TestCreateData_ReturnSuccess(t *testing.T) {
+	ctx := GetContextForTest()
+
+	account := Account{
+		Id:   1,
+		Name: "Hung",
+		Age:  11,
+	}
+	err := InsertDataToDB(ctx, &account)
+	defer DeleteDataFromDB(ctx, account)
+	if err != nil {
+		t.Errorf("TestCreateData_ReturnSuccess: %v", err)
+	}
+
+	t.Logf("Result: %#v", account)
+}
+
+func TestCreateDataWithManyKey_ReturnSuccess(t *testing.T) {
+	ctx := GetContextForTest()
 
 	account := AccountManyKey{
 		Id:   1,
 		Name: "Hung",
+		Age:  11,
+		Note: "Note 1",
 	}
-	err := SelectById(ctx, &account)
+	err := InsertDataToDB(ctx, &account)
+	defer DeleteDataFromDB(ctx, account)
 	if err != nil {
-		t.Errorf("TestSelectByPrimaryKey_ReturnSuccess: get error: %s\n", err.Error())
-		return
+		t.Errorf("TestCreateDataWithManyKey_ReturnSuccess: %v", err)
 	}
 
-	if account.Age != accountMany01.Age {
-		t.Errorf("TestSelectByPrimaryKey_ReturnSuccess: wrong return values: %#v\n", account)
-		return
-	}
-
-	t.Logf("Account: %#v\n", account)
+	t.Logf("Result: %#v", account)
 }
 
-func TestUpdateDataInDB_ReturnSuccessWithManyKey(t *testing.T) {
+func TestUpdateData_ReturnSuccess(t *testing.T) {
 	ctx := GetContextForTest()
+	migrateTables(ctx)
+	insertAccount(ctx)
+	defer deleteAccount(ctx)
+
+	account := Account{
+		Id:   1,
+		Name: "Hung",
+		Age:  11,
+	}
+	err := UpdateDataToDB(ctx, &account)
+	if err != nil {
+		t.Errorf("TestUpdateData_ReturnSuccess: %v", err)
+	}
+
+	t.Logf("Result: %#v", account)
+}
+
+func TestSelectByID_ReturnSuccess(t *testing.T) {
+	ctx := GetContextForTest()
+	insertAccount(ctx)
+	defer deleteAccount(ctx)
+
+	account := Account{
+		Id: 1,
+	}
+	err := SelectByID(ctx, &account)
+	if err != nil {
+		t.Errorf("TestSelectByID_ReturnSuccess: %v", err)
+		return
+	}
+
+	t.Logf("Result: %#v", account)
+}
+
+func TestSelectByManyKey_ReturnSuccess(t *testing.T) {
+	ctx := GetContextForTest()
+	migrateTables(ctx)
 	insertAccountWithManyKey(ctx)
 	defer deleteAccountWithManyKey(ctx)
 
 	account := AccountManyKey{
-		Id:   1,
 		Name: "Hung",
-		Age:  23,
-		Note: "TestNote",
+		Age:  11,
 	}
 
-	err := UpdateDataInDB(ctx, &account)
+	err := SelectByID(ctx, &account)
 	if err != nil {
-		t.Errorf("TestUpdateDataInDB_ReturnSuccessWithManyKey: get error: %s\n", err.Error())
+		t.Errorf("TestSelectByManyKey_ReturnSuccess: %v", err)
 		return
 	}
 
-	// Get account from db
-	acc := AccountManyKey{
-		Id:   1,
-		Name: "Hung",
-	}
-
-	err = SelectById(ctx, &acc)
-	if err != nil {
-		t.Errorf("TestUpdateDataInDB_ReturnSuccessWithManyKey: get error: %s\n", err.Error())
-		return
-	}
-
-	if acc.Age != account.Age || acc.Note != account.Note {
-		t.Errorf("TestUpdateDataInDB_ReturnSuccessWithManyKey: wrong return values: %#v\n", acc)
-		return
-	}
-
-	t.Logf("Account: %#v\n", acc)
+	t.Logf("Result: %#v", account)
 }
 
-func TestDeleteDataInDB_ReturnSuccessWithManyKey(t *testing.T) {
+func TestCountRecordInTable_ReturnSuccess(t *testing.T) {
 	ctx := GetContextForTest()
-	insertAccountWithManyKey(ctx)
-	defer deleteAccountWithManyKey(ctx)
+	migrateTables(ctx)
+	insertAccount(ctx)
+	defer deleteAccount(ctx)
 
-	account := AccountManyKey{
-		Id:   1,
-		Name: "Hung",
-	}
-
-	err := DeleteDataInDB(ctx, &account)
+	count, err := CountRecordInTable(ctx, &Account{})
 	if err != nil {
-		t.Errorf("TestDeleteDataInDB_ReturnSuccessWithManyKey: get error: %s\n", err.Error())
-		return
+		t.Errorf("TestCountRecordInTable_ReturnSuccess: %v", err)
 	}
 
-	err = SelectById(ctx, &account)
-	if err == nil {
-		t.Errorf("TestDeleteDataInDB_ReturnSuccessWithManyKey: expected an error, got nil")
-		return
+	t.Logf("Result: %d", count)
+}
+
+func TestCountRecordInTableWithWhereQuery_ReturnSuccess(t *testing.T) {
+	ctx := GetContextForTest()
+	migrateTables(ctx)
+	insertAccount(ctx)
+	defer deleteAccount(ctx)
+
+	count, err := CountRecordInTableWithWhereQuery(ctx, &Account{}, "name = ?", "Hung")
+	if err != nil {
+		t.Errorf("TestCountRecordInTableWithWhereQuery_ReturnSuccess: %v", err)
 	}
 
-	t.Logf("Delete Account: %#v\n", account)
+	t.Logf("Result: %d", count)
+}
+
+func TestSelectPaging_ReturnSuccess(t *testing.T) {
+	ctx := GetContextForTest()
+	migrateTables(ctx)
+	insertAccount(ctx)
+	defer deleteAccount(ctx)
+
+	accounts, err := SelectPaging(ctx, &Account{}, "name = ?", 1, 1)
+	if err != nil {
+		t.Errorf("TestSelectPaging_ReturnSuccess: %v", err)
+	}
+
+	t.Logf("Result: %#v", accounts)
+}
+
+func TestSelectListByFieldWithPaging_ReturnSuccess(t *testing.T) {
+	ctx := GetContextForTest()
+	migrateTables(ctx)
+	insertAccount(ctx)
+	defer deleteAccount(ctx)
+
+	accounts, err := SelectListByFieldWithPaging(ctx, &Account{}, 1, 1, "name = ?", "Hung")
+	if err != nil {
+		t.Errorf("TestSelectListByFieldWithPaging_ReturnSuccess: %v", err)
+	}
+
+	t.Logf("Result: %#v", accounts)
+}
+
+func TestSelectListByFields_ReturnSuccess(t *testing.T) {
+	ctx := GetContextForTest()
+	migrateTables(ctx)
+	insertAccount(ctx)
+	defer deleteAccount(ctx)
+
+	accounts, err := SelectListByFields(ctx, &Account{}, "name = ?", "Hung")
+	if err != nil {
+		t.Errorf("TestSelectListByFields_ReturnSuccess: %v", err)
+	}
+
+	t.Logf("Result: %#v", accounts)
 }

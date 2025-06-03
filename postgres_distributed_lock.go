@@ -22,7 +22,7 @@ func NewPgLock(session dbSession, lockKey string) *PgLock {
 
 func (m *PgLock) Lock() Error {
 	var success bool
-	err := m.session.QueryRow("SELECT pg_try_advisory_lock($1)", m.lockID).Scan(&success)
+	err := m.session.GetOriginConnection(coreContext).QueryRow("SELECT pg_try_advisory_lock($1)", m.lockID).Scan(&success)
 	if err != nil {
 		return NewError(ERROR_CODE_FROM_DATABASE, fmt.Sprintf("failed to acquire lock: %v", err))
 	}
@@ -34,7 +34,7 @@ func (m *PgLock) Lock() Error {
 
 func (m *PgLock) Unlock() Error {
 	var success bool
-	err := m.session.QueryRow("SELECT pg_advisory_unlock($1)", m.lockID).Scan(&success)
+	err := m.session.GetOriginConnection(coreContext).QueryRow("SELECT pg_advisory_unlock($1)", m.lockID).Scan(&success)
 	if err != nil {
 		return NewError(ERROR_CODE_FROM_DATABASE, fmt.Sprintf("failed to release lock: %v", err))
 	}

@@ -60,7 +60,7 @@ func (w *worker) execute() {
 	bucket := GetBucket(time.Now())
 
 	// Get all task from database: table: todo
-	result, err := DBSession().QueryContext(coreContext, "SELECT task_id, bucket FROM scheduler_todo WHERE bucket <= $1 and source = $2", bucket, Config.Server.Name)
+	result, err := DBSession().GetOriginConnection(coreContext).QueryContext(coreContext, "SELECT task_id, bucket FROM scheduler_todo WHERE bucket <= $1 and source = $2", bucket, Config.Server.Name)
 	if err != nil {
 		LogError("Execute tasks fail: %v", err)
 		return
@@ -107,7 +107,7 @@ func (w *worker) execute() {
 func (w *worker) process(bucket int64, id int64) {
 	var t task
 	// Get task detail from database in table: tasks
-	row := DBSession().QueryRowContext(coreContext, "SELECT id, queue_name, data, done, loop_index, loop_count, next, interval, start_time FROM scheduler_tasks WHERE id = $1", id)
+	row := DBSession().GetOriginConnection(coreContext).QueryRowContext(coreContext, "SELECT id, queue_name, data, done, loop_index, loop_count, next, interval, start_time FROM scheduler_tasks WHERE id = $1", id)
 	err := row.Scan(&t.ID, &t.QueueName, &t.Data, &t.Done, &t.LoopIndex, &t.LoopCount, &t.Next, &t.Interval, &t.StartTime)
 	if err != nil {
 		LogError("Get task fail: %v", err)
@@ -117,7 +117,7 @@ func (w *worker) process(bucket int64, id int64) {
 
 	if t.Done {
 		// Delete task in table: todo
-		if _, err := DBSession().ExecContext(coreContext, "DELETE FROM scheduler_todo WHERE task_id = $1", id); err != nil {
+		if _, err := DBSession().GetOriginConnection(coreContext).ExecContext(coreContext, "DELETE FROM scheduler_todo WHERE task_id = $1", id); err != nil {
 			LogError("Cannot delete todo task: %d", id)
 		}
 		return
@@ -128,12 +128,12 @@ func (w *worker) process(bucket int64, id int64) {
 	err = pushTaskToQueue(coreContext, t.QueueName, t.Data)
 	if err != nil {
 		LogError("Cannot run task: %v, err = %s", t, err.Error())
-		_, err := DBSession().ExecContext(coreContext, "INSERT INTO scheduler_done(bucket, task_id, operation_time, status) VALUES ($1, $2, $3, $4)", bucket, t.ID, now.Format(time.RFC3339), TASK_FAIL)
+		_, err := DBSession().GetOriginConnection(coreContext).ExecContext(coreContext, "INSERT INTO scheduler_done(bucket, task_id, operation_time, status) VALUES ($1, $2, $3, $4)", bucket, t.ID, now.Format(time.RFC3339), TASK_FAIL)
 		if err != nil {
 			LogError("Cannot insert task to done table: %v", err)
 		}
 	} else {
-		_, err := DBSession().ExecContext(coreContext, "INSERT INTO scheduler_done(bucket, task_id, operation_time, status) VALUES ($1, $2, $3, $4)", bucket, t.ID, now.Format(time.RFC3339), TASK_DONE)
+		_, err := DBSession().GetOriginConnection(coreContext).ExecContext(coreContext, "INSERT INTO scheduler_done(bucket, task_id, operation_time, status) VALUES ($1, $2, $3, $4)", bucket, t.ID, now.Format(time.RFC3339), TASK_DONE)
 		if err != nil {
 			LogError("Cannot insert task to done table: %v", err)
 		}
@@ -153,7 +153,7 @@ func (w *worker) process(bucket int64, id int64) {
 		next := time.Unix(t.Next, 0)
 		newBucket := GetBucket(next)
 		// Update new task in table: todo, task (time of next task)
-		tx, err := DBSession().BeginTx(coreContext, &sql.TxOptions{})
+		tx, err := DBSession().GetOriginConnection(coreContext).BeginTx(coreContext, &sql.TxOptions{})
 		if err != nil {
 			LogError("Start transaction fail: %v", err)
 		}
@@ -180,7 +180,7 @@ func (w *worker) process(bucket int64, id int64) {
 		}
 
 	} else {
-		tx, err := DBSession().BeginTx(coreContext, &sql.TxOptions{})
+		tx, err := DBSession().GetOriginConnection(coreContext).BeginTx(coreContext, &sql.TxOptions{})
 		if err != nil {
 			LogError("Start transaction fail: %v", err)
 		}

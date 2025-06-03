@@ -59,6 +59,8 @@ var (
 	ERROR_CANNOT_UNMARSHAL_HTTP_RESPONSE        Error = NewError(17, "Cannot unmarshal http response")
 	ERROR_NIL_PARAM                             Error = NewError(18, "Nil param")
 	ERROR_INSERT_TO_DB_FAIL                     Error = NewError(19, "Insert to database fail")
+	ERROR_DELETE_FROM_DB_FAIL                   Error = NewError(20, "Delete from database fail")
+	ERROR_UPDATE_TO_DB_FAIL                     Error = NewError(21, "Update to database fail")
 	ERROR_ADD_TASK_SYSTEM_FAIL                  Error = NewError(20, "Add task to system fail")
 	ERROR_TASK_TIME_LESS_THAN_NOW               Error = NewError(21, "Scheduler time is less than now")
 	ERROR_TASK_INTERVAL_INVALID                 Error = NewError(22, "Task interval is invalid")

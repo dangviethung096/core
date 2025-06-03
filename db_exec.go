@@ -1,159 +1,52 @@
 package core
 
-import "reflect"
-
 /*
 * Save data to database
-* @param data interface{} Data to save
+* @param data any Data to save
 * @return Error
  */
-func SaveDataToDB[T DataBaseObject](ctx Context, data T) Error {
-	return mainDbSession.SaveDataToDB(ctx, data)
-}
-
-/*
-* Save data to database without primary key
-* primary key will be auto increment in database
-* @param data interface{} Data to save
-* @return Error
- */
-func SaveDataToDBWithoutPrimaryKey[T DataBaseObject](ctx Context, data T) Error {
-	return mainDbSession.SaveDataToDBWithoutPrimaryKey(ctx, data)
+func InsertDataToDB(ctx Context, data DataBaseObject) Error {
+	return mainDbSession.InsertDataToDB(ctx, data)
 }
 
 /*
 * Delete data in database
-* @param data interface{} Data to delete
+* @param data any Data to delete
 * @return Error
  */
-func DeleteDataInDB[T DataBaseObject](ctx Context, data T) Error {
-	return mainDbSession.DeleteDataInDB(ctx, data)
-}
-
-func DeleteDataWithWhereQuery[T DataBaseObject](ctx Context, data T, whereQuery string) Error {
-	return mainDbSession.DeleteDataWithWhereQuery(ctx, data, whereQuery)
+func DeleteDataFromDB(ctx Context, data DataBaseObject) Error {
+	return mainDbSession.DeleteDataFromDBByID(ctx, data)
 }
 
 /*
 * Update data in database
-* @param data interface{} Data to update
+* @param data any Data to update
 * @return Error
  */
-func UpdateDataInDB[T DataBaseObject](ctx Context, data T) Error {
-	return mainDbSession.UpdateDataInDB(ctx, data)
+func UpdateDataToDB(ctx Context, data DataBaseObject) Error {
+	return mainDbSession.UpdateDataToDB(ctx, data)
 }
 
-/*
-* Select data from database by primary key
-* @param data interface{} Data to select
-* @return Error
- */
-func SelectById(ctx Context, data DataBaseObject) Error {
-	return mainDbSession.SelectById(ctx, data)
+func SelectListByFields(ctx Context, data DataBaseObject, whereQuery string, args ...any) ([]DataBaseObject, Error) {
+	return mainDbSession.SelectListByFields(ctx, data, whereQuery, args...)
 }
 
-/*
-* ListAllInTable
-* @params: ctx Context, data DataBaseObject
-* @return []DataBaseObject, Error
-* @description: select all data from table
- */
-func ListAllInTable(ctx Context, data DataBaseObject) (any, Error) {
-	return mainDbSession.ListAllInTable(ctx, data)
+func SelectListByFieldWithPaging(ctx Context, data DataBaseObject, limit int64, offset int64, whereQuery string, args ...any) ([]DataBaseObject, Error) {
+	return mainDbSession.SelectListByFieldWithPaging(ctx, data, limit, offset, whereQuery, args...)
 }
 
-/*
-* ListTable
-* @params: ctx Context, data DataBaseObject
-* @return []DataBaseObject, Error
-* @description: select all data from table
-* @note: this function is used for paging
- */
-func ListPagingTable(ctx Context, data DataBaseObject, limit int64, offset int64) (any, Error) {
-	return mainDbSession.ListPagingTable(ctx, data, limit, offset)
+func SelectPaging(ctx Context, data DataBaseObject, orderQuery string, limit int64, offset int64) ([]DataBaseObject, Error) {
+	return mainDbSession.SelectPaging(ctx, data, orderQuery, limit, offset)
 }
 
-/*
-* Select data from database by field: fieldName and fieldValue is passed in parameter
-* @return Error
- */
-func SelectByField(ctx Context, data DataBaseObject, fieldName string, fieldValue any) Error {
-	result, err := mainDbSession.SelectPagingListByFields(ctx, data, map[string]interface{}{
-		fieldName: fieldValue,
-	}, 1, 0)
-	if err != nil {
-		return err
-	}
-
-	resultValue := reflect.ValueOf(result)
-	if resultValue.Len() > 0 {
-		// Copy value of result to data
-		reflect.ValueOf(data).Elem().Set(reflect.ValueOf(resultValue.Index(0).Interface()))
-	} else {
-		return ERROR_NOT_FOUND_IN_DB
-	}
-
-	return nil
-
-}
-
-/*
-* SelectListByField
-* @params: ctx Context, data DataBaseObject, fieldName string, fieldValue any
-* @return []DataBaseObject, Error
-* @description: select list of data by field
- */
-func SelectListByField(ctx Context, data DataBaseObject, fieldName string, fieldValue any) (any, Error) {
-	return mainDbSession.SelectListByFields(ctx, data, map[string]interface{}{
-		fieldName: fieldValue,
-	})
-}
-
-func SelectListByFields(ctx Context, data DataBaseObject, mapArgs map[string]interface{}) (any, Error) {
-	return mainDbSession.SelectListByFields(ctx, data, mapArgs)
-}
-
-/*
-* SelectListWithWhereQuery
-* @params: ctx Context, data DataBaseObject, whereQuery string
-* @return []DataBaseObject, Error
-* @description: select list of data by where query
- */
-func SelectListWithWhereQuery(ctx Context, data DataBaseObject, tailQuery *TailQuery) (any, Error) {
-	return mainDbSession.SelectListWithTailQuery(ctx, data, tailQuery)
-}
-
-func SelectListWithTailQuery(ctx Context, data DataBaseObject, tailQuery *TailQuery) (any, Error) {
-	return mainDbSession.SelectListWithTailQuery(ctx, data, tailQuery)
-}
-
-/*
-* SelectPagingListByFields
-* @params: ctx Context, data DataBaseObject, mapArgs map[string]interface{}, limit int64, offset int64
-* @return []DataBaseObject, Error
-* @description: select list of data by args with limit and offset
-* @note: this function is used for paging
- */
-func SelectPagingListByFields(ctx Context, data DataBaseObject, mapArgs map[string]interface{}, limit int64, offset int64) (any, Error) {
-	return mainDbSession.SelectPagingListByFields(ctx, data, mapArgs, limit, offset)
-}
-
-/*
-* CountRecordInTable
-* @params: ctx Context, data DataBaseObject
-* @return int64, Error
-* @description: count record in table
- */
 func CountRecordInTable(ctx Context, data DataBaseObject) (int64, Error) {
 	return mainDbSession.CountRecordInTable(ctx, data)
 }
 
-/*
-* CountRecordInTableWithWhere
-* @params: ctx Context, data DataBaseObject, whereQuery string
-* @return int64, Error
-* @description: count record in table with where query
- */
-func CountRecordInTableWithTailQuery(ctx Context, data DataBaseObject, tailQuery *TailQuery) (int64, Error) {
-	return mainDbSession.CountRecordInTableWithTailQuery(ctx, data, tailQuery)
+func SelectByID(ctx Context, data DataBaseObject) Error {
+	return mainDbSession.SelectByID(ctx, data)
+}
+
+func CountRecordInTableWithWhereQuery(ctx Context, data DataBaseObject, whereQuery string, args ...any) (int64, Error) {
+	return mainDbSession.CountRecordInTableWithWhereQuery(ctx, data, whereQuery, args...)
 }
