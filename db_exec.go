@@ -27,15 +27,15 @@ func UpdateDataToDB(ctx Context, data DataBaseObject) Error {
 	return mainDbSession.UpdateDataToDB(ctx, data)
 }
 
-func SelectListByFields(ctx Context, data DataBaseObject, whereQuery string, args ...any) ([]DataBaseObject, Error) {
+func SelectListByFields(ctx Context, data DataBaseObject, whereQuery string, args ...any) (any, Error) {
 	return mainDbSession.SelectListByFields(ctx, data, whereQuery, args...)
 }
 
-func SelectListByFieldWithPaging(ctx Context, data DataBaseObject, limit int64, offset int64, whereQuery string, args ...any) ([]DataBaseObject, Error) {
+func SelectListByFieldWithPaging(ctx Context, data DataBaseObject, limit int64, offset int64, whereQuery string, args ...any) (any, Error) {
 	return mainDbSession.SelectListByFieldWithPaging(ctx, data, limit, offset, whereQuery, args...)
 }
 
-func SelectPaging(ctx Context, data DataBaseObject, orderQuery string, limit int64, offset int64) ([]DataBaseObject, Error) {
+func SelectPaging(ctx Context, data DataBaseObject, orderQuery string, limit int64, offset int64) (any, Error) {
 	return mainDbSession.SelectPaging(ctx, data, orderQuery, limit, offset)
 }
 

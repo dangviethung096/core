@@ -34,9 +34,9 @@ type dbSession interface {
 	UpdateDataToDB(ctx Context, data DataBaseObject) Error
 
 	// Query
-	SelectListByFields(ctx Context, data DataBaseObject, whereQuery string, args ...any) ([]DataBaseObject, Error)
-	SelectListByFieldWithPaging(ctx Context, data DataBaseObject, limit int64, offset int64, whereQuery string, args ...any) ([]DataBaseObject, Error)
-	SelectPaging(ctx Context, data DataBaseObject, orderQuery string, limit int64, offset int64) ([]DataBaseObject, Error)
+	SelectListByFields(ctx Context, data DataBaseObject, whereQuery string, args ...any) (any, Error)
+	SelectListByFieldWithPaging(ctx Context, data DataBaseObject, limit int64, offset int64, whereQuery string, args ...any) (any, Error)
+	SelectPaging(ctx Context, data DataBaseObject, orderQuery string, limit int64, offset int64) (any, Error)
 	SelectByID(ctx Context, data DataBaseObject) Error
 
 	CountRecordInTable(ctx Context, data DataBaseObject) (int64, Error)

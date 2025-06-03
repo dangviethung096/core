@@ -60,7 +60,7 @@ func (session postgresSession) UpdateDataToDB(ctx Context, data DataBaseObject) 
 	return nil
 }
 
-func (session postgresSession) SelectListByFields(ctx Context, data DataBaseObject, whereQuery string, args ...interface{}) ([]DataBaseObject, Error) {
+func (session postgresSession) SelectListByFields(ctx Context, data DataBaseObject, whereQuery string, args ...interface{}) (any, Error) {
 	if data == nil {
 		return nil, NewError(ERROR_CODE_FROM_DATABASE, "data is nil")
 	}
@@ -79,17 +79,10 @@ func (session postgresSession) SelectListByFields(ctx Context, data DataBaseObje
 		return nil, NewError(ERROR_CODE_FROM_DATABASE, err.Error())
 	}
 
-	// Convert the result to []DataBaseObject
-	resultValue := reflect.ValueOf(result)
-	dataBaseObjects := make([]DataBaseObject, resultValue.Len())
-	for i := 0; i < resultValue.Len(); i++ {
-		dataBaseObjects[i] = resultValue.Index(i).Interface().(DataBaseObject)
-	}
-
-	return dataBaseObjects, nil
+	return result, nil
 }
 
-func (session postgresSession) SelectListByFieldWithPaging(ctx Context, data DataBaseObject, limit int64, offset int64, whereQuery string, args ...any) ([]DataBaseObject, Error) {
+func (session postgresSession) SelectListByFieldWithPaging(ctx Context, data DataBaseObject, limit int64, offset int64, whereQuery string, args ...any) (any, Error) {
 	var result []DataBaseObject
 
 	ctx.LogInfo("SelectListByFieldWithPaging, table = %s, conditions = %v, limit = %d, offset = %d", data.TableName(), whereQuery, limit, offset)
@@ -121,7 +114,7 @@ func (session postgresSession) CountRecordInTableWithWhereQuery(ctx Context, dat
 	return count, nil
 }
 
-func (session postgresSession) SelectPaging(ctx Context, data DataBaseObject, orderQuery string, limit int64, offset int64) ([]DataBaseObject, Error) {
+func (session postgresSession) SelectPaging(ctx Context, data DataBaseObject, orderQuery string, limit int64, offset int64) (any, Error) {
 	var result []DataBaseObject
 
 	ctx.LogInfo("SelectPaging, table = %s, limit = %d, offset = %d", data.TableName(), limit, offset)
