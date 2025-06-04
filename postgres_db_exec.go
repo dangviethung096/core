@@ -68,6 +68,11 @@ func (session postgresSession) SelectListByFields(ctx Context, data DataBaseObje
 	// Get the type of the input data
 	dataType := reflect.TypeOf(data)
 
+	// If the type is a pointer, get the underlying struct type
+	if dataType.Kind() == reflect.Ptr {
+		dataType = dataType.Elem()
+	}
+
 	// Create a slice of the same type
 	sliceType := reflect.SliceOf(dataType)
 	result := reflect.MakeSlice(sliceType, 0, 0).Interface()
@@ -83,7 +88,21 @@ func (session postgresSession) SelectListByFields(ctx Context, data DataBaseObje
 }
 
 func (session postgresSession) SelectListByFieldWithPaging(ctx Context, data DataBaseObject, limit int64, offset int64, whereQuery string, args ...any) (any, Error) {
-	var result []DataBaseObject
+	if data == nil {
+		return nil, NewError(ERROR_CODE_FROM_DATABASE, "data is nil")
+	}
+
+	// Get the type of the input data
+	dataType := reflect.TypeOf(data)
+
+	// If the type is a pointer, get the underlying struct type
+	if dataType.Kind() == reflect.Ptr {
+		dataType = dataType.Elem()
+	}
+
+	// Create a slice of the same type
+	sliceType := reflect.SliceOf(dataType)
+	result := reflect.MakeSlice(sliceType, 0, 0).Interface()
 
 	ctx.LogInfo("SelectListByFieldWithPaging, table = %s, conditions = %v, limit = %d, offset = %d", data.TableName(), whereQuery, limit, offset)
 	if err := session.Where(whereQuery, args...).Limit(int(limit)).Offset(int(offset)).Find(&result).Error; err != nil {
@@ -115,7 +134,21 @@ func (session postgresSession) CountRecordInTableWithWhereQuery(ctx Context, dat
 }
 
 func (session postgresSession) SelectPaging(ctx Context, data DataBaseObject, orderQuery string, limit int64, offset int64) (any, Error) {
-	var result []DataBaseObject
+	if data == nil {
+		return nil, NewError(ERROR_CODE_FROM_DATABASE, "data is nil")
+	}
+
+	// Get the type of the input data
+	dataType := reflect.TypeOf(data)
+
+	// If the type is a pointer, get the underlying struct type
+	if dataType.Kind() == reflect.Ptr {
+		dataType = dataType.Elem()
+	}
+
+	// Create a slice of the same type
+	sliceType := reflect.SliceOf(dataType)
+	result := reflect.MakeSlice(sliceType, 0, 0).Interface()
 
 	ctx.LogInfo("SelectPaging, table = %s, limit = %d, offset = %d", data.TableName(), limit, offset)
 
