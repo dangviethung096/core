@@ -12,6 +12,14 @@ type postgresSession struct {
 }
 
 func (session postgresSession) InsertDataToDB(ctx Context, data DataBaseObject) Error {
+	// Check data is a pointer and not nil
+	if data == nil {
+		return NewError(ERROR_CODE_FROM_DATABASE, "data is nil")
+	}
+	if reflect.TypeOf(data).Kind() != reflect.Ptr {
+		return NewError(ERROR_CODE_FROM_DATABASE, "data is not a pointer")
+	}
+
 	ctx.LogInfo("Insert data table = %s, data = %#v", data.TableName(), data)
 	if err := session.Create(data).Error; err != nil {
 		ctx.LogError("Error insert data = %#v, err = %v", data, err)
@@ -22,6 +30,11 @@ func (session postgresSession) InsertDataToDB(ctx Context, data DataBaseObject) 
 }
 
 func (session postgresSession) DeleteDataFromDBByID(ctx Context, data DataBaseObject) Error {
+	// Check data is a pointer and not nil
+	if reflect.TypeOf(data).Kind() != reflect.Ptr {
+		return NewError(ERROR_CODE_FROM_DATABASE, "data is not a pointer")
+	}
+
 	if data == nil {
 		return NewError(ERROR_CODE_FROM_DATABASE, "data is nil")
 	}
@@ -35,6 +48,11 @@ func (session postgresSession) DeleteDataFromDBByID(ctx Context, data DataBaseOb
 }
 
 func (session postgresSession) DeleteDataFromDBWithWhereQuery(ctx Context, data DataBaseObject, whereQuery string, args ...any) Error {
+	// Check data is a pointer and not nil
+	if reflect.TypeOf(data).Kind() != reflect.Ptr {
+		return NewError(ERROR_CODE_FROM_DATABASE, "data is not a pointer")
+	}
+
 	if data == nil {
 		return NewError(ERROR_CODE_FROM_DATABASE, "data is nil")
 	}
@@ -48,6 +66,11 @@ func (session postgresSession) DeleteDataFromDBWithWhereQuery(ctx Context, data 
 }
 
 func (session postgresSession) UpdateDataToDB(ctx Context, data DataBaseObject) Error {
+	// Check data is a pointer and not nil
+	if reflect.TypeOf(data).Kind() != reflect.Ptr {
+		return NewError(ERROR_CODE_FROM_DATABASE, "data is not a pointer")
+	}
+
 	if data == nil {
 		return NewError(ERROR_CODE_FROM_DATABASE, "data is nil")
 	}
@@ -63,6 +86,11 @@ func (session postgresSession) UpdateDataToDB(ctx Context, data DataBaseObject) 
 func (session postgresSession) SelectListByFields(ctx Context, data DataBaseObject, whereQuery string, args ...interface{}) (any, Error) {
 	if data == nil {
 		return nil, NewError(ERROR_CODE_FROM_DATABASE, "data is nil")
+	}
+
+	// Check data is a pointer and not nil
+	if reflect.TypeOf(data).Kind() != reflect.Ptr {
+		return nil, NewError(ERROR_CODE_FROM_DATABASE, "data is not a pointer")
 	}
 
 	// Get the type of the input data
@@ -92,6 +120,11 @@ func (session postgresSession) SelectListByFieldWithPaging(ctx Context, data Dat
 		return nil, NewError(ERROR_CODE_FROM_DATABASE, "data is nil")
 	}
 
+	// Check data is a pointer and not nil
+	if reflect.TypeOf(data).Kind() != reflect.Ptr {
+		return nil, NewError(ERROR_CODE_FROM_DATABASE, "data is not a pointer")
+	}
+
 	// Get the type of the input data
 	dataType := reflect.TypeOf(data)
 
@@ -114,6 +147,15 @@ func (session postgresSession) SelectListByFieldWithPaging(ctx Context, data Dat
 }
 
 func (session postgresSession) CountRecordInTable(ctx Context, data DataBaseObject) (int64, Error) {
+	// Check data is a pointer and not nil
+	if reflect.TypeOf(data).Kind() != reflect.Ptr {
+		return 0, NewError(ERROR_CODE_FROM_DATABASE, "data is not a pointer")
+	}
+
+	if data == nil {
+		return 0, NewError(ERROR_CODE_FROM_DATABASE, "data is nil")
+	}
+
 	ctx.LogInfo("CountRecordInTable, table = %s", data.TableName())
 	var count int64
 	if err := session.Model(&data).Count(&count).Error; err != nil {
@@ -124,6 +166,15 @@ func (session postgresSession) CountRecordInTable(ctx Context, data DataBaseObje
 }
 
 func (session postgresSession) CountRecordInTableWithWhereQuery(ctx Context, data DataBaseObject, whereQuery string, args ...any) (int64, Error) {
+	// Check data is a pointer and not nil
+	if reflect.TypeOf(data).Kind() != reflect.Ptr {
+		return 0, NewError(ERROR_CODE_FROM_DATABASE, "data is not a pointer")
+	}
+
+	if data == nil {
+		return 0, NewError(ERROR_CODE_FROM_DATABASE, "data is nil")
+	}
+
 	ctx.LogInfo("CountRecordInTableWithWhereQuery, table = %s, conditions = %v", data.TableName(), whereQuery)
 	var count int64
 	if err := session.Model(&data).Where(whereQuery, args...).Count(&count).Error; err != nil {
@@ -136,6 +187,11 @@ func (session postgresSession) CountRecordInTableWithWhereQuery(ctx Context, dat
 func (session postgresSession) SelectPaging(ctx Context, data DataBaseObject, orderQuery string, limit int64, offset int64) (any, Error) {
 	if data == nil {
 		return nil, NewError(ERROR_CODE_FROM_DATABASE, "data is nil")
+	}
+
+	// Check data is a pointer and not nil
+	if reflect.TypeOf(data).Kind() != reflect.Ptr {
+		return nil, NewError(ERROR_CODE_FROM_DATABASE, "data is not a pointer")
 	}
 
 	// Get the type of the input data
@@ -203,6 +259,12 @@ func (session postgresSession) SelectByID(ctx Context, data DataBaseObject) Erro
 	if data == nil {
 		return NewError(ERROR_CODE_FROM_DATABASE, "data is nil")
 	}
+
+	// Check data is a pointer and not nil
+	if reflect.TypeOf(data).Kind() != reflect.Ptr {
+		return NewError(ERROR_CODE_FROM_DATABASE, "data is not a pointer")
+	}
+
 	if err := session.First(data).Error; err != nil {
 		ctx.LogError("Error select by id = %#v, err = %s", data, err.Error())
 		return NewError(ERROR_CODE_FROM_DATABASE, err.Error())
