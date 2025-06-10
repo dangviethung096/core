@@ -283,6 +283,9 @@ func (builder *httpClientBuilder) Request(response any) (HttpClientResponse, Err
 		body = builder.body.(*bytes.Buffer)
 	}
 
+	if body == nil {
+		body = bytes.NewBuffer([]byte(BLANK))
+	}
 	// Init a request
 	req, err := http.NewRequest(builder.method, builder.url, body)
 	if err != nil {
