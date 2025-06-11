@@ -89,9 +89,11 @@ type NatsQueue struct {
 }
 
 type RedisConfig struct {
-	Use  bool   `yaml:"use"`
-	Host string `yaml:"host"`
-	Port int    `yaml:"port"`
+	Use              bool   `yaml:"use"`
+	Host             string `yaml:"host"`
+	Port             int    `yaml:"port"`
+	Password         string `yaml:"password"`
+	SecureConnection bool   `yaml:"secure_connection"`
 }
 
 type ProxyConfig struct {
