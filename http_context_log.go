@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -19,7 +20,7 @@ func (ctx *HttpContext) LogInfo(format string, args ...any) {
 	logStr = "[INFO] " + logStr
 	log.Println(logStr)
 	if Config.Log.UseElasticsearch {
-		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, ctx.requestID, logInfo)
+		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
 	}
 }
 
@@ -34,7 +35,7 @@ func (ctx *HttpContext) LogDebug(format string, args ...any) {
 	logStr = "[DEBUG] " + logStr
 	log.Println(logStr)
 	if Config.Log.UseElasticsearch {
-		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, ctx.requestID, logInfo)
+		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
 	}
 }
 
@@ -49,7 +50,7 @@ func (ctx *HttpContext) LogError(format string, args ...any) {
 	logStr = "[ERROR] " + logStr
 	log.Println(logStr)
 	if Config.Log.UseElasticsearch {
-		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, ctx.requestID, logInfo)
+		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
 	}
 }
 
@@ -64,7 +65,7 @@ func (ctx *HttpContext) LogWarning(format string, args ...any) {
 	logStr = "[WARNING] " + logStr
 	log.Println(logStr)
 	if Config.Log.UseElasticsearch {
-		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, ctx.requestID, logInfo)
+		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
 	}
 }
 
@@ -79,7 +80,7 @@ func (ctx *HttpContext) LogFatal(format string, args ...any) {
 	logStr = "[FATAL] " + logStr
 	log.Fatalln(logStr)
 	if Config.Log.UseElasticsearch {
-		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, ctx.requestID, logInfo)
+		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
 	}
 }
 
@@ -89,7 +90,7 @@ func (ctx *HttpContext) LogPanic(format string, args ...any) {
 	logStr = "[PANIC] " + logStr
 	log.Panicln(logStr)
 	if Config.Log.UseElasticsearch {
-		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, ctx.requestID, logInfo)
+		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
 	}
 }
 
@@ -125,7 +126,7 @@ func (ctx *HttpContext) format(format string, args ...any) (string, logMessage) 
 	}
 
 	logInfo.Caller = functionName
-	logInfo.File = file
+	logInfo.File = file + ":" + strconv.Itoa(line)
 	logInfo.Timestamp = time.Now().Format(time.RFC3339)
 
 	// Return the formatted string

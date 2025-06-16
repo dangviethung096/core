@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	elastic "github.com/elastic/go-elasticsearch/v9"
 )
@@ -59,6 +60,7 @@ func connectElasticsearch() searchClient {
 func (c *searchClient) CreateIndex(ctx Context, indexName string, mapping string) Error {
 	res, err := c.Client.Indices.Exists([]string{indexName})
 	if err != nil {
+		ctx.LogError("Failed to check if index exists: %v", err)
 		return NewError(ERROR_CODE_FROM_ELASTICSEARCH, fmt.Sprintf("Failed to check if index exists: %v", err))
 	}
 	defer res.Body.Close()
@@ -69,14 +71,18 @@ func (c *searchClient) CreateIndex(ctx Context, indexName string, mapping string
 			c.Client.Indices.Create.WithBody(strings.NewReader(mapping)),
 		)
 		if err != nil {
+			ctx.LogError("Failed to create index: %v", err)
 			return NewError(ERROR_CODE_FROM_ELASTICSEARCH, fmt.Sprintf("Failed to create index: %v", err))
 		}
 		defer res.Body.Close()
 
 		if res.IsError() {
+			ctx.LogError("Failed to create index: %s", res.String())
 			return NewError(ERROR_CODE_FROM_ELASTICSEARCH, fmt.Sprintf("Failed to create index: %s", res.String()))
 		}
 	}
+
+	ctx.LogInfo("Index %s is created", indexName)
 	return nil
 }
 
@@ -193,4 +199,32 @@ func (c *searchClient) IndexExists(ctx Context, indexName string) bool {
 	defer res.Body.Close()
 
 	return res.StatusCode == 200
+}
+
+// AppendDocument appends a document to an index, creating the index if it doesn't exist
+func (c *searchClient) AppendDocument(ctx Context, indexName string, id string, document any) Error {
+	// Check if index exists
+	if !c.IndexExists(ctx, indexName) {
+		// Create index with default mapping if it doesn't exist
+		defaultMapping := `{
+			"mappings": {
+				"properties": {
+					"@timestamp": { "type": "date" }
+				}
+			}
+		}`
+		if err := c.CreateIndex(ctx, indexName, defaultMapping); err != nil {
+			ctx.LogError("Failed to create index %s: %v", indexName, err)
+			return err
+		}
+	}
+
+	// Add timestamp to document if it's a map
+	if docMap, ok := document.(map[string]any); ok {
+		docMap["@timestamp"] = time.Now().UTC().Format(time.RFC3339)
+		document = docMap
+	}
+
+	// Index the document
+	return c.IndexDocument(ctx, indexName, id, document)
 }

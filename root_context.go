@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http/httptest"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -46,154 +47,154 @@ func (root *rootContext) GetCancelFunc() func() {
 
 /*
 * Info: Log Info with context information
-* @params: format string, args ...interface{}
+* @params: format string, args ...any
 * @return: void
  */
-func (ctx *rootContext) LogInfo(format string, args ...interface{}) {
+func (ctx *rootContext) LogInfo(format string, args ...any) {
 	logStr, logInfo := ctx.formatWithCallStack(format, 2, args...)
 	logStr = "[INFO] " + logStr
 	log.Println(logStr)
 	if Config.Log.UseElasticsearch {
-		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, ctx.contextID, logInfo)
+		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
 	}
 }
 
-func (ctx *rootContext) LogInfoWithCallStack(format string, callStack int, args ...interface{}) {
+func (ctx *rootContext) LogInfoWithCallStack(format string, callStack int, args ...any) {
 	logStr, logInfo := ctx.formatWithCallStack(format, callStack, args...)
 	logStr = "[INFO] " + logStr
 	log.Println(logStr)
 	if Config.Log.UseElasticsearch {
-		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, ctx.contextID, logInfo)
+		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
 	}
 }
 
 /*
 * Debug: Log Debug with context information
-* @params: format string, args ...interface{}
+* @params: format string, args ...any
 * @return: void
  */
-func (ctx *rootContext) LogDebug(format string, args ...interface{}) {
+func (ctx *rootContext) LogDebug(format string, args ...any) {
 	logStr, logInfo := ctx.formatWithCallStack(format, 2, args...)
 	logStr = "[DEBUG] " + logStr
 	log.Println(logStr)
 	if Config.Log.UseElasticsearch {
-		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, ctx.contextID, logInfo)
+		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
 	}
 }
 
-func (ctx *rootContext) LogDebugWithCallStack(format string, callStack int, args ...interface{}) {
+func (ctx *rootContext) LogDebugWithCallStack(format string, callStack int, args ...any) {
 	logStr, logInfo := ctx.formatWithCallStack(format, callStack, args...)
 	logStr = "[DEBUG] " + logStr
 	log.Println(logStr)
 	if Config.Log.UseElasticsearch {
-		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, ctx.contextID, logInfo)
+		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
 	}
 }
 
 /*
 * Error: Log Error with context information
-* @params: format string, args ...interface{}
+* @params: format string, args ...any
 * @return: void
  */
-func (ctx *rootContext) LogError(format string, args ...interface{}) {
+func (ctx *rootContext) LogError(format string, args ...any) {
 	logStr, logInfo := ctx.formatWithCallStack(format, 2, args...)
 	logStr = "[ERROR] " + logStr
 	log.Println(logStr)
 	if Config.Log.UseElasticsearch {
-		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, ctx.contextID, logInfo)
+		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
 	}
 }
 
-func (ctx *rootContext) LogErrorWithCallStack(format string, callStack int, args ...interface{}) {
+func (ctx *rootContext) LogErrorWithCallStack(format string, callStack int, args ...any) {
 	logStr, logInfo := ctx.formatWithCallStack(format, callStack, args...)
 	logStr = "[ERROR] " + logStr
 	log.Println(logStr)
 	if Config.Log.UseElasticsearch {
-		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, ctx.contextID, logInfo)
+		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
 	}
 }
 
 /*
 * Warning: Log Warning with context information
-* @params: format string, args ...interface{}
+* @params: format string, args ...any
 * @return: void
  */
-func (ctx *rootContext) LogWarning(format string, args ...interface{}) {
+func (ctx *rootContext) LogWarning(format string, args ...any) {
 	logStr, logInfo := ctx.formatWithCallStack(format, 2, args...)
 	logStr = "[WARNING] " + logStr
 	log.Println(logStr)
 	if Config.Log.UseElasticsearch {
-		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, ctx.contextID, logInfo)
+		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
 	}
 }
 
-func (ctx *rootContext) LogWarningWithCallStack(format string, callStack int, args ...interface{}) {
+func (ctx *rootContext) LogWarningWithCallStack(format string, callStack int, args ...any) {
 	logStr, logInfo := ctx.formatWithCallStack(format, callStack, args...)
 	logStr = "[WARNING] " + logStr
 	log.Println(logStr)
 	if Config.Log.UseElasticsearch {
-		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, ctx.contextID, logInfo)
+		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
 	}
 }
 
 /*
 * Panic: Log Panic with context information
-* @params: format string, args ...interface{}
+* @params: format string, args ...any
 * @return: void
  */
-func (ctx *rootContext) LogPanic(format string, args ...interface{}) {
+func (ctx *rootContext) LogPanic(format string, args ...any) {
 	logStr, logInfo := ctx.formatWithCallStack(format, 2, args...)
 	logStr = "[Panic] " + logStr
 	log.Panicln(logStr)
 	if Config.Log.UseElasticsearch {
-		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, ctx.contextID, logInfo)
+		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
 	}
 }
 
-func (ctx *rootContext) LogPanicWithCallStack(format string, callStack int, args ...interface{}) {
+func (ctx *rootContext) LogPanicWithCallStack(format string, callStack int, args ...any) {
 	logStr, logInfo := ctx.formatWithCallStack(format, callStack, args...)
 	logStr = "[Panic] " + logStr
 	log.Panicln(logStr)
 	if Config.Log.UseElasticsearch {
-		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, ctx.contextID, logInfo)
+		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
 	}
 }
 
 /*
 * Fatal: Log Fatal with context information
-* @params: format string, args ...interface{}
+* @params: format string, args ...any
 * @return: void
  */
-func (ctx *rootContext) LogFatal(format string, args ...interface{}) {
+func (ctx *rootContext) LogFatal(format string, args ...any) {
 	logStr, logInfo := ctx.formatWithCallStack(format, 2, args...)
 	logStr = "[FATAL] " + logStr
 	log.Fatalln(logStr)
 	if Config.Log.UseElasticsearch {
-		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, ctx.contextID, logInfo)
+		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
 	}
 }
 
-func (ctx *rootContext) LogFatalWithCallStack(format string, callStack int, args ...interface{}) {
+func (ctx *rootContext) LogFatalWithCallStack(format string, callStack int, args ...any) {
 	logStr, logInfo := ctx.formatWithCallStack(format, callStack, args...)
 	logStr = "[FATAL] " + logStr
 	log.Fatalln(logStr)
 	if Config.Log.UseElasticsearch {
-		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, ctx.contextID, logInfo)
+		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
 	}
 }
 
 /*
 * format: Format the ctx: add to message log the file name
 * and line number of the code that calls the ctx interface
-* @params: format string, args ...interface{}
+* @params: format string, args ...any
 * @return: string
  */
 
-func (ctx *rootContext) formatWithCallStack(format string, callStack int, args ...interface{}) (string, logMessage) {
+func (ctx *rootContext) formatWithCallStack(format string, callStack int, args ...any) (string, logMessage) {
 	// Format the ctx
 	logStr := fmt.Sprintf(format, args...)
 	logInfo := logMessage{
-		RequestID: ctx.contextID,
+		RequestID: BLANK,
 		Message:   logStr,
 	}
 
@@ -211,11 +212,11 @@ func (ctx *rootContext) formatWithCallStack(format string, callStack int, args .
 			functionName = functionPath[len(functionPath)-1]
 		}
 
-		logStr = fmt.Sprintf("%s:%d:%s, RequestID: %s , Message: %s", file, line, functionName, ctx.contextID, logStr)
+		logStr = fmt.Sprintf("%s:%d:%s, RequestID: %s , Message: %s", file, line, functionName, BLANK, logStr)
 	}
 
 	logInfo.Caller = functionName
-	logInfo.File = file
+	logInfo.File = file + ":" + strconv.Itoa(line)
 	logInfo.Timestamp = time.Now().Format(time.RFC3339)
 
 	// Return the formatted string
