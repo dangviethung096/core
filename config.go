@@ -25,6 +25,7 @@ type CoreConfig struct {
 	HtmlFolder        HtmlFolderConfig    `yaml:"html_config"`
 	UseCorsOrigin     bool                `yaml:"use_cors_origin"`
 	Elasticsearch     ElasticsearchConfig `yaml:"elasticsearch"`
+	Log               LogConfig           `yaml:"log"`
 }
 
 type ServerConfig struct {
@@ -137,6 +138,13 @@ type ElasticsearchConfig struct {
 	Username         string `yaml:"username"`
 	Password         string `yaml:"password"`
 	SecureConnection bool   `yaml:"secure_connection"`
+}
+
+type LogConfig struct {
+	Use              bool   `yaml:"use"`
+	Level            string `yaml:"level"`
+	UseElasticsearch bool   `yaml:"use_elasticsearch"`
+	ElasticIndex     string `yaml:"elastic_index"`
 }
 
 func loadConfigFile(configFile string) CoreConfig {

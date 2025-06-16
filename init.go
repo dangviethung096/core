@@ -179,6 +179,10 @@ func Init(configFile string) {
 		router.Use(corsMiddleware())
 	}
 
+	if Config.Log.Use {
+		logInit()
+	}
+
 	api := router.Group("/api")
 	api.Use(TimeoutMiddleware(contextTimeout))
 }

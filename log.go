@@ -33,3 +33,32 @@ func LogFatal(format string, args ...interface{}) {
 func LogPanic(format string, args ...interface{}) {
 	coreContext.(*rootContext).LogPanicWithCallStack(format, 3, args...)
 }
+
+type logMessage struct {
+	RequestID string `json:"request_id"`
+	Caller    string `json:"caller"`
+	File      string `json:"file"`
+	Message   string `json:"message"`
+	Level     string `json:"level"`
+	Timestamp string `json:"timestamp"`
+}
+
+func logInit() {
+	if Config.Log.UseElasticsearch {
+		elasticsearchClient := ElasticsearchClient()
+		if !elasticsearchClient.IndexExists(coreContext, Config.Log.ElasticIndex) {
+			elasticsearchClient.CreateIndex(coreContext, Config.Log.ElasticIndex, `{
+				"mappings": {
+					"properties": {
+						"request_id": { "type": "keyword" },
+						"level": { "type": "keyword" },
+						"caller": { "type": "text" },
+						"file": { "type": "text" },
+						"timestamp": { "type": "date" },
+						"message": { "type": "text" },
+					}
+				}
+			}`)
+		}
+	}
+}
