@@ -25,6 +25,7 @@ var validate *validator.Validate
 var contextTimeout time.Duration
 var emqxBrokerClient MqttClient
 var lockerManagerInstance *lockManager
+var esClient searchClient
 
 var router *gin.Engine
 
@@ -89,6 +90,11 @@ func Init(configFile string) {
 	// Init emqx client
 	if Config.Emqx.Use {
 		emqxBrokerClient = NewEmqxClient(Config.Emqx)
+	}
+
+	// Init Elasticsearch client
+	if Config.Elasticsearch.Use {
+		esClient = connectElasticsearch()
 	}
 
 	// Init id generator
@@ -186,6 +192,9 @@ func Release() {
 	releaseCacheDB()
 	releaseMessageQueue()
 	stopScheduler()
+	if esClient.Client != nil {
+		esClient.Close()
+	}
 }
 
 func closeDB() {
@@ -268,4 +277,8 @@ func SecondaryDBSession() dbSession {
 
 func EmqxBrokerClient() MqttClient {
 	return emqxBrokerClient
+}
+
+func ElasticsearchClient() searchClient {
+	return esClient
 }

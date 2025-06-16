@@ -29,6 +29,7 @@ const (
 	ERROR_FROM_LIBRARY                 = 103
 	ERROR_CODE_FROM_DATABASE           = 104
 	ERROR_CODE_FROM_MQTT               = 105
+	ERROR_CODE_FROM_ELASTICSEARCH      = 106
 )
 
 // Scheduler

@@ -9,21 +9,22 @@ import (
 )
 
 type CoreConfig struct {
-	Debug             bool               `yaml:"debug"`
-	Server            ServerConfig       `yaml:"server"`
-	SecureServer      SecureServerConfig `yaml:"secure_server"`
-	Context           ContextConfig      `yaml:"context"`
-	IdGenerator       IdGenerator        `yaml:"id_generator"`
-	Database          Database           `yaml:"database"`
-	SecondaryDatabase Database           `yaml:"secondary_database"`
-	NatsQueue         NatsQueue          `yaml:"nats_queue"`
-	Redis             RedisConfig        `yaml:"redis"`
-	Proxy             ProxyConfig        `yaml:"proxy"`
-	HttpClient        HttpClientConfig   `yaml:"http_client"`
-	Scheduler         SchedulerConfig    `yaml:"scheduler"`
-	Emqx              EmqxConfig         `yaml:"emqx"`
-	HtmlFolder        HtmlFolderConfig   `yaml:"html_config"`
-	UseCorsOrigin     bool               `yaml:"use_cors_origin"`
+	Debug             bool                `yaml:"debug"`
+	Server            ServerConfig        `yaml:"server"`
+	SecureServer      SecureServerConfig  `yaml:"secure_server"`
+	Context           ContextConfig       `yaml:"context"`
+	IdGenerator       IdGenerator         `yaml:"id_generator"`
+	Database          Database            `yaml:"database"`
+	SecondaryDatabase Database            `yaml:"secondary_database"`
+	NatsQueue         NatsQueue           `yaml:"nats_queue"`
+	Redis             RedisConfig         `yaml:"redis"`
+	Proxy             ProxyConfig         `yaml:"proxy"`
+	HttpClient        HttpClientConfig    `yaml:"http_client"`
+	Scheduler         SchedulerConfig     `yaml:"scheduler"`
+	Emqx              EmqxConfig          `yaml:"emqx"`
+	HtmlFolder        HtmlFolderConfig    `yaml:"html_config"`
+	UseCorsOrigin     bool                `yaml:"use_cors_origin"`
+	Elasticsearch     ElasticsearchConfig `yaml:"elasticsearch"`
 }
 
 type ServerConfig struct {
@@ -127,6 +128,15 @@ type EmqxConfig struct {
 type HtmlFolderConfig struct {
 	Use  bool     `yaml:"use"`
 	Path []string `yaml:"path"`
+}
+
+type ElasticsearchConfig struct {
+	Use              bool   `yaml:"use"`
+	Host             string `yaml:"host"`
+	Port             int    `yaml:"port"`
+	Username         string `yaml:"username"`
+	Password         string `yaml:"password"`
+	SecureConnection bool   `yaml:"secure_connection"`
 }
 
 func loadConfigFile(configFile string) CoreConfig {
