@@ -53,6 +53,7 @@ func (root *rootContext) GetCancelFunc() func() {
 func (ctx *rootContext) LogInfo(format string, args ...any) {
 	logStr, logInfo := ctx.formatWithCallStack(format, 2, args...)
 	logStr = "[INFO] " + logStr
+	logInfo.Level = "INFO"
 	log.Println(logStr)
 	if Config.Log.UseElasticsearch {
 		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
@@ -61,6 +62,7 @@ func (ctx *rootContext) LogInfo(format string, args ...any) {
 
 func (ctx *rootContext) LogInfoWithCallStack(format string, callStack int, args ...any) {
 	logStr, logInfo := ctx.formatWithCallStack(format, callStack, args...)
+	logInfo.Level = "INFO"
 	logStr = "[INFO] " + logStr
 	log.Println(logStr)
 	if Config.Log.UseElasticsearch {
@@ -75,6 +77,7 @@ func (ctx *rootContext) LogInfoWithCallStack(format string, callStack int, args 
  */
 func (ctx *rootContext) LogDebug(format string, args ...any) {
 	logStr, logInfo := ctx.formatWithCallStack(format, 2, args...)
+	logInfo.Level = "DEBUG"
 	logStr = "[DEBUG] " + logStr
 	log.Println(logStr)
 	if Config.Log.UseElasticsearch {
@@ -84,6 +87,7 @@ func (ctx *rootContext) LogDebug(format string, args ...any) {
 
 func (ctx *rootContext) LogDebugWithCallStack(format string, callStack int, args ...any) {
 	logStr, logInfo := ctx.formatWithCallStack(format, callStack, args...)
+	logInfo.Level = "DEBUG"
 	logStr = "[DEBUG] " + logStr
 	log.Println(logStr)
 	if Config.Log.UseElasticsearch {
@@ -98,6 +102,7 @@ func (ctx *rootContext) LogDebugWithCallStack(format string, callStack int, args
  */
 func (ctx *rootContext) LogError(format string, args ...any) {
 	logStr, logInfo := ctx.formatWithCallStack(format, 2, args...)
+	logInfo.Level = "ERROR"
 	logStr = "[ERROR] " + logStr
 	log.Println(logStr)
 	if Config.Log.UseElasticsearch {
@@ -107,6 +112,7 @@ func (ctx *rootContext) LogError(format string, args ...any) {
 
 func (ctx *rootContext) LogErrorWithCallStack(format string, callStack int, args ...any) {
 	logStr, logInfo := ctx.formatWithCallStack(format, callStack, args...)
+	logInfo.Level = "ERROR"
 	logStr = "[ERROR] " + logStr
 	log.Println(logStr)
 	if Config.Log.UseElasticsearch {
@@ -121,6 +127,7 @@ func (ctx *rootContext) LogErrorWithCallStack(format string, callStack int, args
  */
 func (ctx *rootContext) LogWarning(format string, args ...any) {
 	logStr, logInfo := ctx.formatWithCallStack(format, 2, args...)
+	logInfo.Level = "WARNING"
 	logStr = "[WARNING] " + logStr
 	log.Println(logStr)
 	if Config.Log.UseElasticsearch {
@@ -130,6 +137,7 @@ func (ctx *rootContext) LogWarning(format string, args ...any) {
 
 func (ctx *rootContext) LogWarningWithCallStack(format string, callStack int, args ...any) {
 	logStr, logInfo := ctx.formatWithCallStack(format, callStack, args...)
+	logInfo.Level = "WARNING"
 	logStr = "[WARNING] " + logStr
 	log.Println(logStr)
 	if Config.Log.UseElasticsearch {
@@ -144,6 +152,7 @@ func (ctx *rootContext) LogWarningWithCallStack(format string, callStack int, ar
  */
 func (ctx *rootContext) LogPanic(format string, args ...any) {
 	logStr, logInfo := ctx.formatWithCallStack(format, 2, args...)
+	logInfo.Level = "PANIC"
 	logStr = "[Panic] " + logStr
 	log.Panicln(logStr)
 	if Config.Log.UseElasticsearch {
@@ -153,6 +162,7 @@ func (ctx *rootContext) LogPanic(format string, args ...any) {
 
 func (ctx *rootContext) LogPanicWithCallStack(format string, callStack int, args ...any) {
 	logStr, logInfo := ctx.formatWithCallStack(format, callStack, args...)
+	logInfo.Level = "PANIC"
 	logStr = "[Panic] " + logStr
 	log.Panicln(logStr)
 	if Config.Log.UseElasticsearch {
@@ -167,6 +177,7 @@ func (ctx *rootContext) LogPanicWithCallStack(format string, callStack int, args
  */
 func (ctx *rootContext) LogFatal(format string, args ...any) {
 	logStr, logInfo := ctx.formatWithCallStack(format, 2, args...)
+	logInfo.Level = "FATAL"
 	logStr = "[FATAL] " + logStr
 	log.Fatalln(logStr)
 	if Config.Log.UseElasticsearch {
@@ -176,6 +187,7 @@ func (ctx *rootContext) LogFatal(format string, args ...any) {
 
 func (ctx *rootContext) LogFatalWithCallStack(format string, callStack int, args ...any) {
 	logStr, logInfo := ctx.formatWithCallStack(format, callStack, args...)
+	logInfo.Level = "FATAL"
 	logStr = "[FATAL] " + logStr
 	log.Fatalln(logStr)
 	if Config.Log.UseElasticsearch {
@@ -194,7 +206,7 @@ func (ctx *rootContext) formatWithCallStack(format string, callStack int, args .
 	// Format the ctx
 	logStr := fmt.Sprintf(format, args...)
 	logInfo := logMessage{
-		RequestID: BLANK,
+		RequestID: ctx.contextID,
 		Message:   logStr,
 	}
 
