@@ -446,6 +446,7 @@ func (builder *httpClientBuilder) request(req *http.Request, response any) (Http
 
 	if resp.StatusCode > 399 && builder.errorResponse != nil && paramIsPointerOfStruct(builder.errorResponse) == nil {
 		json.Unmarshal(resBody, builder.errorResponse)
+		return resVal, ERROR_HTTP_RESPONSE_ERROR
 	}
 
 	// Read response
