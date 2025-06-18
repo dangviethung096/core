@@ -290,3 +290,7 @@ func EmqxBrokerClient() MqttClient {
 func ElasticsearchClient() searchClient {
 	return esClient
 }
+
+func GetRouter() *gin.Engine {
+	return router
+}
