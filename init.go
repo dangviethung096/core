@@ -243,8 +243,12 @@ func Start() {
 		}()
 	}
 
+	coreContext.LogInfo("Starting http server at port %d", Config.Server.Port)
 	// Start http server
-	router.Run(":" + fmt.Sprintf("%d", Config.Server.Port))
+	err := router.Run(":" + fmt.Sprintf("%d", Config.Server.Port))
+	if err != nil {
+		coreContext.LogFatal("Fail to start http server at port %d. Error: %v", Config.Server.Port, err)
+	}
 }
 
 /*
