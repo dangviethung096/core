@@ -278,8 +278,12 @@ func (builder *httpClientBuilder) Request(response any) (HttpClientResponse, Err
 				}
 			}
 		}
-		body = bytes.NewBuffer([]byte(data.Encode()))
+
+		dataStr := data.Encode()
+		builder.ctx.LogInfo("Form data url encoded body: url = %s, body = %s", builder.url, dataStr)
+		body = bytes.NewBuffer([]byte(dataStr))
 	} else if builder.bodyType == BodyType_FORM_DATA && builder.body != nil {
+		builder.ctx.LogInfo("Form data body: url = %s, body = %v", builder.url, builder.body)
 		body = builder.body.(*bytes.Buffer)
 	}
 
