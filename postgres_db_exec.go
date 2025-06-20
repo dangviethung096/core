@@ -267,6 +267,9 @@ func (session postgresSession) SelectByID(ctx Context, data DataBaseObject) Erro
 
 	if err := session.First(data).Error; err != nil {
 		ctx.LogError("Error select by id = %#v, err = %s", data, err.Error())
+		if err == gorm.ErrRecordNotFound {
+			return ERROR_NOT_FOUND_IN_DB
+		}
 		return NewError(ERROR_CODE_FROM_DATABASE, err.Error())
 	}
 	return nil
