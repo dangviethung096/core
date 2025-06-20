@@ -76,7 +76,7 @@ func openPostgresDBConnection(dbInfo DBInfo) *postgresSession {
 				LogLevel:                  gormlogger.Info, // Log level (Silent, Error, Warn, Info)
 				IgnoreRecordNotFoundError: true,            // Ignore ErrRecordNotFound error for logger
 				Colorful:                  true,            // Enable color
-				ParameterizedQueries:      true,            // Don't include params in the SQL log
+				ParameterizedQueries:      false,           // Include params in the SQL log
 			},
 		),
 	}
