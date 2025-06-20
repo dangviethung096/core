@@ -50,3 +50,7 @@ func SelectByID(ctx Context, data DataBaseObject) Error {
 func CountRecordInTableWithWhereQuery(ctx Context, data DataBaseObject, whereQuery string, args ...any) (int64, Error) {
 	return mainDbSession.CountRecordInTableWithWhereQuery(ctx, data, whereQuery, args...)
 }
+
+func SelectOneByField(ctx Context, data DataBaseObject, whereQuery string, args ...any) Error {
+	return mainDbSession.SelectOneByField(ctx, data, whereQuery, args...)
+}

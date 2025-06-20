@@ -274,3 +274,20 @@ func (session postgresSession) SelectByID(ctx Context, data DataBaseObject) Erro
 	}
 	return nil
 }
+
+func (session postgresSession) SelectOneByField(ctx Context, data DataBaseObject, whereQuery string, args ...any) Error {
+	if data == nil {
+		return NewError(ERROR_CODE_FROM_DATABASE, "data is nil")
+	}
+
+	if err := session.Where(whereQuery, args...).First(data).Error; err != nil {
+		ctx.LogError("Error select one by field = %#v, err = %s", data, err.Error())
+		if err == gorm.ErrRecordNotFound {
+			ctx.LogInfo("No record found with query = %v, args = %v", whereQuery, args)
+			return ERROR_NOT_FOUND_IN_DB
+		}
+		return NewError(ERROR_CODE_FROM_DATABASE, err.Error())
+	}
+
+	return nil
+}
