@@ -127,6 +127,7 @@ type StopTaskRequest struct {
 }
 
 func StopTask(ctx Context, request *StopTaskRequest) Error {
+	ctx.LogInfo("Receive StopTaskRequest: %#v", *request)
 	tx, err := DBSession().GetOriginConnection(ctx).BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
 		ctx.LogError("Begin transaction fail: %v, error = %s", *request, err.Error())
@@ -156,6 +157,7 @@ func StopTask(ctx Context, request *StopTaskRequest) Error {
 }
 
 func StopTaskByTaskName(ctx Context, taskName string) Error {
+	ctx.LogInfo("Receive StopTaskByTaskNameRequest: %s", taskName)
 	var id uint64
 	row := DBSession().GetOriginConnection(ctx).QueryRowContext(ctx, "SELECT id FROM scheduler_tasks WHERE task_name = $1", taskName)
 	if err := row.Scan(&id); err != nil {
