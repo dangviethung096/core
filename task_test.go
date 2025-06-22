@@ -12,8 +12,8 @@ func TestStartSchedule_ReturnSuccess(t *testing.T) {
 		TaskName:  "test-queue",
 		QueueName: "test-queue",
 		Time:      time.Now().Add(time.Second * 2),
-		Loop:      1,
-		Interval:  1,
+		Loop:      0,
+		Interval:  0,
 		Data:      []byte("test-data"),
 	}
 
