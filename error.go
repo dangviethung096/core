@@ -81,4 +81,5 @@ var (
 	ERROR_WHERE_QUERY_IS_EMPTY                  Error = NewError(38, "Where query is empty")
 	ERROR_INVALID_STRUCTURE_FOR_RESPONSE        Error = NewError(39, "Invalid structure for response")
 	ERROR_HTTP_RESPONSE_ERROR                   Error = NewError(40, "Http response error")
+	ERROR_TASK_NOT_FOUND                        Error = NewError(41, "Task not found")
 )

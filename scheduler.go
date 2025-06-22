@@ -18,6 +18,7 @@ type task struct {
 	Interval  int64  `db:"interval"`
 	Source    string `db:"source"`
 	StartTime string `db:"start_time"`
+	TaskName  string `db:"task_name"`
 }
 
 func startScheduler(interval time.Duration) {

@@ -107,8 +107,8 @@ func (w *worker) execute() {
 func (w *worker) process(bucket int64, id int64) {
 	var t task
 	// Get task detail from database in table: tasks
-	row := DBSession().GetOriginConnection(coreContext).QueryRowContext(coreContext, "SELECT id, queue_name, data, done, loop_index, loop_count, next, interval, start_time FROM scheduler_tasks WHERE id = $1", id)
-	err := row.Scan(&t.ID, &t.QueueName, &t.Data, &t.Done, &t.LoopIndex, &t.LoopCount, &t.Next, &t.Interval, &t.StartTime)
+	row := DBSession().GetOriginConnection(coreContext).QueryRowContext(coreContext, "SELECT id, queue_name, data, done, loop_index, loop_count, next, interval, start_time, task_name FROM scheduler_tasks WHERE id = $1", id)
+	err := row.Scan(&t.ID, &t.QueueName, &t.Data, &t.Done, &t.LoopIndex, &t.LoopCount, &t.Next, &t.Interval, &t.StartTime, &t.TaskName)
 	if err != nil {
 		LogError("Get task fail: %v", err)
 		return
@@ -128,12 +128,12 @@ func (w *worker) process(bucket int64, id int64) {
 	err = pushTaskToQueue(coreContext, t.QueueName, t.Data)
 	if err != nil {
 		LogError("Cannot run task: %v, err = %s", t, err.Error())
-		_, err := DBSession().GetOriginConnection(coreContext).ExecContext(coreContext, "INSERT INTO scheduler_done(bucket, task_id, operation_time, status) VALUES ($1, $2, $3, $4)", bucket, t.ID, now.Format(time.RFC3339), TASK_FAIL)
+		_, err := DBSession().GetOriginConnection(coreContext).ExecContext(coreContext, "INSERT INTO scheduler_done(bucket, task_id, operation_time, status, task_name) VALUES ($1, $2, $3, $4, $5)", bucket, t.ID, now.Format(time.RFC3339), TASK_FAIL, t.TaskName)
 		if err != nil {
 			LogError("Cannot insert task to done table: %v", err)
 		}
 	} else {
-		_, err := DBSession().GetOriginConnection(coreContext).ExecContext(coreContext, "INSERT INTO scheduler_done(bucket, task_id, operation_time, status) VALUES ($1, $2, $3, $4)", bucket, t.ID, now.Format(time.RFC3339), TASK_DONE)
+		_, err := DBSession().GetOriginConnection(coreContext).ExecContext(coreContext, "INSERT INTO scheduler_done(bucket, task_id, operation_time, status, task_name) VALUES ($1, $2, $3, $4, $5)", bucket, t.ID, now.Format(time.RFC3339), TASK_DONE, t.TaskName)
 		if err != nil {
 			LogError("Cannot insert task to done table: %v", err)
 		}

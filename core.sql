@@ -31,6 +31,7 @@ CREATE TABLE scheduler_done (
     id bigserial PRIMARY KEY,
     bucket bigint,
     task_id bigint,
+    task_name text,
     operation_time text,
     status text
 );

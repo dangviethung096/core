@@ -19,7 +19,7 @@ type StartTaskRequest struct {
 }
 
 func StartTask(ctx Context, request *StartTaskRequest) Error {
-	ctx.LogInfo("Receive StartTaskRequest: %+v", *request)
+	ctx.LogInfo("Receive StartTaskRequest: %#v", *request)
 
 	if err := validateStartTaskRequest(request); err != nil {
 		ctx.LogError("Validate task request fail: %v, err = %s", *request, err.Error())
@@ -90,7 +90,7 @@ func StartTask(ctx Context, request *StartTaskRequest) Error {
 		}
 	}
 
-	ctx.LogInfo("Insert new task: %d, startTime: %s, loopCount: %d, interval: %d", taskId, request.Time.String(), request.Loop, request.Interval)
+	ctx.LogInfo("Insert new task: %d, task name = %s, queue name = %s, startTime: %s, loopCount: %d, interval: %d", taskId, request.TaskName, request.QueueName, request.Time.String(), request.Loop, request.Interval)
 	row = tx.QueryRowContext(ctx,
 		"INSERT INTO scheduler_tasks(task_name, queue_name, data, done, loop_index, loop_count, next, interval, start_time, source, next_time) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id;",
 		request.TaskName, request.QueueName, request.Data, false, loopIndex, request.Loop, nextTime.Unix(), request.Interval, request.Time.Format(time.RFC3339), Config.Server.Name, nextTime.Format(time.RFC3339))
@@ -109,7 +109,7 @@ func StartTask(ctx Context, request *StartTaskRequest) Error {
 		return ERROR_ADD_TASK_SYSTEM_FAIL
 	}
 
-	ctx.LogInfo("Insert new task: %d success", taskId)
+	ctx.LogInfo("Insert new task success: id = %d, task name = %s, queue name = %s, startTime: %s, loopCount: %d, interval: %d", taskId, request.TaskName, request.QueueName, request.Time.String(), request.Loop, request.Interval)
 	return nil
 }
 
@@ -134,17 +134,45 @@ func StopTask(ctx Context, request *StopTaskRequest) Error {
 	}
 
 	// Delete todo in database
-	if _, err := tx.ExecContext(ctx, "DELETE FROM todo WHERE id = $1", request.Id); err != nil {
+	if _, err := tx.ExecContext(ctx, "DELETE FROM scheduler_todo WHERE task_id = $1", request.Id); err != nil {
 		ctx.LogError("Delete task from todo fail: %d, %s", request.Id, err.Error())
 		return ERROR_STOP_TASK_FAIL
 	}
 
 	// Delete task in database
-	if _, err := tx.ExecContext(ctx, "DELETE FROM task WHERE id = $1", request.Id); err != nil {
+	if _, err := tx.ExecContext(ctx, "DELETE FROM scheduler_tasks WHERE id = $1", request.Id); err != nil {
 		ctx.LogError("Delete task from tasks fail: %d, %s", request.Id, err.Error())
 		return ERROR_STOP_TASK_FAIL
 	}
+
+	// Run transaction
+	if err := tx.Commit(); err != nil {
+		ctx.LogError("Commit fail: %v, error = %s", *request, err.Error())
+		return ERROR_STOP_TASK_FAIL
+	}
+
+	ctx.LogInfo("Stop task %d success", request.Id)
 	return nil
+}
+
+func StopTaskByTaskName(ctx Context, taskName string) Error {
+	var id uint64
+	row := DBSession().GetOriginConnection(ctx).QueryRowContext(ctx, "SELECT id FROM scheduler_tasks WHERE task_name = $1", taskName)
+	if err := row.Scan(&id); err != nil {
+		if err == sql.ErrNoRows {
+			ctx.LogInfo("Task %s not found", taskName)
+			return ERROR_TASK_NOT_FOUND
+		}
+		ctx.LogError("Get task id fail: %v, error = %s", taskName, err.Error())
+		return ERROR_STOP_TASK_FAIL
+	}
+
+	ctx.LogInfo("Stop task_id = %d, task name = %s", id, taskName)
+	err := StopTask(ctx, &StopTaskRequest{
+		Id: id,
+	})
+
+	return err
 }
 
 func TriggerTask(ctx Context, taskName string, taskData []byte) Error {
