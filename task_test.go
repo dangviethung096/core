@@ -47,3 +47,23 @@ func TestStopTaskByTaskName(t *testing.T) {
 
 	time.Sleep(time.Second * 5)
 }
+
+func TestStartTask_ReplaceTask(t *testing.T) {
+	ctx := coreContext
+
+	task := StartTaskRequest{
+		TaskName:  "test-queue",
+		QueueName: "test-queue",
+		Time:      time.Now().Add(time.Second * 60),
+		Loop:      0,
+		Interval:  0,
+		Data:      []byte("test-data"),
+	}
+
+	StartTask(ctx, &task)
+
+	task.Data = []byte("test-data-2")
+	StartTask(ctx, &task)
+
+	time.Sleep(time.Second * 5)
+}

@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bytes"
 	"database/sql"
 	"fmt"
 	"math"
@@ -71,11 +72,15 @@ func StartTask(ctx Context, request *StartTaskRequest) Error {
 	var source string
 	var loopCount, interval int64
 	var queueName string
-	row := DBSession().GetOriginConnection(ctx).QueryRowContext(ctx, "SELECT id, start_time, loop_count, interval, source, queue_name FROM scheduler_tasks WHERE task_name = $1", request.TaskName)
-	err = row.Scan(&id, &startTime, &loopCount, &interval, &source, &queueName)
+	var data []byte
+	row := DBSession().GetOriginConnection(ctx).QueryRowContext(ctx, "SELECT id, start_time, loop_count, interval, source, queue_name, data FROM scheduler_tasks WHERE task_name = $1", request.TaskName)
+	err = row.Scan(&id, &startTime, &loopCount, &interval, &source, &queueName, &data)
 	if err == nil {
-		if startTime == request.Time.Format(time.RFC3339) && loopCount == int64(request.Loop) && interval == request.Interval && source == Config.Server.Name && queueName == request.QueueName {
+		isEqualData := bytes.Equal(data, request.Data)
+		// Check if task is expired
+		if startTime == request.Time.Format(time.RFC3339) && loopCount == int64(request.Loop) && interval == request.Interval && source == Config.Server.Name && queueName == request.QueueName && isEqualData {
 			ctx.LogInfo("Task %#v already exist in db with id = %s", *request, id)
+			ctx.LogInfo("Data is equal: %#v, %s, %s", isEqualData, string(data), string(request.Data))
 			return ERROR_TASK_ALREADY_EXISTED
 		}
 
