@@ -449,8 +449,10 @@ func (builder *httpClientBuilder) request(req *http.Request, response any) (Http
 	builder.ctx.LogInfo("HttpRequest: url = %s, response header: %+v", builder.url, resp.Header)
 	builder.ctx.LogInfo("HttpRequest: url = %s response body: %s", builder.url, string(resBody))
 
-	if resp.StatusCode > 399 && builder.errorResponse != nil && paramIsPointerOfStruct(builder.errorResponse) == nil {
-		json.Unmarshal(resBody, builder.errorResponse)
+	if resp.StatusCode > 399 {
+		if builder.errorResponse != nil && paramIsPointerOfStruct(builder.errorResponse) == nil {
+			json.Unmarshal(resBody, builder.errorResponse)
+		}
 		return resVal, ERROR_HTTP_RESPONSE_ERROR
 	}
 
