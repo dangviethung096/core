@@ -37,7 +37,7 @@ func HandleTask(ctx Context, taskQueueName string, handler TaskHandler) Error {
 		}
 
 		// Handle task
-		newCtx.LogInfo("Handle task from nats message: topic: %s, task_id: %d, task_name: %s, task_queue_name: %s", topic, taskMessage.TaskID, taskMessage.TaskName, taskMessage.TaskQueueName)
+		newCtx.LogInfo("Handle task from nats message: topic: %s, task_id: %d, task_name: %s, task_queue_name: %s, data: %s", topic, taskMessage.TaskID, taskMessage.TaskName, taskMessage.TaskQueueName, string(data))
 		handler(newCtx, TaskInfo{
 			Data: data,
 		})
