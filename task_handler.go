@@ -21,7 +21,7 @@ func HandleTask(ctx Context, taskQueueName string, handler TaskHandler) Error {
 		newCtx := GetContextWithoutTimeout()
 		defer PutContext(newCtx)
 		// Handle task
-		newCtx.LogInfo("Handle task: %s", taskQueueName)
+		newCtx.LogInfo("Handle task: %s, topic: %s", taskQueueName, topic)
 		handler(newCtx, TaskInfo{
 			Data: data,
 		})
