@@ -1,11 +1,19 @@
 package core
 
 import (
+	"encoding/json"
 	"fmt"
 )
 
 type TaskInfo struct {
 	Data []byte
+}
+
+type TaskMessage struct {
+	Data          []byte `json:"data"`
+	TaskID        uint64 `json:"task_id"`
+	TaskName      string `json:"task_name"`
+	TaskQueueName string `json:"task_queue_name"`
 }
 
 type TaskHandler func(ctx Context, task TaskInfo)
@@ -36,7 +44,12 @@ func HandleTask(ctx Context, taskQueueName string, handler TaskHandler) Error {
 	return nil
 }
 
-func pushTaskToQueue(ctx Context, taskQueueName string, taskData []byte) Error {
-	topicName := fmt.Sprintf("%s%s", TASK_PREFIX_QUEUE_NAME, taskQueueName)
-	return MessageQueue().Publish(ctx, topicName, taskData)
+func pushTaskToQueue(ctx Context, taskMessage TaskMessage) Error {
+	topicName := fmt.Sprintf("%s%s", TASK_PREFIX_QUEUE_NAME, taskMessage.TaskQueueName)
+	data, err := json.Marshal(taskMessage)
+	if err != nil {
+		ctx.LogError("Error when marshal task message: %v", err)
+		return ERROR_TASK_REQUEST_INVALID
+	}
+	return MessageQueue().Publish(ctx, topicName, data)
 }

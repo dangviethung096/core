@@ -125,7 +125,12 @@ func (w *worker) process(bucket int64, id int64) {
 
 	// Start run this task: use rabbitmqt
 	now := time.Now()
-	err = pushTaskToQueue(coreContext, t.QueueName, t.Data)
+	err = pushTaskToQueue(coreContext, TaskMessage{
+		Data:          t.Data,
+		TaskID:        uint64(t.ID),
+		TaskName:      t.TaskName,
+		TaskQueueName: t.QueueName,
+	})
 	if err != nil {
 		LogError("Cannot run task: %v, err = %s", t, err.Error())
 		_, err := DBSession().GetOriginConnection(coreContext).ExecContext(coreContext, "INSERT INTO scheduler_done(bucket, task_id, operation_time, status, task_name) VALUES ($1, $2, $3, $4, $5)", bucket, t.ID, now.Format(time.RFC3339), TASK_FAIL, t.TaskName)

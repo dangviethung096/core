@@ -183,7 +183,12 @@ func StopTaskByTaskName(ctx Context, taskName string) Error {
 }
 
 func TriggerTask(ctx Context, taskName string, taskData []byte) Error {
-	return pushTaskToQueue(ctx, taskName, taskData)
+	return pushTaskToQueue(ctx, TaskMessage{
+		Data:          taskData,
+		TaskID:        uint64(0),
+		TaskName:      taskName,
+		TaskQueueName: taskName,
+	})
 }
 
 func StartOneTimeTask(ctx Context, queueName string, startTime time.Time, taskData []byte) (string, Error) {
