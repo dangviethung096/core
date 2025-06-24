@@ -127,7 +127,7 @@ func (w *worker) process(bucket int64, id int64) {
 	now := time.Now()
 	err = pushTaskToQueue(coreContext, TaskMessage{
 		Data:          t.Data,
-		TaskID:        uint64(t.ID),
+		TaskID:        t.ID,
 		TaskName:      t.TaskName,
 		TaskQueueName: t.QueueName,
 	})

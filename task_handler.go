@@ -28,8 +28,16 @@ func HandleTask(ctx Context, taskQueueName string, handler TaskHandler) Error {
 	natsHandler := func(topic string, data []byte) {
 		newCtx := GetContextWithoutTimeout()
 		defer PutContext(newCtx)
+
+		var taskMessage TaskMessage
+		err := json.Unmarshal(data, &taskMessage)
+		if err != nil {
+			newCtx.LogError("Error when unmarshal task message: %v", err)
+			return
+		}
+
 		// Handle task
-		newCtx.LogInfo("Handle task: %s, topic: %s", taskQueueName, topic)
+		newCtx.LogInfo("Handle task from nats message: topic: %s, task_id: %d, task_name: %s, task_queue_name: %s", topic, taskMessage.TaskID, taskMessage.TaskName, taskMessage.TaskQueueName)
 		handler(newCtx, TaskInfo{
 			Data: data,
 		})
