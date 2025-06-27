@@ -65,5 +65,7 @@ func TestStartTask_ReplaceTask(t *testing.T) {
 	task.Data = []byte("test-data-2")
 	StartTask(ctx, &task)
 
+	defer StopTaskByTaskName(ctx, "test-queue")
+
 	time.Sleep(time.Second * 5)
 }
