@@ -1,7 +1,6 @@
 package core
 
 import (
-	"bytes"
 	"database/sql"
 	"fmt"
 	"math"
@@ -66,36 +65,32 @@ func StartTask(ctx Context, request *StartTaskRequest) Error {
 	}
 	defer tx.Rollback()
 
-	// check task in database
-	var id string
-	var startTime string
-	var source string
-	var loopCount, interval int64
-	var queueName string
-	var data []byte
-	row := DBSession().GetOriginConnection(ctx).QueryRowContext(ctx, "SELECT id, start_time, loop_count, interval, source, queue_name, data FROM scheduler_tasks WHERE task_name = $1", request.TaskName)
-	err = row.Scan(&id, &startTime, &loopCount, &interval, &source, &queueName, &data)
+	// Check if task with same name already exists (using transaction)
+	var existingId int64
+	row := tx.QueryRowContext(ctx, "SELECT id FROM scheduler_tasks WHERE task_name = $1", request.TaskName)
+	err = row.Scan(&existingId)
 	if err == nil {
-		isEqualData := bytes.Equal(data, request.Data)
-		// Check if task is expired
-		if startTime == request.Time.Format(time.RFC3339) && loopCount == int64(request.Loop) && interval == request.Interval && source == Config.Server.Name && queueName == request.QueueName && isEqualData {
-			ctx.LogInfo("Task %#v already exist in db with id = %s", *request, id)
-			ctx.LogInfo("Data is equal: %#v, %s, %s", isEqualData, string(data), string(request.Data))
-			return ERROR_TASK_ALREADY_EXISTED
-		}
+		// Task with same name exists - delete it and its todo entry
+		ctx.LogInfo("Task with name '%s' already exists (id: %d), replacing it", request.TaskName, existingId)
 
-		ctx.LogInfo("Replace task: %s, startTime: %s, loopCount: %d, interval: %d", id, startTime, loopCount, interval)
-		if _, err := tx.ExecContext(ctx, "DELETE FROM scheduler_tasks WHERE id = $1;", id); err != nil {
-			ctx.LogError("delete task fail: %s, err = %s", id, err.Error())
+		if _, err := tx.ExecContext(ctx, "DELETE FROM scheduler_tasks WHERE id = $1;", existingId); err != nil {
+			ctx.LogError("delete task fail: %d, err = %s", existingId, err.Error())
 			return ERROR_REMOVE_OLD_TASK_FAIL
 		}
-		if _, err := tx.ExecContext(ctx, "DELETE FROM scheduler_todo WHERE task_id = $1;", id); err != nil {
-			ctx.LogError("delete todo task fail: %s, err = %s", id, err.Error())
+		if _, err := tx.ExecContext(ctx, "DELETE FROM scheduler_todo WHERE task_id = $1;", existingId); err != nil {
+			ctx.LogError("delete todo task fail: %d, err = %s", existingId, err.Error())
 			return ERROR_REMOVE_OLD_TASK_FAIL
 		}
+	} else if err != sql.ErrNoRows {
+		// Unexpected error
+		ctx.LogError("Check existing task fail: %s, err = %s", request.TaskName, err.Error())
+		return ERROR_ADD_TASK_SYSTEM_FAIL
 	}
 
-	ctx.LogInfo("Insert new task: %d, task name = %s, queue name = %s, startTime: %s, loopCount: %d, interval: %d", taskId, request.TaskName, request.QueueName, request.Time.String(), request.Loop, request.Interval)
+	// Insert new task
+	ctx.LogInfo("Insert new task: task name = %s, queue name = %s, startTime = %s, loopCount = %d, interval = %d",
+		request.TaskName, request.QueueName, request.Time.String(), request.Loop, request.Interval)
+
 	row = tx.QueryRowContext(ctx,
 		"INSERT INTO scheduler_tasks(task_name, queue_name, data, done, loop_index, loop_count, next, interval, start_time, source, next_time) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id;",
 		request.TaskName, request.QueueName, request.Data, false, loopIndex, request.Loop, nextTime.Unix(), request.Interval, request.Time.Format(time.RFC3339), Config.Server.Name, nextTime.Format(time.RFC3339))
@@ -114,7 +109,7 @@ func StartTask(ctx Context, request *StartTaskRequest) Error {
 		return ERROR_ADD_TASK_SYSTEM_FAIL
 	}
 
-	ctx.LogInfo("Insert new task success: id = %d, task name = %s, queue name = %s, startTime: %s, loopCount: %d, interval: %d", taskId, request.TaskName, request.QueueName, request.Time.String(), request.Loop, request.Interval)
+	ctx.LogInfo("Insert new task success: id = %d, task name = %s, queue name = %s, startTime = %s, loopCount = %d, interval = %d", taskId, request.TaskName, request.QueueName, request.Time.String(), request.Loop, request.Interval)
 	return nil
 }
 

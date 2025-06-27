@@ -2,7 +2,7 @@ DROP TABLE IF EXISTS scheduler_tasks;
 
 CREATE TABLE scheduler_tasks (
     id serial PRIMARY KEY,
-    task_name text,
+    task_name text UNIQUE NOT NULL,
     queue_name text,
     data bytea,
     done boolean,
