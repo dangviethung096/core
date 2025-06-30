@@ -65,42 +65,44 @@ func StartTask(ctx Context, request *StartTaskRequest) Error {
 	}
 	defer tx.Rollback()
 
-	// Check if task with same name already exists (using transaction)
-	var existingId int64
-	row := tx.QueryRowContext(ctx, "SELECT id FROM scheduler_tasks WHERE task_name = $1", request.TaskName)
-	err = row.Scan(&existingId)
-	if err == nil {
-		// Task with same name exists - delete it and its todo entry
-		ctx.LogInfo("Task with name '%s' already exists (id: %d), replacing it", request.TaskName, existingId)
-
-		if _, err := tx.ExecContext(ctx, "DELETE FROM scheduler_tasks WHERE id = $1;", existingId); err != nil {
-			ctx.LogError("delete task fail: %d, err = %s", existingId, err.Error())
-			return ERROR_REMOVE_OLD_TASK_FAIL
-		}
-		if _, err := tx.ExecContext(ctx, "DELETE FROM scheduler_todo WHERE task_id = $1;", existingId); err != nil {
-			ctx.LogError("delete todo task fail: %d, err = %s", existingId, err.Error())
-			return ERROR_REMOVE_OLD_TASK_FAIL
-		}
-	} else if err != sql.ErrNoRows {
-		// Unexpected error
-		ctx.LogError("Check existing task fail: %s, err = %s", request.TaskName, err.Error())
-		return ERROR_ADD_TASK_SYSTEM_FAIL
-	}
-
-	// Insert new task
-	ctx.LogInfo("Insert new task: task name = %s, queue name = %s, startTime = %s, loopCount = %d, interval = %d",
+	// Use UPSERT to handle concurrent requests safely
+	// This will either insert a new task or update existing one atomically
+	ctx.LogInfo("Upsert task: task name = %s, queue name = %s, startTime = %s, loopCount = %d, interval = %d",
 		request.TaskName, request.QueueName, request.Time.String(), request.Loop, request.Interval)
 
-	row = tx.QueryRowContext(ctx,
-		"INSERT INTO scheduler_tasks(task_name, queue_name, data, done, loop_index, loop_count, next, interval, start_time, source, next_time) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id;",
+	row := tx.QueryRowContext(ctx,
+		`INSERT INTO scheduler_tasks(task_name, queue_name, data, done, loop_index, loop_count, next, interval, start_time, source, next_time) 
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
+		 ON CONFLICT (task_name) DO UPDATE SET
+			queue_name = EXCLUDED.queue_name,
+			data = EXCLUDED.data,
+			done = EXCLUDED.done,
+			loop_index = EXCLUDED.loop_index,
+			loop_count = EXCLUDED.loop_count,
+			next = EXCLUDED.next,
+			interval = EXCLUDED.interval,
+			start_time = EXCLUDED.start_time,
+			source = EXCLUDED.source,
+			next_time = EXCLUDED.next_time
+		 RETURNING id;`,
 		request.TaskName, request.QueueName, request.Data, false, loopIndex, request.Loop, nextTime.Unix(), request.Interval, request.Time.Format(time.RFC3339), Config.Server.Name, nextTime.Format(time.RFC3339))
+
 	if err := row.Scan(&taskId); err != nil {
-		ctx.LogError("Insert task fail: %v, err = %s", *request, err.Error())
+		ctx.LogError("Upsert task fail: %v, err = %s", *request, err.Error())
 		return ERROR_ADD_TASK_SYSTEM_FAIL
 	}
 
-	if _, err := tx.ExecContext(ctx, "INSERT INTO scheduler_todo(task_id, bucket, next_time, source) VALUES ($1, $2, $3, $4);", taskId, bucket, nextTime.Format(time.RFC3339), Config.Server.Name); err != nil {
-		ctx.LogError("Insert task fail: %v, err = %s", *request, err.Error())
+	// Use UPSERT for scheduler_todo to handle concurrent requests safely
+	// This will either insert a new todo entry or update existing one atomically
+	if _, err := tx.ExecContext(ctx,
+		`INSERT INTO scheduler_todo(task_id, bucket, next_time, source) 
+		 VALUES ($1, $2, $3, $4)
+		 ON CONFLICT (task_id) DO UPDATE SET
+			bucket = EXCLUDED.bucket,
+			next_time = EXCLUDED.next_time,
+			source = EXCLUDED.source;`,
+		taskId, bucket, nextTime.Format(time.RFC3339), Config.Server.Name); err != nil {
+		ctx.LogError("Upsert todo fail: %v, err = %s", *request, err.Error())
 		return ERROR_ADD_TASK_SYSTEM_FAIL
 	}
 

@@ -59,8 +59,11 @@ type todo struct {
 func (w *worker) execute() {
 	bucket := GetBucket(time.Now())
 
-	// Get all task from database: table: todo
-	result, err := DBSession().GetOriginConnection(coreContext).QueryContext(coreContext, "SELECT task_id, bucket FROM scheduler_todo WHERE bucket <= $1 and source = $2", bucket, Config.Server.Name)
+	// Get all task from database: table: todo with row-level locking
+	// This prevents multiple workers from processing the same todo entry
+	result, err := DBSession().GetOriginConnection(coreContext).QueryContext(coreContext,
+		"SELECT task_id, bucket FROM scheduler_todo WHERE bucket <= $1 and source = $2 FOR UPDATE SKIP LOCKED",
+		bucket, Config.Server.Name)
 	if err != nil {
 		LogError("Execute tasks fail: %v", err)
 		return
@@ -168,9 +171,16 @@ func (w *worker) process(bucket int64, id int64) {
 			LogError("Fail to delete task in todo: id = %d, bucket %d", id, bucket)
 		}
 
-		// Insert new record in todo task
-		if _, err := tx.ExecContext(coreContext, "INSERT INTO scheduler_todo(task_id, bucket, next_time, source) VALUES ($1, $2, $3, $4);", id, newBucket, next.Format(time.RFC3339), Config.Server.Name); err != nil {
-			LogError("Update todo task fail: id = %d, bucket = %d, err = %s", id, newBucket, err.Error())
+		// Use UPSERT for scheduler_todo to handle concurrent updates safely
+		if _, err := tx.ExecContext(coreContext,
+			`INSERT INTO scheduler_todo(task_id, bucket, next_time, source) 
+			 VALUES ($1, $2, $3, $4)
+			 ON CONFLICT (task_id) DO UPDATE SET
+				bucket = EXCLUDED.bucket,
+				next_time = EXCLUDED.next_time,
+				source = EXCLUDED.source;`,
+			id, newBucket, next.Format(time.RFC3339), Config.Server.Name); err != nil {
+			LogError("Upsert todo task fail: id = %d, bucket = %d, err = %s", id, newBucket, err.Error())
 		}
 
 		// Update in task

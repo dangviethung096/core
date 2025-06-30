@@ -19,7 +19,7 @@ DROP TABLE IF EXISTS scheduler_todo;
 
 CREATE TABLE scheduler_todo (
     id bigserial PRIMARY KEY,
-    task_id int,
+    task_id int UNIQUE NOT NULL,
     bucket bigint,
     next_time text,
     source text
