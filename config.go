@@ -32,6 +32,7 @@ type ServerConfig struct {
 	Port      int    `yaml:"port"`
 	Name      string `yaml:"name"`
 	CacheHtml bool   `yaml:"cache_html"`
+	Host      string `yaml:"host"`
 }
 
 type SecureServerConfig struct {
