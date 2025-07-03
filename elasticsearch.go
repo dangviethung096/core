@@ -57,8 +57,8 @@ func connectElasticsearch() searchClient {
 }
 
 // CreateIndex creates a new index with the given name and mapping
-func (c *searchClient) CreateIndex(ctx Context, indexName string, mapping string) Error {
-	res, err := c.Client.Indices.Exists([]string{indexName})
+func CreateSearchIndex(ctx Context, indexName string, mapping string) Error {
+	res, err := esClient.Indices.Exists([]string{indexName})
 	if err != nil {
 		ctx.LogError("Failed to check if index exists: %v", err)
 		return NewError(ERROR_CODE_FROM_ELASTICSEARCH, fmt.Sprintf("Failed to check if index exists: %v", err))
@@ -66,9 +66,9 @@ func (c *searchClient) CreateIndex(ctx Context, indexName string, mapping string
 	defer res.Body.Close()
 
 	if res.StatusCode == 404 {
-		res, err := c.Client.Indices.Create(
+		res, err := esClient.Indices.Create(
 			indexName,
-			c.Client.Indices.Create.WithBody(strings.NewReader(mapping)),
+			esClient.Indices.Create.WithBody(strings.NewReader(mapping)),
 		)
 		if err != nil {
 			ctx.LogError("Failed to create index: %v", err)
@@ -87,17 +87,17 @@ func (c *searchClient) CreateIndex(ctx Context, indexName string, mapping string
 }
 
 // IndexDocument indexes a document in Elasticsearch
-func (c *searchClient) IndexDocument(ctx Context, indexName string, id string, document any) Error {
+func IndexSearchDocument(ctx Context, indexName string, id string, document any) Error {
 	data, err := json.Marshal(document)
 	if err != nil {
 		return NewError(ERROR_CODE_FROM_ELASTICSEARCH, fmt.Sprintf("Failed to marshal document: %v", err))
 	}
 
-	res, err := c.Client.Index(
+	res, err := esClient.Index(
 		indexName,
 		bytes.NewReader(data),
-		c.Client.Index.WithDocumentID(id),
-		c.Client.Index.WithContext(ctx),
+		esClient.Index.WithDocumentID(id),
+		esClient.Index.WithContext(ctx),
 	)
 	if err != nil {
 		return NewError(ERROR_CODE_FROM_ELASTICSEARCH, fmt.Sprintf("Failed to index document: %v", err))
@@ -111,16 +111,16 @@ func (c *searchClient) IndexDocument(ctx Context, indexName string, id string, d
 }
 
 // Search performs a search query on the specified index
-func (c *searchClient) Search(ctx Context, indexName string, query any) (map[string]any, Error) {
+func Search(ctx Context, indexName string, query any) (map[string]any, Error) {
 	data, err := json.Marshal(query)
 	if err != nil {
 		return nil, NewError(ERROR_CODE_FROM_ELASTICSEARCH, fmt.Sprintf("Failed to marshal query: %v", err))
 	}
 
-	res, err := c.Client.Search(
-		c.Client.Search.WithIndex(indexName),
-		c.Client.Search.WithBody(bytes.NewReader(data)),
-		c.Client.Search.WithContext(ctx),
+	res, err := esClient.Search(
+		esClient.Search.WithIndex(indexName),
+		esClient.Search.WithBody(bytes.NewReader(data)),
+		esClient.Search.WithContext(ctx),
 	)
 	if err != nil {
 		return nil, NewError(ERROR_CODE_FROM_ELASTICSEARCH, fmt.Sprintf("Failed to search: %v", err))
@@ -139,12 +139,12 @@ func (c *searchClient) Search(ctx Context, indexName string, query any) (map[str
 	return result, nil
 }
 
-// DeleteDocument deletes a document from the index
-func (c *searchClient) DeleteDocument(ctx Context, indexName string, id string) Error {
-	res, err := c.Client.Delete(
+// DeleteSearchDocument deletes a document from the index
+func DeleteSearchDocument(ctx Context, indexName string, id string) Error {
+	res, err := esClient.Delete(
 		indexName,
 		id,
-		c.Client.Delete.WithContext(ctx),
+		esClient.Delete.WithContext(ctx),
 	)
 	if err != nil {
 		return NewError(ERROR_CODE_FROM_ELASTICSEARCH, fmt.Sprintf("Failed to delete document: %v", err))
@@ -157,8 +157,8 @@ func (c *searchClient) DeleteDocument(ctx Context, indexName string, id string) 
 	return nil
 }
 
-// UpdateDocument updates a document in the index
-func (c *searchClient) UpdateDocument(ctx Context, indexName string, id string, update any) Error {
+// UpdateSearchDocument updates a document in the index
+func UpdateSearchDocument(ctx Context, indexName string, id string, update any) Error {
 	data, err := json.Marshal(map[string]any{
 		"doc": update,
 	})
@@ -166,11 +166,11 @@ func (c *searchClient) UpdateDocument(ctx Context, indexName string, id string, 
 		return NewError(ERROR_CODE_FROM_ELASTICSEARCH, fmt.Sprintf("Failed to marshal update: %v", err))
 	}
 
-	res, err := c.Client.Update(
+	res, err := esClient.Update(
 		indexName,
 		id,
 		bytes.NewReader(data),
-		c.Client.Update.WithContext(ctx),
+		esClient.Update.WithContext(ctx),
 	)
 	if err != nil {
 		return NewError(ERROR_CODE_FROM_ELASTICSEARCH, fmt.Sprintf("Failed to update document: %v", err))
@@ -189,9 +189,9 @@ func (c *searchClient) Close() {
 	// It uses Go's standard http.Client which manages its own connections
 }
 
-// IndexExists checks if an index exists in Elasticsearch
-func (c *searchClient) IndexExists(ctx Context, indexName string) bool {
-	res, err := c.Client.Indices.Exists([]string{indexName})
+// SearchIndexExists checks if an index exists in Elasticsearch
+func SearchIndexExists(ctx Context, indexName string) bool {
+	res, err := esClient.Indices.Exists([]string{indexName})
 	if err != nil {
 		ctx.LogError("Failed to check if index exists: %v", err)
 		return false
@@ -201,10 +201,10 @@ func (c *searchClient) IndexExists(ctx Context, indexName string) bool {
 	return res.StatusCode == 200
 }
 
-// AppendDocument appends a document to an index, creating the index if it doesn't exist
-func (c *searchClient) AppendDocument(ctx Context, indexName string, id string, document any) Error {
+// AppendSearchDocument appends a document to an index, creating the index if it doesn't exist
+func AppendSearchDocument(ctx Context, indexName string, id string, document any) Error {
 	// Check if index exists
-	if !c.IndexExists(ctx, indexName) {
+	if !SearchIndexExists(ctx, indexName) {
 		// Create index with default mapping if it doesn't exist
 		defaultMapping := `{
 			"mappings": {
@@ -213,7 +213,7 @@ func (c *searchClient) AppendDocument(ctx Context, indexName string, id string, 
 				}
 			}
 		}`
-		if err := c.CreateIndex(ctx, indexName, defaultMapping); err != nil {
+		if err := CreateSearchIndex(ctx, indexName, defaultMapping); err != nil {
 			ctx.LogError("Failed to create index %s: %v", indexName, err)
 			return err
 		}
@@ -226,5 +226,5 @@ func (c *searchClient) AppendDocument(ctx Context, indexName string, id string, 
 	}
 
 	// Index the document
-	return c.IndexDocument(ctx, indexName, id, document)
+	return IndexSearchDocument(ctx, indexName, id, document)
 }

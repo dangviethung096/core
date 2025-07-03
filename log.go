@@ -45,9 +45,8 @@ type logMessage struct {
 
 func logInit() {
 	if Config.Log.UseElasticsearch {
-		elasticsearchClient := ElasticsearchClient()
-		if !elasticsearchClient.IndexExists(coreContext, Config.Log.ElasticIndex) {
-			elasticsearchClient.CreateIndex(coreContext, Config.Log.ElasticIndex, `{
+		if !SearchIndexExists(coreContext, Config.Log.ElasticIndex) {
+			CreateSearchIndex(coreContext, Config.Log.ElasticIndex, `{
 				"mappings": {
 					"properties": {
 						"request_id": { "type": "keyword" },

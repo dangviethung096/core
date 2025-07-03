@@ -56,7 +56,7 @@ func (ctx *rootContext) LogInfo(format string, args ...any) {
 	logInfo.Level = "INFO"
 	log.Println(logStr)
 	if Config.Log.UseElasticsearch {
-		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
+		IndexSearchDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
 	}
 }
 
@@ -66,7 +66,7 @@ func (ctx *rootContext) LogInfoWithCallStack(format string, callStack int, args 
 	logStr = "[INFO] " + logStr
 	log.Println(logStr)
 	if Config.Log.UseElasticsearch {
-		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
+		IndexSearchDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
 	}
 }
 
@@ -81,7 +81,7 @@ func (ctx *rootContext) LogDebug(format string, args ...any) {
 	logStr = "[DEBUG] " + logStr
 	log.Println(logStr)
 	if Config.Log.UseElasticsearch {
-		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
+		IndexSearchDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
 	}
 }
 
@@ -91,7 +91,7 @@ func (ctx *rootContext) LogDebugWithCallStack(format string, callStack int, args
 	logStr = "[DEBUG] " + logStr
 	log.Println(logStr)
 	if Config.Log.UseElasticsearch {
-		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
+		IndexSearchDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
 	}
 }
 
@@ -106,7 +106,7 @@ func (ctx *rootContext) LogError(format string, args ...any) {
 	logStr = "[ERROR] " + logStr
 	log.Println(logStr)
 	if Config.Log.UseElasticsearch {
-		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
+		IndexSearchDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
 	}
 }
 
@@ -116,7 +116,7 @@ func (ctx *rootContext) LogErrorWithCallStack(format string, callStack int, args
 	logStr = "[ERROR] " + logStr
 	log.Println(logStr)
 	if Config.Log.UseElasticsearch {
-		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
+		IndexSearchDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
 	}
 }
 
@@ -131,7 +131,7 @@ func (ctx *rootContext) LogWarning(format string, args ...any) {
 	logStr = "[WARNING] " + logStr
 	log.Println(logStr)
 	if Config.Log.UseElasticsearch {
-		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
+		IndexSearchDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
 	}
 }
 
@@ -141,7 +141,7 @@ func (ctx *rootContext) LogWarningWithCallStack(format string, callStack int, ar
 	logStr = "[WARNING] " + logStr
 	log.Println(logStr)
 	if Config.Log.UseElasticsearch {
-		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
+		IndexSearchDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
 	}
 }
 
@@ -156,7 +156,7 @@ func (ctx *rootContext) LogPanic(format string, args ...any) {
 	logStr = "[Panic] " + logStr
 	log.Panicln(logStr)
 	if Config.Log.UseElasticsearch {
-		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
+		IndexSearchDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
 	}
 }
 
@@ -166,7 +166,7 @@ func (ctx *rootContext) LogPanicWithCallStack(format string, callStack int, args
 	logStr = "[Panic] " + logStr
 	log.Panicln(logStr)
 	if Config.Log.UseElasticsearch {
-		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
+		IndexSearchDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
 	}
 }
 
@@ -181,7 +181,7 @@ func (ctx *rootContext) LogFatal(format string, args ...any) {
 	logStr = "[FATAL] " + logStr
 	log.Fatalln(logStr)
 	if Config.Log.UseElasticsearch {
-		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
+		IndexSearchDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
 	}
 }
 
@@ -191,7 +191,7 @@ func (ctx *rootContext) LogFatalWithCallStack(format string, callStack int, args
 	logStr = "[FATAL] " + logStr
 	log.Fatalln(logStr)
 	if Config.Log.UseElasticsearch {
-		esClient.IndexDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
+		IndexSearchDocument(coreContext, Config.Log.ElasticIndex, BLANK, logInfo)
 	}
 }
 
