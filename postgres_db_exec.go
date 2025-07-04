@@ -291,3 +291,12 @@ func (session postgresSession) SelectOneByField(ctx Context, data DataBaseObject
 
 	return nil
 }
+
+func (session postgresSession) DeleteDataFromDBByWhereQuery(ctx Context, data DataBaseObject, whereQuery string, args ...any) Error {
+	ctx.LogInfo("DeleteDataFromDBByWhereQuery, table = %s, conditions = %v, args = %v", data.TableName(), whereQuery, args)
+	if err := session.Where(whereQuery, args...).Delete(data).Error; err != nil {
+		ctx.LogError("Error delete data by where query = %#v, err = %s", data, err.Error())
+		return NewError(ERROR_CODE_FROM_DATABASE, err.Error())
+	}
+	return nil
+}

@@ -32,6 +32,7 @@ type dbSession interface {
 	DeleteDataFromDBByID(ctx Context, data DataBaseObject) Error
 	DeleteDataFromDBWithWhereQuery(ctx Context, data DataBaseObject, whereQuery string, args ...any) Error
 	UpdateDataToDB(ctx Context, data DataBaseObject) Error
+	DeleteDataFromDBByWhereQuery(ctx Context, data DataBaseObject, whereQuery string, args ...any) Error
 
 	// Query
 	SelectListByFields(ctx Context, data DataBaseObject, whereQuery string, args ...any) (any, Error)

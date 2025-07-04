@@ -54,3 +54,7 @@ func CountRecordInTableWithWhereQuery(ctx Context, data DataBaseObject, whereQue
 func SelectOneByField(ctx Context, data DataBaseObject, whereQuery string, args ...any) Error {
 	return mainDbSession.SelectOneByField(ctx, data, whereQuery, args...)
 }
+
+func DeleteDataFromDBByWhereQuery(ctx Context, data DataBaseObject, whereQuery string, args ...any) Error {
+	return mainDbSession.DeleteDataFromDBByWhereQuery(ctx, data, whereQuery, args...)
+}
