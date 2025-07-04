@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"strings"
 	"time"
 
@@ -65,7 +66,7 @@ func CreateSearchIndex(ctx Context, indexName string, mapping string) Error {
 	}
 	defer res.Body.Close()
 
-	if res.StatusCode == 404 {
+	if res.StatusCode == http.StatusNotFound {
 		res, err := esClient.Indices.Create(
 			indexName,
 			esClient.Indices.Create.WithBody(strings.NewReader(mapping)),
