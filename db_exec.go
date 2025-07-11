@@ -31,8 +31,8 @@ func SelectListByFields(ctx Context, data DataBaseObject, whereQuery string, arg
 	return mainDbSession.SelectListByFields(ctx, data, whereQuery, args...)
 }
 
-func SelectListByFieldWithPaging(ctx Context, data DataBaseObject, limit int64, offset int64, whereQuery string, args ...any) (any, Error) {
-	return mainDbSession.SelectListByFieldWithPaging(ctx, data, limit, offset, whereQuery, args...)
+func SelectListByFieldWithPaging(ctx Context, data DataBaseObject, orderQuery string, limit int64, offset int64, whereQuery string, args ...any) (any, Error) {
+	return mainDbSession.SelectListByFieldWithPaging(ctx, data, orderQuery, limit, offset, whereQuery, args...)
 }
 
 func SelectPaging(ctx Context, data DataBaseObject, orderQuery string, limit int64, offset int64) (any, Error) {

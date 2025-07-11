@@ -298,7 +298,7 @@ func TestSelectListByFieldWithPaging_ReturnSuccess(t *testing.T) {
 	insertAccount(ctx)
 	defer deleteAccount(ctx)
 
-	accounts, err := SelectListByFieldWithPaging(ctx, &Account{}, 1, 1, "name = ?", "Hung")
+	accounts, err := SelectListByFieldWithPaging(ctx, &Account{}, "name asc", 1, 0, "name = ?", "Hung")
 	if err != nil {
 		t.Errorf("TestSelectListByFieldWithPaging_ReturnSuccess: %v", err)
 	}

@@ -36,7 +36,7 @@ type dbSession interface {
 
 	// Query
 	SelectListByFields(ctx Context, data DataBaseObject, whereQuery string, args ...any) (any, Error)
-	SelectListByFieldWithPaging(ctx Context, data DataBaseObject, limit int64, offset int64, whereQuery string, args ...any) (any, Error)
+	SelectListByFieldWithPaging(ctx Context, data DataBaseObject, orderQuery string, limit int64, offset int64, whereQuery string, args ...any) (any, Error)
 	SelectPaging(ctx Context, data DataBaseObject, orderQuery string, limit int64, offset int64) (any, Error)
 	SelectByID(ctx Context, data DataBaseObject) Error
 	SelectOneByField(ctx Context, data DataBaseObject, whereQuery string, args ...any) Error

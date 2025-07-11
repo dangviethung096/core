@@ -115,7 +115,7 @@ func (session postgresSession) SelectListByFields(ctx Context, data DataBaseObje
 	return result, nil
 }
 
-func (session postgresSession) SelectListByFieldWithPaging(ctx Context, data DataBaseObject, limit int64, offset int64, whereQuery string, args ...any) (any, Error) {
+func (session postgresSession) SelectListByFieldWithPaging(ctx Context, data DataBaseObject, orderQuery string, limit int64, offset int64, whereQuery string, args ...any) (any, Error) {
 	if data == nil {
 		return nil, NewError(ERROR_CODE_FROM_DATABASE, "data is nil")
 	}
@@ -138,7 +138,7 @@ func (session postgresSession) SelectListByFieldWithPaging(ctx Context, data Dat
 	result := reflect.MakeSlice(sliceType, 0, 0).Interface()
 
 	ctx.LogInfo("SelectListByFieldWithPaging, table = %s, conditions = %v, limit = %d, offset = %d", data.TableName(), whereQuery, limit, offset)
-	if err := session.Where(whereQuery, args...).Limit(int(limit)).Offset(int(offset)).Find(&result).Error; err != nil {
+	if err := session.Where(whereQuery, args...).Order(orderQuery).Limit(int(limit)).Offset(int(offset)).Find(&result).Error; err != nil {
 		ctx.LogError("Error select list by fields = %#v, err = %s", data, err.Error())
 		return nil, NewError(ERROR_CODE_FROM_DATABASE, err.Error())
 	}
