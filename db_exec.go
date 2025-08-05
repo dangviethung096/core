@@ -11,6 +11,10 @@ func SaveDataToDB[T DataBaseObject](ctx Context, data T) Error {
 	return mainDbSession.SaveDataToDB(ctx, data)
 }
 
+func UpsertDataToDB[T DataBaseObject](ctx Context, data T) Error {
+	return mainDbSession.UpsertDataToDB(ctx, data)
+}
+
 /*
 * Save data to database without primary key
 * primary key will be auto increment in database

@@ -49,6 +49,7 @@ type dbSession interface {
 
 	// Additional methods for dbSession
 	SaveDataToDB(ctx Context, data DataBaseObject) Error
+	UpsertDataToDB(ctx Context, data DataBaseObject) Error
 	SaveDataToDBWithoutPrimaryKey(ctx Context, data DataBaseObject) Error
 	DeleteDataInDB(ctx Context, data DataBaseObject) Error
 	// TODO: Should change in the future
@@ -68,9 +69,10 @@ type dbSession interface {
 
 func openDBConnection(dbInfo DBInfo) dbSession {
 	var session dbSession
-	if dbInfo.DBType == DB_TYPE_POSTGRES {
+	switch dbInfo.DBType {
+	case DB_TYPE_POSTGRES:
 		session = openPostgresDBConnection(dbInfo)
-	} else if dbInfo.DBType == DB_TYPE_ORACLE {
+	case DB_TYPE_ORACLE:
 		session = openOracleDBConnection(dbInfo)
 	}
 	return session

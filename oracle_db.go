@@ -44,6 +44,30 @@ func (session *oracleSession) SaveDataToDB(ctx Context, data DataBaseObject) Err
 	return nil
 }
 
+func (session *oracleSession) UpsertDataToDB(ctx Context, data DataBaseObject) Error {
+	// Duplicate data in DataBaseObject by reflect package
+	_, err := getTypeOfPointer(data)
+	if err != nil {
+		ctx.LogError("Error when get type of pointer = %#v, err = %s", data, err.Error())
+		return err
+	}
+	v := reflect.ValueOf(data).Elem()
+
+	// Check if data is exist in database
+	err = session.SelectById(ctx, v.Interface().(DataBaseObject))
+	switch err {
+	case ERROR_NOT_FOUND_IN_DB:
+		// Insert new value
+		return session.SaveDataToDB(ctx, data)
+	case nil:
+		// Update value
+		return session.UpdateDataInDB(ctx, data)
+	default:
+		ctx.LogError("Error when upsert data = %#v, err = %s", data, err.Error())
+		return err
+	}
+}
+
 func (session *oracleSession) SaveDataToDBWithoutPrimaryKey(ctx Context, data DataBaseObject) Error {
 	query, args, _, insertError := GetInsertQueryWithoutPrimaryKeyForOracle(data)
 	if insertError != nil {

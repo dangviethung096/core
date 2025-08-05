@@ -303,9 +303,10 @@ func (builder *httpClientBuilder) Request(response any) (HttpClientResponse, Err
 	builder.ctx.LogInfo("HttpRequest: url = %s, headers: %#v", builder.url, builder.headers)
 
 	//Set Form Data
-	if builder.bodyType == BodyType_URLEncoded {
+	switch builder.bodyType {
+	case BodyType_URLEncoded:
 		req.Header.Set(CONTENT_TYPE_KEY, FORM_URLENCODED_CONTENT_TYPE)
-	} else if builder.bodyType == BodyType_JSON {
+	case BodyType_JSON:
 		req.Header.Set(CONTENT_TYPE_KEY, JSON_CONTENT_TYPE)
 	}
 

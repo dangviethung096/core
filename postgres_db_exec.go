@@ -36,6 +36,22 @@ func (session postgresSession) SaveDataToDB(ctx Context, data DataBaseObject) Er
 	return nil
 }
 
+func (session postgresSession) UpsertDataToDB(ctx Context, data DataBaseObject) Error {
+	query, args, err := GetUpsertQuery(data)
+	if err != nil {
+		ctx.LogError("Error when get upsert data = %#v, err = %s", data, err.Error())
+		return err
+	}
+
+	ctx.LogInfo("Upsert query = %v, args = %v", query, args)
+	if _, err := session.ExecContext(ctx, query, args...); err != nil {
+		ctx.LogError("Error upsert data = %#v, err = %v", data, err)
+		return NewError(ERROR_CODE_FROM_DATABASE, err.Error())
+	}
+
+	return nil
+}
+
 func (session postgresSession) SaveDataToDBWithoutPrimaryKey(ctx Context, data DataBaseObject) Error {
 	query, args, pkAddress, insertError := GetInsertQueryWithoutPrimaryKey(data)
 	if insertError != nil {

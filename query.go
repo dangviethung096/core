@@ -3,6 +3,7 @@ package core
 import (
 	"fmt"
 	"reflect"
+	"slices"
 	"strings"
 )
 
@@ -119,6 +120,74 @@ func GetInsertQuery[T DataBaseObject](model T) (string, []any, Error) {
 	}
 
 	query := fmt.Sprintf("INSERT INTO %s(%s) VALUES(%s)", tableName, fields, questionString)
+
+	return query, args, nil
+}
+
+func GetUpsertQuery[T DataBaseObject](model T) (string, []any, Error) {
+	t, err := getTypeOfPointer(model)
+	if err != nil {
+		return BLANK, nil, err
+	}
+	v := reflect.ValueOf(model).Elem()
+
+	// Generate insert query
+	tableName := model.GetTableName()
+	fields := BLANK
+	questionString := BLANK
+	args := []any{}
+	count := 1
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		tag := field.Tag.Get("db")
+
+		if tag == BLANK {
+			continue
+		}
+
+		if i != t.NumField()-1 {
+			fields += tag + ","
+			questionString += fmt.Sprintf("$%d,", count)
+		} else {
+			fields += tag
+			questionString += fmt.Sprintf("$%d", count)
+		}
+
+		count++
+		args = append(args, v.Field(i).Interface())
+	}
+
+	if len(fields) == 0 {
+		return BLANK, nil, ERROR_MODEL_HAVE_NO_FIELD
+	}
+
+	if fields[len(fields)-1:] == "," {
+		fields = fields[:len(fields)-1]
+		questionString = questionString[:len(questionString)-1]
+	}
+
+	primaryKeys, numPrimaryKeys := splitPrimaryKey(model)
+	if numPrimaryKeys == 0 {
+		return BLANK, nil, ERROR_NOT_FOUND_PRIMARY_KEY
+	}
+
+	fieldsWithoutPrimaryKey := []string{}
+	for _, field := range strings.Split(fields, ",") {
+		if !slices.Contains(primaryKeys, field) {
+			fieldsWithoutPrimaryKey = append(fieldsWithoutPrimaryKey, field)
+		}
+	}
+
+	var updateSetString string = BLANK
+	for i, field := range fieldsWithoutPrimaryKey {
+		if i != len(fieldsWithoutPrimaryKey)-1 {
+			updateSetString += fmt.Sprintf("%s = EXCLUDED.%s, ", field, field)
+		} else {
+			updateSetString += fmt.Sprintf("%s = EXCLUDED.%s", field, field)
+		}
+	}
+
+	query := fmt.Sprintf("INSERT INTO %s(%s) VALUES(%s) ON CONFLICT (%s) DO UPDATE SET %s", tableName, fields, questionString, model.GetPrimaryKey(), updateSetString)
 
 	return query, args, nil
 }
