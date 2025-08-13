@@ -127,8 +127,5 @@ func RegisterWebsocket[T any](url string, handler WebsocketHandler[T], middlewar
 
 // Constants for websocket handling
 const (
-	writeWait      = 10 * time.Second
-	pongWait       = 60 * time.Second
-	pingPeriod     = (pongWait * 9) / 10
-	maxMessageSize = 512
+	writeWait = 10 * time.Second
 )

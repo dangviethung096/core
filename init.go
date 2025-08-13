@@ -19,7 +19,7 @@ var httpContextPool sync.Pool
 var websocketContextPool sync.Pool
 var Config CoreConfig
 var redisClient cacheClient
-var queueClient natsClient
+var queueClient *natsClient
 var coreContext Context
 var validate *validator.Validate
 var contextTimeout time.Duration
@@ -84,7 +84,7 @@ func Init(configFile string) {
 
 	// Init rabbitmq client
 	if Config.NatsQueue.Use {
-		queueClient = connectToNatsQueue(Config.NatsQueue.Url)
+		connectToNatsQueue(Config.NatsQueue.Url)
 	}
 
 	// Init emqx client
@@ -199,6 +199,10 @@ func Release() {
 	if esClient.Client != nil {
 		esClient.Close()
 	}
+
+	if Config.NatsQueue.Use {
+		queueClient.Close()
+	}
 }
 
 func closeDB() {
@@ -263,7 +267,7 @@ func CacheClient() cacheClient {
 * MessageQueue: Get message queue client
 * @return messageQueue
  */
-func MessageQueue() natsClient {
+func MessageQueue() *natsClient {
 	return queueClient
 }
 
