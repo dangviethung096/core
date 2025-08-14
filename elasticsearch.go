@@ -101,11 +101,13 @@ func IndexSearchDocument(ctx Context, indexName string, id string, document any)
 		esClient.Index.WithContext(ctx),
 	)
 	if err != nil {
+		ctx.LogError("Failed to index document: %v", err)
 		return NewError(ERROR_CODE_FROM_ELASTICSEARCH, fmt.Sprintf("Failed to index document: %v", err))
 	}
 	defer res.Body.Close()
 
 	if res.IsError() {
+		ctx.LogError("Failed after call index document: %s", res.String())
 		return NewError(ERROR_CODE_FROM_ELASTICSEARCH, fmt.Sprintf("Failed to index document: %s", res.String()))
 	}
 	return nil
@@ -124,11 +126,13 @@ func Search(ctx Context, indexName string, query any) (map[string]any, Error) {
 		esClient.Search.WithContext(ctx),
 	)
 	if err != nil {
+		ctx.LogError("Failed to search: %v", err)
 		return nil, NewError(ERROR_CODE_FROM_ELASTICSEARCH, fmt.Sprintf("Failed to search: %v", err))
 	}
 	defer res.Body.Close()
 
 	if res.IsError() {
+		ctx.LogError("Failed after call search: %s", res.String())
 		return nil, NewError(ERROR_CODE_FROM_ELASTICSEARCH, fmt.Sprintf("Search error: %s", res.String()))
 	}
 
