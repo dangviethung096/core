@@ -207,3 +207,20 @@ func StartOneTimeTask(ctx Context, queueName string, startTime time.Time, taskDa
 		Loop:      0,
 	})
 }
+
+func GetTaskByName(ctx Context, taskName string) (*task, Error) {
+	taskData := task{}
+	query := "SELECT id, queue_name, data, done, loop_index, loop_count, next, interval, source, start_time, task_name FROM scheduler_tasks WHERE task_name = $1"
+	ctx.LogInfo("Query = %s, taskName = %s", query, taskName)
+	row := DBSession().GetOriginConnection(ctx).QueryRowContext(ctx, query, taskName)
+	if err := row.Scan(&taskData.ID, &taskData.QueueName, &taskData.Data, &taskData.Done, &taskData.LoopIndex, &taskData.LoopCount, &taskData.Next, &taskData.Interval, &taskData.Source, &taskData.StartTime, &taskData.TaskName); err != nil {
+		if err == sql.ErrNoRows {
+			ctx.LogInfo("Task %s not found", taskName)
+			return nil, ERROR_TASK_NOT_FOUND
+		}
+		ctx.LogError("Get task fail: %v, error = %s", taskName, err.Error())
+		return nil, ERROR_SERVER_ERROR
+	}
+
+	return &taskData, nil
+}

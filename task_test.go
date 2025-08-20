@@ -69,3 +69,26 @@ func TestStartTask_ReplaceTask(t *testing.T) {
 
 	time.Sleep(time.Second * 5)
 }
+
+func TestGetTaskByName(t *testing.T) {
+	ctx := coreContext
+
+	task := StartTaskRequest{
+		TaskName:  "test-queue",
+		QueueName: "test-queue",
+		Time:      time.Now().Add(time.Second * 60),
+		Loop:      0,
+		Interval:  0,
+		Data:      []byte("test-data"),
+	}
+
+	StartTask(ctx, &task)
+	defer StopTaskByTaskName(ctx, "test-queue")
+
+	taskData, err := GetTaskByName(ctx, "test-queue")
+	if err != nil {
+		t.Fatalf("Failed to get task: %v", err)
+	}
+
+	t.Logf("Task: %#v", *taskData)
+}
