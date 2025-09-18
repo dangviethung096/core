@@ -34,6 +34,10 @@ func connectToNatsQueue(queueUrl string) {
 	queueClient.connectWithReconnection()
 }
 
+type BrokerMessage struct {
+	*nats.Msg
+}
+
 func (client *natsClient) connectWithReconnection() {
 	// Set up connection options with reconnection
 	opts := []nats.Option{
@@ -157,6 +161,18 @@ func (client *natsClient) Publish(ctx Context, topic string, data []byte) Error 
 	}
 
 	return nil
+}
+
+func (client *natsClient) Request(ctx Context, topic string, data []byte) (BrokerMessage, Error) {
+	natsMsg, err := client.nc.Request(topic, data, Config.GetContextTimeout())
+	if err != nil {
+		ctx.LogError("Request fail: %s, error = %s", topic, err.Error())
+		return BrokerMessage{}, ERROR_CANNOT_REQUEST_QUEUE
+	}
+
+	return BrokerMessage{
+		Msg: natsMsg,
+	}, nil
 }
 
 // Add method to manually reconnect if needed

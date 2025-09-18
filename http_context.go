@@ -49,12 +49,25 @@ func getHttpContext(c *gin.Context) *HttpContext {
 	return ctx
 }
 
+func NewHttpContext() *HttpContext {
+	ctx := httpContextPool.Get().(*HttpContext)
+	ctx.Context = nil
+	ctx.timeout = contextTimeout
+	ctx.isResponseEnd = false
+	ctx.responseHeader = make(map[string][]string)
+	ctx.requestID = ID.GenerateID()
+	ctx.cancelFunc = func() {
+		ctx.LogInfo("Cancel context")
+	}
+	return ctx
+}
+
 /*
 * PutContext: Put context to pool
 * @params: Context
 * @return: void
  */
-func putHttpContext(ctx *HttpContext) {
+func PutHttpContext(ctx *HttpContext) {
 	// Release memory of context: urlParams, responseHeader, tempData
 	ctx.urlParams = nil
 	ctx.responseHeader = nil

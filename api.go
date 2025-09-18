@@ -42,7 +42,7 @@ func RegisterAPI[T any](url string, method string, handler Handler[T], middlewar
 		// Create a new context
 		ctx := getHttpContext(c)
 
-		defer putHttpContext(ctx)
+		defer PutHttpContext(ctx)
 		buildContext(ctx)
 
 		ctx.LogInfo("Request: Url = %s, method = %s, header = %#v", ctx.URL, ctx.Method, ctx.request.Header)

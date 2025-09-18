@@ -46,7 +46,7 @@ func RegisterWebsocket[T any](url string, handler WebsocketHandler[T], middlewar
 				buildContext(handshakeContext)
 				handshakeContext.requestID = ctx.GetContextID()
 				handshakeContext.writeError(err)
-				putHttpContext(handshakeContext)
+				PutHttpContext(handshakeContext)
 				return
 			}
 		}

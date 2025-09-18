@@ -82,4 +82,5 @@ var (
 	ERROR_INVALID_STRUCTURE_FOR_RESPONSE        Error = NewError(39, "Invalid structure for response")
 	ERROR_HTTP_RESPONSE_ERROR                   Error = NewError(40, "Http response error")
 	ERROR_TASK_NOT_FOUND                        Error = NewError(41, "Task not found")
+	ERROR_CANNOT_REQUEST_QUEUE                  Error = NewError(42, "Cannot request queue")
 )
