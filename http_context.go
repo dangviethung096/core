@@ -34,6 +34,8 @@ type HttpContext interface {
 	GetCookie(key string) (*http.Cookie, Error)
 	ResetCookie(name string)
 	SetCookie(key string, value string, maxAge int)
+	Query(key string) string
+	GetHeader(key string) string
 	SetTempData(key string, value any)
 	GetTempData(key string) any
 	EndResponse(statusCode int, header *http.Header, body []byte)
@@ -475,4 +477,12 @@ func (ctx *httpContext) EndResponse(statusCode int, header *http.Header, body []
 		}
 		ctx.rw.(http.Flusher).Flush()
 	}
+}
+
+func (ctx *httpContext) Query(key string) string {
+	return ctx.Context.Query(key)
+}
+
+func (ctx *httpContext) GetHeader(key string) string {
+	return ctx.Context.GetHeader(key)
 }
