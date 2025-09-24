@@ -6,4 +6,4 @@ package core
 * If it return Error, page will not be rendered
 * If it return nil, page will be rendered
  */
-type PageMiddleware func(*HttpContext, *PageRequest) Error
+type PageMiddleware func(HttpContext, *PageRequest) Error

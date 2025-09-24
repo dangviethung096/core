@@ -32,7 +32,7 @@ type PageResponse struct {
 	FunctionMap  map[string]any
 }
 
-type PageHandler func(ctx *HttpContext, request *PageRequest) (PageResponse, Error)
+type PageHandler func(ctx HttpContext, request *PageRequest) (PageResponse, Error)
 
 func RegisterPage(url string, handler PageHandler, middleware ...PageMiddleware) {
 	LogInfo("Register page: url = %s", url)

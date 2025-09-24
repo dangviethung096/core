@@ -247,12 +247,12 @@ func GetContextForTest() Context {
 	return ctx
 }
 
-func GetHttpContextForTest() *HttpContext {
-	ctx := httpContextPool.Get().(*HttpContext)
+func GetHttpContextForTest() *httpContext {
+	ctx := httpContextPool.Get().(httpContext)
 	ctx.requestID = ID.GenerateID()
 	// Init new request
 	ctx.rw = httptest.NewRecorder()
-	return ctx
+	return &ctx
 }
 
 /*

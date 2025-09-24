@@ -121,23 +121,23 @@ func ConvertUrlToNatsTopic(method string, url string) string {
 	return strings.ReplaceAll(urlTopic, "/", ".")
 }
 
-func buildNatsContext(ctx *HttpContext, msg *nats.Msg) HttpError {
+func buildNatsContext(ctx HttpContext, msg *nats.Msg) HttpError {
 
-	// Assign response writer and request
-	ctx.rw = ctx.Writer
-	ctx.request = ctx.Request
+	// // Assign response writer and request
+	// ctx.rw = ctx.Writer
+	// ctx.request = ctx.Request
 
-	// Get url
-	ctx.URL = ctx.Request.URL
-	ctx.Method = ctx.Request.Method
+	// // Get url
+	// ctx.URL = ctx.Request.URL
+	// ctx.Method = ctx.Request.Method
 
-	bodyData, err := ctx.GetRawData()
-	if err != nil {
-		LogError("Read request body fail. RequestId: %s, Error: %s", ctx.requestID, err.Error())
-		return HTTP_ERROR_READ_BODY_REQUEST_FAIL
-	}
+	// bodyData, err := ctx.GetRawData()
+	// if err != nil {
+	// 	LogError("Read request body fail. RequestId: %s, Error: %s", ctx.requestID, err.Error())
+	// 	return HTTP_ERROR_READ_BODY_REQUEST_FAIL
+	// }
 
-	ctx.requestBody = bodyData
+	// ctx.requestBody = bodyData
 	return nil
 }
 

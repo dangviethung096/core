@@ -11,11 +11,39 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type HttpContext interface {
+	Context
+	Next()
+	GetRequestHeader(key string) string
+	GetQueryParam(key string) string
+	GetArrayQueryParam(key string) []string
+	GetFormData(key string) string
+	SetResponseHeader(key string, value []string)
+	AddResponseHeader(key string, value string)
+	AddResponseHeaders(key string, values []string)
+	GetResponseHeader(key string) []string
+	RedirectURL(url string)
+	GetCancelFunc() func()
+	writeError(httpErr HttpError)
+	writeSuccess(httpRes HttpResponse)
+	writeDefaultSuccess()
+	endResponse(statusCode int, body string)
+	GetUrlParam(key string) string
+	GetContextID() string
+	GetTimeout() time.Duration
+	GetCookie(key string) (*http.Cookie, Error)
+	ResetCookie(name string)
+	SetCookie(key string, value string, maxAge int)
+	SetTempData(key string, value any)
+	GetTempData(key string) any
+	EndResponse(statusCode int, header *http.Header, body []byte)
+}
+
 /*
 * Context type: which carries deadlines, cancellation signals,
 * and other request-scoped values across API boundaries and between processes.
  */
-type HttpContext struct {
+type httpContext struct {
 	*gin.Context
 	URL            *url.URL
 	Method         string
@@ -36,12 +64,21 @@ type HttpContext struct {
 * GetContext: Get context from pool
 * @return: Context
  */
-func getHttpContext(c *gin.Context) *HttpContext {
-	ctx := httpContextPool.Get().(*HttpContext)
+func getHttpContext(c *gin.Context) *httpContext {
+	ctx := httpContextPool.Get().(*httpContext)
 	ctx.Context = c
 	ctx.timeout = contextTimeout
 	ctx.isResponseEnd = false
-	ctx.responseHeader = make(map[string][]string)
+	// Clear the maps instead of creating new ones
+	for k := range ctx.responseHeader {
+		delete(ctx.responseHeader, k)
+	}
+	for k := range ctx.urlParams {
+		delete(ctx.urlParams, k)
+	}
+	for k := range ctx.tempData {
+		delete(ctx.tempData, k)
+	}
 	ctx.requestID = ID.GenerateID()
 	ctx.cancelFunc = func() {
 		ctx.LogInfo("Cancel context")
@@ -49,12 +86,21 @@ func getHttpContext(c *gin.Context) *HttpContext {
 	return ctx
 }
 
-func NewHttpContext() *HttpContext {
-	ctx := httpContextPool.Get().(*HttpContext)
+func NewHttpContext() *httpContext {
+	ctx := httpContextPool.Get().(*httpContext)
 	ctx.Context = nil
 	ctx.timeout = contextTimeout
 	ctx.isResponseEnd = false
-	ctx.responseHeader = make(map[string][]string)
+	// Clear the maps instead of creating new ones
+	for k := range ctx.responseHeader {
+		delete(ctx.responseHeader, k)
+	}
+	for k := range ctx.urlParams {
+		delete(ctx.urlParams, k)
+	}
+	for k := range ctx.tempData {
+		delete(ctx.tempData, k)
+	}
 	ctx.requestID = ID.GenerateID()
 	ctx.cancelFunc = func() {
 		ctx.LogInfo("Cancel context")
@@ -67,14 +113,19 @@ func NewHttpContext() *HttpContext {
 * @params: Context
 * @return: void
  */
-func PutHttpContext(ctx *HttpContext) {
+func PutHttpContext(ctx HttpContext) {
+	if ctx == nil {
+		return
+	}
+
+	ctxValue := ctx.(*httpContext)
 	// Release memory of context: urlParams, responseHeader, tempData
-	ctx.urlParams = nil
-	ctx.responseHeader = nil
-	ctx.tempData = nil
-	ctx.cancelFunc = nil
+	ctxValue.urlParams = nil
+	ctxValue.responseHeader = nil
+	ctxValue.tempData = nil
+	ctxValue.cancelFunc = nil
 	// Put context to pool
-	httpContextPool.Put(ctx)
+	httpContextPool.Put(ctxValue)
 }
 
 /*
@@ -82,7 +133,7 @@ func PutHttpContext(ctx *HttpContext) {
 * This funciton must to be called when you want to call next middleware
 * @return: void
  */
-func (ctx *HttpContext) Next() {
+func (ctx *httpContext) Next() {
 	ctx.isRequestEnd = false
 }
 
@@ -91,7 +142,7 @@ func (ctx *HttpContext) Next() {
 * @params: key string
 * @return: string
  */
-func (ctx *HttpContext) GetRequestHeader(key string) string {
+func (ctx *httpContext) GetRequestHeader(key string) string {
 	return ctx.request.Header.Get(key)
 }
 
@@ -100,7 +151,7 @@ func (ctx *HttpContext) GetRequestHeader(key string) string {
 * @params: key string
 * @return: string
  */
-func (ctx *HttpContext) GetQueryParam(key string) string {
+func (ctx *httpContext) GetQueryParam(key string) string {
 	return ctx.request.URL.Query().Get(key)
 }
 
@@ -109,7 +160,7 @@ func (ctx *HttpContext) GetQueryParam(key string) string {
 * @params: key string
 * @return: []string
  */
-func (ctx *HttpContext) GetArrayQueryParam(key string) []string {
+func (ctx *httpContext) GetArrayQueryParam(key string) []string {
 	return ctx.request.URL.Query()[key]
 }
 
@@ -119,11 +170,11 @@ func (ctx *HttpContext) GetArrayQueryParam(key string) []string {
 * @return string
 * if key exist in form data return value of key, otherwise return empty string
  */
-func (ctx *HttpContext) GetFormData(key string) string {
+func (ctx *httpContext) GetFormData(key string) string {
 	return ctx.request.PostForm.Get(key)
 }
 
-func (ctx *HttpContext) SetResponseHeader(key string, value []string) {
+func (ctx *httpContext) SetResponseHeader(key string, value []string) {
 	if value != nil {
 		ctx.responseHeader[key] = value
 	} else {
@@ -131,7 +182,7 @@ func (ctx *HttpContext) SetResponseHeader(key string, value []string) {
 	}
 }
 
-func (ctx *HttpContext) AddResponseHeader(key string, value string) {
+func (ctx *httpContext) AddResponseHeader(key string, value string) {
 	if val, ok := ctx.responseHeader[key]; ok && val != nil {
 		val = append(val, value)
 		ctx.responseHeader[key] = val
@@ -140,7 +191,7 @@ func (ctx *HttpContext) AddResponseHeader(key string, value string) {
 	}
 }
 
-func (ctx *HttpContext) AddResponseHeaders(key string, values []string) {
+func (ctx *httpContext) AddResponseHeaders(key string, values []string) {
 	if val, ok := ctx.responseHeader[key]; ok && val != nil {
 		val = append(val, values...)
 		ctx.responseHeader[key] = val
@@ -156,7 +207,7 @@ func (ctx *HttpContext) AddResponseHeaders(key string, values []string) {
 /*
 * GetResponseHeader
  */
-func (ctx *HttpContext) GetResponseHeader(key string) []string {
+func (ctx *httpContext) GetResponseHeader(key string) []string {
 	if val, ok := ctx.responseHeader[key]; ok && val != nil {
 		return val
 	}
@@ -166,7 +217,7 @@ func (ctx *HttpContext) GetResponseHeader(key string) []string {
 /*
 * Redirect url
  */
-func (ctx *HttpContext) RedirectURL(url string) {
+func (ctx *httpContext) RedirectURL(url string) {
 	ctx.isResponseEnd = true
 	http.Redirect(ctx.rw, ctx.request, url, http.StatusSeeOther)
 }
@@ -176,14 +227,14 @@ func (ctx *HttpContext) RedirectURL(url string) {
 * @params: void
 * @return: func()
  */
-func (ctx *HttpContext) GetCancelFunc() func() {
+func (ctx *httpContext) GetCancelFunc() func() {
 	return ctx.cancelFunc
 }
 
 /*
 * writeError: write error http response to user
  */
-func (ctx *HttpContext) writeError(httpErr HttpError) {
+func (ctx *httpContext) writeError(httpErr HttpError) {
 	ctx.rw.Header().Set("Content-Type", "application/json")
 	ctx.rw.Header().Set("Request-Id", ctx.requestID)
 	for key, values := range ctx.responseHeader {
@@ -218,7 +269,7 @@ func (ctx *HttpContext) writeError(httpErr HttpError) {
 /*
 * writeSuccess: write success http response to user
  */
-func (ctx *HttpContext) writeSuccess(httpRes HttpResponse) {
+func (ctx *httpContext) writeSuccess(httpRes HttpResponse) {
 	ctx.rw.Header().Set("Request-Id", ctx.requestID)
 
 	for key, values := range ctx.responseHeader {
@@ -262,7 +313,7 @@ func (ctx *HttpContext) writeSuccess(httpRes HttpResponse) {
 	ctx.endResponse(int(httpRes.GetStatusCode()), string(body))
 }
 
-func (ctx *HttpContext) writeDefaultSuccess() {
+func (ctx *httpContext) writeDefaultSuccess() {
 	ctx.rw.Header().Set("Request-Id", ctx.requestID)
 
 	for key, values := range ctx.responseHeader {
@@ -299,7 +350,7 @@ func (ctx *HttpContext) writeDefaultSuccess() {
 /*
 * endResponse: call write header if it is not called before and write body to writer
  */
-func (ctx *HttpContext) endResponse(statusCode int, body string) {
+func (ctx *httpContext) endResponse(statusCode int, body string) {
 	if !ctx.isResponseEnd {
 		ctx.isResponseEnd = true
 		// end response
@@ -312,7 +363,7 @@ func (ctx *HttpContext) endResponse(statusCode int, body string) {
 /*
 * endResponse: call write header if it is not called before and write body to writer
  */
-func (ctx *HttpContext) GetUrlParam(key string) string {
+func (ctx *httpContext) GetUrlParam(key string) string {
 	return ctx.urlParams[key]
 }
 
@@ -321,7 +372,7 @@ func (ctx *HttpContext) GetUrlParam(key string) string {
 * @params: void
 * @return: string
  */
-func (ctx *HttpContext) GetContextID() string {
+func (ctx *httpContext) GetContextID() string {
 	return ctx.requestID
 }
 
@@ -329,7 +380,7 @@ func (ctx *HttpContext) GetContextID() string {
 * GetTimeout: Get the timeout
 * @params: void
  */
-func (ctx *HttpContext) GetTimeout() time.Duration {
+func (ctx *httpContext) GetTimeout() time.Duration {
 	return ctx.timeout
 }
 
@@ -340,7 +391,7 @@ func (ctx *HttpContext) GetTimeout() time.Duration {
 * if key exist in cookie return cookie, otherwise return error
 * Error: ERROR_FROM_LIBRARY
  */
-func (ctx *HttpContext) GetCookie(key string) (*http.Cookie, Error) {
+func (ctx *httpContext) GetCookie(key string) (*http.Cookie, Error) {
 	cookie, err := ctx.request.Cookie(key)
 	if err != nil {
 		return cookie, NewError(ERROR_FROM_LIBRARY, err.Error())
@@ -353,7 +404,7 @@ func (ctx *HttpContext) GetCookie(key string) (*http.Cookie, Error) {
 * @params: name string, value string, maxAge int
 * @return: void
  */
-func (ctx *HttpContext) ResetCookie(name string) {
+func (ctx *httpContext) ResetCookie(name string) {
 	http.SetCookie(ctx.rw, &http.Cookie{
 		Name:   name,
 		Value:  BLANK,
@@ -367,7 +418,7 @@ func (ctx *HttpContext) ResetCookie(name string) {
 * @params: key string, value string, maxAge int
 * @return: void
  */
-func (ctx *HttpContext) SetCookie(key string, value string, maxAge int) {
+func (ctx *httpContext) SetCookie(key string, value string, maxAge int) {
 	http.SetCookie(ctx.rw, &http.Cookie{
 		Name:     key,
 		Value:    value,
@@ -384,7 +435,7 @@ func (ctx *HttpContext) SetCookie(key string, value string, maxAge int) {
 * @params: key string, value any
 * @return: void
  */
-func (ctx *HttpContext) SetTempData(key string, value any) {
+func (ctx *httpContext) SetTempData(key string, value any) {
 	if ctx.tempData == nil {
 		ctx.tempData = make(map[string]any)
 	}
@@ -397,7 +448,7 @@ func (ctx *HttpContext) SetTempData(key string, value any) {
 * @params: key string
 * @return: any
  */
-func (ctx *HttpContext) GetTempData(key string) any {
+func (ctx *httpContext) GetTempData(key string) any {
 	return ctx.tempData[key]
 }
 
@@ -406,7 +457,7 @@ func (ctx *HttpContext) GetTempData(key string) any {
 * @params: statusCode int, header *http.Header, body []byte
 * @return: void
  */
-func (ctx *HttpContext) EndResponse(statusCode int, header *http.Header, body []byte) {
+func (ctx *httpContext) EndResponse(statusCode int, header *http.Header, body []byte) {
 	if !ctx.isResponseEnd {
 		ctx.isResponseEnd = true
 

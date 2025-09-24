@@ -14,7 +14,7 @@ import (
 * @params: format string, args ...any
 * @return: void
  */
-func (ctx *HttpContext) LogInfo(format string, args ...any) {
+func (ctx *httpContext) LogInfo(format string, args ...any) {
 	logStr, logInfo := ctx.format(format, args...)
 	logInfo.Level = "INFO"
 	logStr = "[INFO] " + logStr
@@ -29,7 +29,7 @@ func (ctx *HttpContext) LogInfo(format string, args ...any) {
 * @params: format string, args ...any
 * @return: void
  */
-func (ctx *HttpContext) LogDebug(format string, args ...any) {
+func (ctx *httpContext) LogDebug(format string, args ...any) {
 	logStr, logInfo := ctx.format(format, args...)
 	logInfo.Level = "DEBUG"
 	logStr = "[DEBUG] " + logStr
@@ -44,7 +44,7 @@ func (ctx *HttpContext) LogDebug(format string, args ...any) {
 * @params: format string, args ...any
 * @return: void
  */
-func (ctx *HttpContext) LogError(format string, args ...any) {
+func (ctx *httpContext) LogError(format string, args ...any) {
 	logStr, logInfo := ctx.format(format, args...)
 	logInfo.Level = "ERROR"
 	logStr = "[ERROR] " + logStr
@@ -59,7 +59,7 @@ func (ctx *HttpContext) LogError(format string, args ...any) {
 * @params: format string, args ...any
 * @return: void
  */
-func (ctx *HttpContext) LogWarning(format string, args ...any) {
+func (ctx *httpContext) LogWarning(format string, args ...any) {
 	logStr, logInfo := ctx.format(format, args...)
 	logInfo.Level = "WARNING"
 	logStr = "[WARNING] " + logStr
@@ -74,7 +74,7 @@ func (ctx *HttpContext) LogWarning(format string, args ...any) {
 * @params: format string, args ...any
 * @return: void
  */
-func (ctx *HttpContext) LogFatal(format string, args ...any) {
+func (ctx *httpContext) LogFatal(format string, args ...any) {
 	logStr, logInfo := ctx.format(format, args...)
 	logInfo.Level = "FATAL"
 	logStr = "[FATAL] " + logStr
@@ -84,7 +84,7 @@ func (ctx *HttpContext) LogFatal(format string, args ...any) {
 	}
 }
 
-func (ctx *HttpContext) LogPanic(format string, args ...any) {
+func (ctx *httpContext) LogPanic(format string, args ...any) {
 	logStr, logInfo := ctx.format(format, args...)
 	logInfo.Level = "PANIC"
 	logStr = "[PANIC] " + logStr
@@ -100,7 +100,7 @@ func (ctx *HttpContext) LogPanic(format string, args ...any) {
 * @params: format string, args ...any
 * @return: string
  */
-func (ctx *HttpContext) format(format string, args ...any) (string, logMessage) {
+func (ctx *httpContext) format(format string, args ...any) (string, logMessage) {
 	// Format the ctx
 	logStr := fmt.Sprintf(format, args...)
 	logInfo := logMessage{

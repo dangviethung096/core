@@ -50,7 +50,7 @@ func TestAPI[T any](apiInfo TestApiInfo[T]) (HttpResponse, HttpError) {
 	return apiInfo.Handler(ctx, req)
 }
 
-func TestAPIWithContext[T any](ctx *HttpContext, apiInfo TestApiInfo[T]) (HttpResponse, HttpError) {
+func TestAPIWithContext[T any](ctx *httpContext, apiInfo TestApiInfo[T]) (HttpResponse, HttpError) {
 	// Get url
 	ctx.URL, _ = url.Parse(apiInfo.URL)
 

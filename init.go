@@ -116,10 +116,11 @@ func Init(configFile string) {
 	// Http context pool
 	httpContextPool = sync.Pool{
 		New: func() any {
-			return &HttpContext{
+			return &httpContext{
 				requestBody:    make([]byte, 16384),
 				urlParams:      make(map[string]string),
 				responseHeader: make(map[string][]string),
+				tempData:       make(map[string]any),
 			}
 		},
 	}

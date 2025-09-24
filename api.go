@@ -18,9 +18,9 @@ type Url struct {
 	Params []string
 }
 
-type ApiMiddleware func(ctx *HttpContext) HttpError
+type ApiMiddleware func(ctx HttpContext) HttpError
 
-type Handler[T any] func(ctx *HttpContext, request T) (HttpResponse, HttpError)
+type Handler[T any] func(ctx HttpContext, request T) (HttpResponse, HttpError)
 
 /*
 * Register api: register api to routeMap
@@ -144,7 +144,7 @@ func initRequest[T any]() T {
 	return ref.Interface().(T)
 }
 
-func buildContext(ctx *HttpContext) HttpError {
+func buildContext(ctx *httpContext) HttpError {
 	// Assign response writer and request
 	ctx.rw = ctx.Writer
 	ctx.request = ctx.Request

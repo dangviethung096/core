@@ -11,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type FileHandler func(ctx *HttpContext, filePath string) (HttpResponse, HttpError)
+type FileHandler func(ctx HttpContext, filePath string) (HttpResponse, HttpError)
 
 func RegisterFileUpload(url string, method string, handler FileHandler, middlewares ...ApiMiddleware) {
 	LogInfo("RegisterFileUpload: url = %s, method = %s", url, method)
