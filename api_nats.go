@@ -13,7 +13,8 @@ import (
 )
 
 func RegisterNatsAPI[T any](url string, method string, handler Handler[T], middlewares ...ApiMiddleware) {
-	LogInfo("Register api: %s %s", method, url)
+	subscribeTopic := ConvertUrlToNatsTopic(method, url)
+	LogInfo("Register api: %s %s = %s", method, url, subscribeTopic)
 
 	// Check if T is a struct
 	tType := reflect.TypeOf((*T)(nil)).Elem()
@@ -21,7 +22,7 @@ func RegisterNatsAPI[T any](url string, method string, handler Handler[T], middl
 		LogFatal("Handler request parameter must be a struct, got: %s", tType.Kind())
 	}
 
-	_, err := queueClient.nc.Subscribe(ConvertUrlToNatsTopic(method, url), func(msg *nats.Msg) {
+	_, err := queueClient.nc.Subscribe(subscribeTopic, func(msg *nats.Msg) {
 		// Create a new context
 		request := Request{}
 		proto.Unmarshal(msg.Data, &request)
@@ -107,6 +108,7 @@ func RegisterNatsAPI[T any](url string, method string, handler Handler[T], middl
 }
 
 func ConvertUrlToNatsTopic(method string, url string) string {
+	url = strings.Trim(url, "/")
 	urlTopic := fmt.Sprintf("%s.%s", method, url)
 	return strings.ReplaceAll(urlTopic, "/", ".")
 }
