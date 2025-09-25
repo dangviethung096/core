@@ -15,6 +15,7 @@ var mainDbSession dbSession
 var secondaryDbSession dbSession
 var commonApiMiddlewares []ApiMiddleware
 var contextPool sync.Pool
+var natsContextPool sync.Pool
 var httpContextPool sync.Pool
 var websocketContextPool sync.Pool
 var Config CoreConfig
@@ -132,6 +133,17 @@ func Init(configFile string) {
 				timeout:    time.Duration(0),
 				cancelFunc: nil,
 				tempData:   make(map[string]any),
+			}
+		},
+	}
+
+	natsContextPool = sync.Pool{
+		New: func() any {
+			return &natsContext{
+				data:         make(map[any]any),
+				timeout:      contextTimeout,
+				cancelFunc:   func() {},
+				isEndRequest: false,
 			}
 		},
 	}

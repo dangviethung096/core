@@ -84,3 +84,5 @@ var (
 	ERROR_TASK_NOT_FOUND                        Error = NewError(41, "Task not found")
 	ERROR_CANNOT_REQUEST_QUEUE                  Error = NewError(42, "Cannot request queue")
 )
+
+var ERROR_NATS_INTERNAL_SERVER = []byte(`{"code":500,"message":"Internal server error","errorData":null,"data":null}`)

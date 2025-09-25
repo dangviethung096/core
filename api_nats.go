@@ -1,16 +1,15 @@
 package core
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"reflect"
 	"strings"
 
 	"github.com/go-playground/validator"
 	"github.com/nats-io/nats.go"
+	"google.golang.org/protobuf/proto"
 )
 
 func RegisterNatsAPI[T any](url string, method string, handler Handler[T], middlewares ...ApiMiddleware) {
@@ -24,12 +23,14 @@ func RegisterNatsAPI[T any](url string, method string, handler Handler[T], middl
 
 	_, err := queueClient.nc.Subscribe(ConvertUrlToNatsTopic(method, url), func(msg *nats.Msg) {
 		// Create a new context
-		ctx := NewHttpContext()
+		request := Request{}
+		proto.Unmarshal(msg.Data, &request)
 
-		defer PutHttpContext(ctx)
-		buildContext(ctx)
+		ctx := generateNatsContextFromRequest(&request)
+		ctx.msg = msg
+		defer putNatsContext(ctx)
 
-		ctx.LogInfo("Request: Url = %s, method = %s, header = %#v", ctx.URL, ctx.Method, ctx.request.Header)
+		ctx.LogInfo("Request: Url = %s, method = %s, header = %#v", ctx.request.Url, ctx.request.Method, ctx.request.Headers)
 
 		// Append to common middleware
 		middlewareList := []ApiMiddleware{}
@@ -38,8 +39,8 @@ func RegisterNatsAPI[T any](url string, method string, handler Handler[T], middl
 
 		// Call middleware of function
 		for _, middleware := range middlewareList {
-			ctx.isRequestEnd = true
-			if err := middleware(ctx); ctx.isRequestEnd {
+			ctx.isEndRequest = true
+			if err := middleware(ctx); ctx.isEndRequest {
 				if err != nil {
 					ctx.writeError(err)
 				}
@@ -50,27 +51,15 @@ func RegisterNatsAPI[T any](url string, method string, handler Handler[T], middl
 		// Init request
 		req := initRequest[T]()
 
-		ctx.LogInfo("Parse uri tag to req")
-		// Parse uri tag to req
-		if err := ctx.ShouldBindUri(&req); err != nil {
-			ctx.LogError("Bind uri error: %s", err.Error())
-			ctx.writeError(NewHttpError(http.StatusBadRequest, ERROR_BAD_BODY_REQUEST, err.Error(), nil))
-			return
-		}
-
 		ctx.LogInfo("Parse json tag to req")
 		requestContentType := strings.ToLower(ctx.GetRequestHeader(CONTENT_TYPE_KEY))
-		if len(ctx.requestBody) != 0 {
+		if len(ctx.request.Body) != 0 {
 			if strings.Contains(requestContentType, JSON_CONTENT_TYPE) {
-				if err := json.Unmarshal(ctx.requestBody, &req); err != nil {
+				if err := json.Unmarshal(ctx.request.Body, &req); err != nil {
 					ctx.LogError("Bind json error: %s", err.Error())
 					ctx.writeError(NewHttpError(http.StatusBadRequest, ERROR_BAD_BODY_REQUEST, err.Error(), nil))
 					return
 				}
-			} else if strings.Contains(requestContentType, FORM_URLENCODED_CONTENT_TYPE) {
-				buffer := bytes.NewBuffer(ctx.requestBody)
-				ctx.request.Body = io.NopCloser(buffer)
-				ctx.request.ParseForm()
 			}
 		}
 
@@ -84,29 +73,30 @@ func RegisterNatsAPI[T any](url string, method string, handler Handler[T], middl
 			}
 			ctx.LogError("Validate go struct with tag error: %s", errMessage)
 			ctx.writeError(NewHttpError(http.StatusBadRequest, ERROR_BAD_BODY_REQUEST, errMessage, nil))
+
 			return
 		}
 
 		ctx.LogInfo("Call handler")
 		// Call handler
-		requestBody := strings.ReplaceAll(string(ctx.requestBody), "\r", "")
+		requestBody := strings.ReplaceAll(string(ctx.request.Body), "\r", "")
 		requestBody = strings.ReplaceAll(requestBody, "\n", "")
 
-		ctx.LogInfo("Request: Url = %s, method = %s, header = %#v, body = %s", ctx.URL, ctx.Method, ctx.request.Header, requestBody)
+		ctx.LogInfo("Request: Url = %s, method = %s, header = %#v, body = %s", ctx.request.Url, ctx.request.Method, ctx.request.Headers, requestBody)
 		res, err := handler(ctx, req)
 		if err != nil {
-			ctx.LogError("Response error: Url = %s, body = %s", ctx.URL, err.Error())
+			ctx.LogError("Response error: Url = %s, body = %s", ctx.request.Url, err.Error())
 			ctx.writeError(err)
 			return
 		}
 
 		if res != nil {
-			ctx.LogInfo("Response: Url = %s, body = %+v", ctx.URL, res.GetBody())
+			ctx.LogInfo("Response: Url = %s, body = %+v", ctx.request.Url, res.GetBody())
 			ctx.writeSuccess(res)
 			return
 		}
 
-		ctx.LogInfo("Response: Url = %s, body = nil", ctx.URL)
+		ctx.LogInfo("Response: Url = %s, body = nil", ctx.request.Url)
 		ctx.writeDefaultSuccess()
 
 	})
@@ -119,27 +109,4 @@ func RegisterNatsAPI[T any](url string, method string, handler Handler[T], middl
 func ConvertUrlToNatsTopic(method string, url string) string {
 	urlTopic := fmt.Sprintf("%s.%s", method, url)
 	return strings.ReplaceAll(urlTopic, "/", ".")
-}
-
-func buildNatsContext(ctx HttpContext, msg *nats.Msg) HttpError {
-
-	// // Assign response writer and request
-	// ctx.rw = ctx.Writer
-	// ctx.request = ctx.Request
-
-	// // Get url
-	// ctx.URL = ctx.Request.URL
-	// ctx.Method = ctx.Request.Method
-
-	// bodyData, err := ctx.GetRawData()
-	// if err != nil {
-	// 	LogError("Read request body fail. RequestId: %s, Error: %s", ctx.requestID, err.Error())
-	// 	return HTTP_ERROR_READ_BODY_REQUEST_FAIL
-	// }
-
-	// ctx.requestBody = bodyData
-	return nil
-}
-
-type NatsHttpRequest struct {
 }

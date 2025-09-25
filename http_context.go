@@ -24,10 +24,6 @@ type HttpContext interface {
 	GetResponseHeader(key string) []string
 	RedirectURL(url string)
 	GetCancelFunc() func()
-	writeError(httpErr HttpError)
-	writeSuccess(httpRes HttpResponse)
-	writeDefaultSuccess()
-	endResponse(statusCode int, body string)
 	GetUrlParam(key string) string
 	GetContextID() string
 	GetTimeout() time.Duration
