@@ -140,7 +140,7 @@ func Init(configFile string) {
 	natsContextPool = sync.Pool{
 		New: func() any {
 			return &natsContext{
-				data:         make(map[any]any),
+				data:         make(map[string]any),
 				timeout:      contextTimeout,
 				cancelFunc:   func() {},
 				isEndRequest: false,

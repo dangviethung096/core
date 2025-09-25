@@ -13,6 +13,11 @@ import (
 func generateNatsContextFromRequest(request *Request) *natsContext {
 	ctx := natsContextPool.Get().(*natsContext)
 	ctx.request = request
+
+	for key, value := range request.Data {
+		ctx.data[key] = value
+	}
+
 	ctx.response = &Response{
 		Headers:      make(map[string]*Header),
 		ResponseBody: nil,
@@ -39,17 +44,13 @@ type natsContext struct {
 	context.Context
 	request  *Request
 	response *Response
-	data     map[any]any
 	msg      *nats.Msg
 
 	timeout    time.Duration
 	cancelFunc func()
 
+	data         map[string]any
 	isEndRequest bool
-}
-
-func (ctx *natsContext) Value(key any) any {
-	return ctx.data[key]
 }
 
 func (ctx *natsContext) GetContextID() string {

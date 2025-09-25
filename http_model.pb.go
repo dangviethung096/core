@@ -326,22 +326,19 @@ func (x *Cookie) GetUnparsed() []string {
 }
 
 type Request struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
-	Url               string                 `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
-	Method            string                 `protobuf:"bytes,2,opt,name=method,proto3" json:"method,omitempty"`
-	Headers           map[string]*Header     `protobuf:"bytes,3,rep,name=headers,proto3" json:"headers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Body              []byte                 `protobuf:"bytes,4,opt,name=body,proto3" json:"body,omitempty"`
-	QueryParams       map[string]*QueryParam `protobuf:"bytes,5,rep,name=queryParams,proto3" json:"queryParams,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	UrlParams         map[string]string      `protobuf:"bytes,6,rep,name=urlParams,proto3" json:"urlParams,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	ContextId         string                 `protobuf:"bytes,7,opt,name=context_id,json=contextId,proto3" json:"context_id,omitempty"`
-	Data              map[string]string      `protobuf:"bytes,8,rep,name=data,proto3" json:"data,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	RequestUser       string                 `protobuf:"bytes,9,opt,name=request_user,json=requestUser,proto3" json:"request_user,omitempty"`
-	RoleId            string                 `protobuf:"bytes,10,opt,name=role_id,json=roleId,proto3" json:"role_id,omitempty"`
-	IsSystemAdminUser bool                   `protobuf:"varint,11,opt,name=is_system_admin_user,json=isSystemAdminUser,proto3" json:"is_system_admin_user,omitempty"`
-	Cookies           map[string]*Cookie     `protobuf:"bytes,12,rep,name=cookies,proto3" json:"cookies,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	FormData          map[string]*FormData   `protobuf:"bytes,13,rep,name=formData,proto3" json:"formData,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Url           string                 `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
+	Method        string                 `protobuf:"bytes,2,opt,name=method,proto3" json:"method,omitempty"`
+	Headers       map[string]*Header     `protobuf:"bytes,3,rep,name=headers,proto3" json:"headers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Body          []byte                 `protobuf:"bytes,4,opt,name=body,proto3" json:"body,omitempty"`
+	QueryParams   map[string]*QueryParam `protobuf:"bytes,5,rep,name=queryParams,proto3" json:"queryParams,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	UrlParams     map[string]string      `protobuf:"bytes,6,rep,name=urlParams,proto3" json:"urlParams,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	ContextId     string                 `protobuf:"bytes,7,opt,name=context_id,json=contextId,proto3" json:"context_id,omitempty"`
+	Data          map[string]string      `protobuf:"bytes,8,rep,name=data,proto3" json:"data,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Cookies       map[string]*Cookie     `protobuf:"bytes,9,rep,name=cookies,proto3" json:"cookies,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	FormData      map[string]*FormData   `protobuf:"bytes,10,rep,name=formData,proto3" json:"formData,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Request) Reset() {
@@ -428,27 +425,6 @@ func (x *Request) GetData() map[string]string {
 		return x.Data
 	}
 	return nil
-}
-
-func (x *Request) GetRequestUser() string {
-	if x != nil {
-		return x.RequestUser
-	}
-	return ""
-}
-
-func (x *Request) GetRoleId() string {
-	if x != nil {
-		return x.RoleId
-	}
-	return ""
-}
-
-func (x *Request) GetIsSystemAdminUser() bool {
-	if x != nil {
-		return x.IsSystemAdminUser
-	}
-	return false
 }
 
 func (x *Request) GetCookies() map[string]*Cookie {
@@ -564,7 +540,7 @@ const file_http_model_proto_rawDesc = "" +
 	"\tsame_site\x18\v \x01(\x05R\bsameSite\x12 \n" +
 	"\vpartitioned\x18\f \x01(\bR\vpartitioned\x12\x10\n" +
 	"\x03raw\x18\r \x01(\tR\x03raw\x12\x1a\n" +
-	"\bunparsed\x18\x0e \x03(\tR\bunparsed\"\xcd\a\n" +
+	"\bunparsed\x18\x0e \x03(\tR\bunparsed\"\xe0\x06\n" +
 	"\aRequest\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url\x12\x16\n" +
 	"\x06method\x18\x02 \x01(\tR\x06method\x124\n" +
@@ -574,13 +550,10 @@ const file_http_model_proto_rawDesc = "" +
 	"\turlParams\x18\x06 \x03(\v2\x1c.core.Request.UrlParamsEntryR\turlParams\x12\x1d\n" +
 	"\n" +
 	"context_id\x18\a \x01(\tR\tcontextId\x12+\n" +
-	"\x04data\x18\b \x03(\v2\x17.core.Request.DataEntryR\x04data\x12!\n" +
-	"\frequest_user\x18\t \x01(\tR\vrequestUser\x12\x17\n" +
-	"\arole_id\x18\n" +
-	" \x01(\tR\x06roleId\x12/\n" +
-	"\x14is_system_admin_user\x18\v \x01(\bR\x11isSystemAdminUser\x124\n" +
-	"\acookies\x18\f \x03(\v2\x1a.core.Request.CookiesEntryR\acookies\x127\n" +
-	"\bformData\x18\r \x03(\v2\x1b.core.Request.FormDataEntryR\bformData\x1aH\n" +
+	"\x04data\x18\b \x03(\v2\x17.core.Request.DataEntryR\x04data\x124\n" +
+	"\acookies\x18\t \x03(\v2\x1a.core.Request.CookiesEntryR\acookies\x127\n" +
+	"\bformData\x18\n" +
+	" \x03(\v2\x1b.core.Request.FormDataEntryR\bformData\x1aH\n" +
 	"\fHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\"\n" +
 	"\x05value\x18\x02 \x01(\v2\f.core.HeaderR\x05value:\x028\x01\x1aP\n" +

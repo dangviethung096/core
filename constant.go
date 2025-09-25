@@ -31,6 +31,7 @@ const (
 	ERROR_CODE_FROM_MQTT               = 105
 	ERROR_CODE_FROM_ELASTICSEARCH      = 106
 	ERROR_CODE_FROM_COOKIE             = 107
+	ERROR_CODE_BAD_REQUEST             = 108
 )
 
 // Scheduler

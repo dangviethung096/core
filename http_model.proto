@@ -45,11 +45,8 @@ message Request {
   map<string, string> urlParams = 6;
   string context_id = 7;
   map<string, string> data = 8;
-  string request_user = 9;
-  string role_id = 10;
-  bool is_system_admin_user = 11;
-  map<string, Cookie> cookies = 12;
-  map<string, FormData> formData = 13;
+  map<string, Cookie> cookies = 9;
+  map<string, FormData> formData = 10;
 }
 
 message Response {
