@@ -122,6 +122,7 @@ func PutHttpContext(ctx HttpContext) {
 	ctxValue.responseHeader = nil
 	ctxValue.tempData = nil
 	ctxValue.cancelFunc = nil
+	ctxValue.Context = nil
 	// Put context to pool
 	httpContextPool.Put(ctxValue)
 }
