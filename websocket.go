@@ -42,7 +42,7 @@ func RegisterWebsocket[T any](url string, handler WebsocketHandler[T], middlewar
 		// Run middlewares
 		for _, middleware := range middlewares {
 			if err := middleware(ctx, ctx.Writer, ctx.Request); err != nil {
-				handshakeContext := getHttpContext(ctx.Context)
+				handshakeContext := GetHttpContext(ctx.Context)
 				buildContext(handshakeContext)
 				handshakeContext.requestID = ctx.GetContextID()
 				handshakeContext.writeError(err)

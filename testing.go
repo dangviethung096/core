@@ -24,7 +24,7 @@ func TestAPI[T any](apiInfo TestApiInfo[T]) (HttpResponse, HttpError) {
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	// Create a new context
-	ctx := getHttpContext(c)
+	ctx := GetHttpContext(c)
 	defer PutHttpContext(ctx)
 
 	// Get url

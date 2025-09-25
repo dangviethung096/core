@@ -40,7 +40,7 @@ func RegisterAPI[T any](url string, method string, handler Handler[T], middlewar
 	// Create a new handler
 	ginHandler := func(c *gin.Context) {
 		// Create a new context
-		ctx := getHttpContext(c)
+		ctx := GetHttpContext(c)
 
 		defer PutHttpContext(ctx)
 		buildContext(ctx)

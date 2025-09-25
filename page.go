@@ -49,7 +49,7 @@ func RegisterPage(url string, handler PageHandler, middleware ...PageMiddleware)
 	}
 
 	router.GET(url, func(c *gin.Context) {
-		ctx := getHttpContext(c)
+		ctx := GetHttpContext(c)
 		defer PutHttpContext(ctx)
 		ctx.LogInfo("Handle page: %s, requestID = %s", ctx.Request.URL.String(), ctx.requestID)
 

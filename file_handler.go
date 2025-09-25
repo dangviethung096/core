@@ -22,7 +22,7 @@ func RegisterFileUpload(url string, method string, handler FileHandler, middlewa
 
 	h := func(c *gin.Context) {
 		// Create a new context
-		ctx := getHttpContext(c)
+		ctx := GetHttpContext(c)
 		defer PutHttpContext(ctx)
 
 		ctx.LogInfo("Handle file upload: url = %s, method = %s", ctx.URL, ctx.Method)

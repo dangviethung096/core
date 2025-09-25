@@ -62,7 +62,7 @@ type httpContext struct {
 * GetContext: Get context from pool
 * @return: Context
  */
-func getHttpContext(c *gin.Context) *httpContext {
+func GetHttpContext(c *gin.Context) *httpContext {
 	ctx := httpContextPool.Get().(*httpContext)
 	ctx.Context = c
 	ctx.timeout = contextTimeout
