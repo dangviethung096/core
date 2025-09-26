@@ -195,9 +195,6 @@ func Init(configFile string) {
 	if Config.Log.Use {
 		logInit()
 	}
-
-	api := router.Group("/api")
-	api.Use(TimeoutMiddleware(contextTimeout))
 }
 
 /*
