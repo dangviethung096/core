@@ -363,7 +363,7 @@ func (ctx *httpContext) endResponse(statusCode int, body string) {
 * endResponse: call write header if it is not called before and write body to writer
  */
 func (ctx *httpContext) GetUrlParam(key string) string {
-	return ctx.urlParams[key]
+	return ctx.Param(key)
 }
 
 /*
