@@ -35,6 +35,7 @@ type HttpContext interface {
 	SetTempData(key string, value any)
 	GetTempData(key string) any
 	EndResponse(statusCode int, header *http.Header, body []byte)
+	GetRawRequest() []byte
 }
 
 /*
@@ -482,4 +483,8 @@ func (ctx *httpContext) Query(key string) string {
 
 func (ctx *httpContext) GetHeader(key string) string {
 	return ctx.Context.GetHeader(key)
+}
+
+func (ctx *httpContext) GetRawRequest() []byte {
+	return ctx.requestBody
 }

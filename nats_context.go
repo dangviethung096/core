@@ -348,3 +348,7 @@ func (ctx *natsContext) writeDefaultSuccess() {
 
 	ctx.endResponse(http.StatusOK, body)
 }
+
+func (ctx *natsContext) GetRawRequest() []byte {
+	return ctx.request.Body
+}
