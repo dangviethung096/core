@@ -1,5 +1,7 @@
 package core
 
+import "time"
+
 const (
 	BLANK                  = ""
 	CONTENT_TYPE_TEXT      = "text/plain"
@@ -73,4 +75,12 @@ const (
 
 const (
 	API_CODE_SUCCESS = 200
+)
+
+// Database connection config
+const (
+	MAX_OPEN_CONNS     = 20
+	MAX_IDLE_CONNS     = 10
+	CONN_MAX_IDLE_TIME = 5 * time.Minute
+	CONN_MAX_LIFETIME  = 30 * time.Minute
 )

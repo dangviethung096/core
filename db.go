@@ -88,6 +88,21 @@ func openPostgresDBConnection(dbInfo DBInfo) *postgresSession {
 		log.Panicf("Cannot connect to database: dbInfo = %v, err = %v", dbInfo, err)
 	}
 
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Panicf("Cannot get database connection: err = %v", err)
+	}
+
+	sqlDB.SetMaxOpenConns(MAX_OPEN_CONNS)        // limit total connections
+	sqlDB.SetMaxIdleConns(MAX_IDLE_CONNS)        // keep up to 10 idle connections
+	sqlDB.SetConnMaxIdleTime(CONN_MAX_IDLE_TIME) // close idle conns after 5 min
+	sqlDB.SetConnMaxLifetime(CONN_MAX_LIFETIME)  // recycle connections every 30 min
+
+	err = sqlDB.Ping()
+	if err != nil {
+		log.Panicf("Cannot ping database: err = %v", err)
+	}
+
 	log.Printf("Connected to postgres database!\n")
 
 	return &postgresSession{
